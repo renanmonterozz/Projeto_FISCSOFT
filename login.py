@@ -18,8 +18,8 @@ class LoginApp(ctk.CTk):
 
         try:
             self.img_bg = ctk.CTkImage(
-                light_image=Image.open("Tela de Login Adm.png"),
-                dark_image=Image.open("Tela de Login Adm.png"),
+                light_image=Image.open("assets/tela_de_login_adm.png"),
+                dark_image=Image.open("assets/tela_de_login_adm.png"),
                 size=(1000, 600),
             )
         except Exception:

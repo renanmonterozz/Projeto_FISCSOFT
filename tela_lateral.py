@@ -27,8 +27,8 @@ class Sidebar(ctk.CTkFrame):
 
         try:
             logo_img = ctk.CTkImage(
-                light_image=Image.open("logo.png"),
-                dark_image=Image.open("logo.png"),
+                light_image=Image.open("assets/logo_fiscsoft.png"),
+                dark_image=Image.open("assets/logo_fiscsoft.png"),
                 size=(130, 130),
             )
             ctk.CTkLabel(logo_frame, text="", image=logo_img).pack()
@@ -36,13 +36,13 @@ class Sidebar(ctk.CTkFrame):
             ctk.CTkLabel(logo_frame, text="FiscSoft", font=ctk.CTkFont(size=18, weight="bold"), text_color="#1D4D21").pack()
 
         self.nav_items = [
-            ("Menu Inicial", "Vector 21.png"),
-            ("Locais Cadastrados", "Predios.png"),
-            ("Itens", "Vector (1).png"),
-            ("Relatórios", "Vector 19.png"),
-            ("Histórico", "Relogio.png"),
-            ("Destinação", "Vector.png"),
-            ("Usuários", "mynaui_users.png"),
+            ("Menu Inicial", "assets/casa.png"),
+            ("Locais Cadastrados", "assets/predios.png"),
+            ("Itens", "assets/caixa.png"),
+            ("Relatórios", "assets/relatorios.png"),
+            ("Histórico", "assets/relogio.png"),
+            ("Destinação", "assets/caminhão.png"),
+            ("Usuários", "assets/usuarios.png"),
         ]
 
         nav_container = ctk.CTkFrame(self, fg_color="transparent")
@@ -75,7 +75,7 @@ class Sidebar(ctk.CTkFrame):
         bottom_frame = ctk.CTkFrame(self, fg_color="transparent")
         bottom_frame.pack(fill="x", padx=18, pady=(0, 22))
 
-        tema_escuro_icon = carregar_icone("botão lua@2x.png")
+        tema_escuro_icon = carregar_icone("assets/lua.png")
 
         tema_container = ctk.CTkFrame(bottom_frame, fg_color="transparent", height=38)
         tema_container.pack(fill="x", pady=(0, 8))
@@ -99,7 +99,7 @@ class Sidebar(ctk.CTkFrame):
 
         sair_icon = None
         try:
-            sair_img = Image.open("pepicons-pop_leave.png")
+            sair_img = Image.open("assets/sair.png")
             sair_icon = ctk.CTkImage(
                 light_image=sair_img,
                 dark_image=sair_img,
