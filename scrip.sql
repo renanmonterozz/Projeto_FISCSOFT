@@ -1,3 +1,4 @@
+
 -- Schema fiscsoft
 -- -----------------------------------------------------
 CREATE SCHEMA IF NOT EXISTS `fiscsoft` DEFAULT CHARACTER SET utf8 ;
@@ -11,15 +12,12 @@ CREATE TABLE IF NOT EXISTS `fiscsoft`.`agente ibama` (
   `senha` VARCHAR(255) NOT NULL,
   `email` VARCHAR(100) NOT NULL,
   `nome_agente` VARCHAR(45) NOT NULL,
-  `cpf` VARCHAR(11) NOT NULL,
-  `telefone` VARCHAR(11) NULL,
-  `login` VARCHAR(45) NOT NULL,
-  `agente ibamacol` VARCHAR(45) NULL,
+  `cpf` VARCHAR(45) NOT NULL,
+  `telefone` CHAR(11) NULL,
   UNIQUE INDEX `matricula_UNIQUE` (`matricula` ASC) VISIBLE,
   UNIQUE INDEX `email senha_UNIQUE` (`email` ASC) VISIBLE,
-  PRIMARY KEY (`login`),
-  UNIQUE INDEX `cpf_UNIQUE` (`cpf` ASC) VISIBLE,
-  UNIQUE INDEX `login_UNIQUE` (`login` ASC) VISIBLE)
+  PRIMARY KEY (`matricula`),
+  UNIQUE INDEX `cpf_UNIQUE` (`cpf` ASC) VISIBLE)
 ENGINE = InnoDB;
 
 
@@ -30,15 +28,13 @@ CREATE TABLE IF NOT EXISTS `fiscsoft`.`infrator` (
   `cpf` VARCHAR(11) NOT NULL,
   `email` VARCHAR(100) NOT NULL,
   `senha` VARCHAR(255) NOT NULL,
+  `id_infrator` INT NOT NULL AUTO_INCREMENT,
   `nome_infrator` VARCHAR(45) NOT NULL,
-  `telefone` VARCHAR(45) NULL,
-  `login` VARCHAR(45) NOT NULL,
-  `infratorcol` VARCHAR(45) NOT NULL,
+  `telefone_infrator` CHAR(11) NULL,
   UNIQUE INDEX `cpf_UNIQUE` (`cpf` ASC) VISIBLE,
   UNIQUE INDEX `email_UNIQUE` (`email` ASC) VISIBLE,
-  UNIQUE INDEX `id_infrator_UNIQUE` (`nome_infrator` ASC) VISIBLE,
-  UNIQUE INDEX `login_UNIQUE` (`login` ASC) VISIBLE,
-  PRIMARY KEY (`login`))
+  UNIQUE INDEX `id_infrator_UNIQUE` (`id_infrator` ASC) VISIBLE,
+  PRIMARY KEY (`id_infrator`))
 ENGINE = InnoDB;
 
 
@@ -66,7 +62,7 @@ CREATE TABLE IF NOT EXISTS `fiscsoft`.`TCCM` (
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_TCCM_infrator1`
     FOREIGN KEY (`infrator_id_infrator`)
-    REFERENCES `fiscsoft`.`infrator` (`nome_infrator`)
+    REFERENCES `fiscsoft`.`infrator` (`id_infrator`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
@@ -135,7 +131,7 @@ CREATE TABLE IF NOT EXISTS `fiscsoft`.`insumo` (
   INDEX `fk_insumo_produtos1_idx` (`produtos_lote` ASC) VISIBLE,
   CONSTRAINT `fk_insumo_infrator1`
     FOREIGN KEY (`infrator_id_infrator`)
-    REFERENCES `fiscsoft`.`infrator` (`nome_infrator`)
+    REFERENCES `fiscsoft`.`infrator` (`id_infrator`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_insumo_produtos1`
@@ -170,3 +166,5 @@ CREATE TABLE IF NOT EXISTS `fiscsoft`.`insumo_has_TCCM` (
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
+
+
