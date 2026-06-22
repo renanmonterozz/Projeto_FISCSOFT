@@ -122,7 +122,7 @@ class UsuariosPage(ctk.CTkFrame):
 
     def build_table(self):
         self.table_frame = ctk.CTkFrame(
-            self, fg_color="white", corner_radius=15,
+            self, fg_color="white", corner_radius=8,
             border_width=1, border_color="#D9D9D9"
         )
         self.table_frame.pack(fill="both", expand=True, padx=30, pady=(0, 30))
@@ -305,8 +305,6 @@ class UsuariosPage(ctk.CTkFrame):
 
 
 if __name__ == "__main__":
-    from tela_lateral import Sidebar
-
     ctk.set_appearance_mode("light")
     ctk.set_default_color_theme("blue")
 
@@ -315,8 +313,5 @@ if __name__ == "__main__":
     app.geometry("1200x700")
     app.configure(fg_color="#F5F5F5")
 
-    sidebar = Sidebar(app, width=210)
-    sidebar.pack(side="left", fill="y")
-
-    UsuariosPage(app).pack(side="right", fill="both", expand=True)
+    UsuariosPage(app).pack(fill="both", expand=True)
     app.mainloop()
