@@ -1,6 +1,12 @@
 import customtkinter as ctk
 from tkinter import messagebox
 from PIL import Image
+import os
+
+from screens.sidebar import Sidebar
+from screens.usuarios import UsuariosPage
+from config.styles import ASSETS_DIR, COLORS
+from config.database import LOGIN_USER, LOGIN_PASS
 
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
@@ -13,13 +19,13 @@ class LoginApp(ctk.CTk):
         self.title("FISCSOFT - Login")
         self.geometry("1000x600")
         self.resizable(False, False)
-        self.configure(fg_color="#FFFFFF")
+        self.configure(fg_color=COLORS["white"])
         self.mostrando_form = False
 
         try:
             self.img_bg = ctk.CTkImage(
-                light_image=Image.open("Tela de Login Adm.png"),
-                dark_image=Image.open("Tela de Login Adm.png"),
+                light_image=Image.open(os.path.join(ASSETS_DIR, "tela_de_login_adm.png")),
+                dark_image=Image.open(os.path.join(ASSETS_DIR, "tela_de_login_adm.png")),
                 size=(1000, 600),
             )
         except Exception:
@@ -55,10 +61,10 @@ class LoginApp(ctk.CTk):
         frame_user.pack_propagate(False)
         frame_user.configure(height=40)
 
-        ctk.CTkLabel(frame_user, text="👤", font=ctk.CTkFont(size=16), text_color="#999999").pack(side="left", padx=(12, 5))
+        ctk.CTkLabel(frame_user, text="\U0001f464", font=ctk.CTkFont(size=16), text_color="#999999").pack(side="left", padx=(12, 5))
         self.entry_usuario = ctk.CTkEntry(
             frame_user,
-            placeholder_text="Usuário",
+            placeholder_text="Usuario",
             height=36,
             border_width=0,
             fg_color="white",
@@ -72,7 +78,7 @@ class LoginApp(ctk.CTk):
         frame_senha.pack_propagate(False)
         frame_senha.configure(height=40)
 
-        ctk.CTkLabel(frame_senha, text="🔒", font=ctk.CTkFont(size=16), text_color="#999999").pack(side="left", padx=(12, 5))
+        ctk.CTkLabel(frame_senha, text="\U0001f512", font=ctk.CTkFont(size=16), text_color="#999999").pack(side="left", padx=(12, 5))
         self.entry_senha = ctk.CTkEntry(
             frame_senha,
             placeholder_text="Senha",
@@ -122,13 +128,43 @@ class LoginApp(ctk.CTk):
         senha = self.entry_senha.get()
 
         if not usuario or not senha:
-            messagebox.showwarning("Atenção", "Preencha todos os campos!")
+            messagebox.showwarning("Atencao", "Preencha todos os campos!")
             return
 
-        if usuario == "admin" and senha == "1234":
-            messagebox.showinfo("Sucesso", f"Bem-vindo, {usuario}!")
+        if usuario == LOGIN_USER and senha == LOGIN_PASS:
+            self.abrir_principal()
         else:
-            messagebox.showerror("Erro", "Usuário ou senha incorretos!")
+            messagebox.showerror("Erro", "Usuario ou senha incorretos!")
+
+    def abrir_principal(self):
+        self.destroy()
+
+        main_app = ctk.CTk()
+        main_app.title("FISCSOFT")
+        main_app.geometry("1200x700")
+        main_app.configure(fg_color=COLORS["white"])
+
+        content_frame = ctk.CTkFrame(main_app, fg_color=COLORS["bg"])
+        content_frame.pack(side="right", fill="both", expand=True)
+
+        def navegar(pagina):
+            for w in content_frame.winfo_children():
+                w.destroy()
+            if pagina == "Usuarios Externos":
+                UsuariosPage(content_frame).pack(fill="both", expand=True)
+            else:
+                ctk.CTkLabel(
+                    content_frame,
+                    text=pagina,
+                    font=ctk.CTkFont(size=24, weight="bold"),
+                    text_color=COLORS["text"],
+                ).pack(expand=True)
+
+        sidebar = Sidebar(main_app, width=210, on_navigate=navegar)
+        sidebar.pack(side="left", fill="y")
+
+        navegar("Usuarios Externos")
+        main_app.mainloop()
 
     def login_certificado(self):
         self.mostrando_form = True
@@ -138,7 +174,7 @@ class LoginApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.form_frame,
-            text="🔐",
+            text="\U0001f510",
             font=ctk.CTkFont(size=40),
         ).pack(pady=(50, 10))
 
@@ -146,7 +182,7 @@ class LoginApp(ctk.CTk):
             self.form_frame,
             text="Funcionalidade em\ndesenvolvimento",
             font=ctk.CTkFont(size=14),
-            text_color="#666666",
+            text_color=COLORS["text_muted"],
         ).pack(pady=10)
 
         ctk.CTkButton(
