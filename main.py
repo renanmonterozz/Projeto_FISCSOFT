@@ -6,7 +6,7 @@ import os
 from screens.sidebar import Sidebar
 from screens.usuarios import UsuariosPage
 from config.styles import ASSETS_DIR, COLORS
-from config.database import LOGIN_USER, LOGIN_PASS
+from database.connection import Database
 
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
@@ -131,10 +131,23 @@ class LoginApp(ctk.CTk):
             messagebox.showwarning("Atencao", "Preencha todos os campos!")
             return
 
-        if usuario == LOGIN_USER and senha == LOGIN_PASS:
-            self.abrir_principal()
+        db = Database()
+        if db.conectar():
+            sql = "SELECT nome_agente, status FROM `agente ibama` WHERE login = %s AND senha = %s"
+            resultado = db.executar(sql, (usuario, senha))
+            registro = resultado.fetchone() if resultado else None
+            db.desconectar()
+
+            if registro:
+                if registro[1] == "ativo":
+                    self.usuario_logado = registro[0]
+                    self.abrir_principal()
+                else:
+                    messagebox.showerror("Erro", "Usuario inativo! Contate o administrador.")
+            else:
+                messagebox.showerror("Erro", "Usuario ou senha incorretos!")
         else:
-            messagebox.showerror("Erro", "Usuario ou senha incorretos!")
+            messagebox.showerror("Erro", "Nao foi possivel conectar ao banco de dados!")
 
     def abrir_principal(self):
         self.destroy()
