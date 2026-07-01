@@ -207,25 +207,12 @@ class UsuariosPage(ctk.CTkFrame):
     def carregar_do_banco(self):
         db = Database()
         if db.conectar():
-            sql = """SELECT matricula, nome_agente, cpf, email, telefone, login, senha, perfil, status,
-                            data_cadastro, ultimo_acesso, cadastrado_por, atualizado_por
+            sql = """SELECT matricula, nome_agente, cpf, email, telefone, login, senha, perfil, status
                      FROM `agente ibama`"""
             resultados = db.executar(sql)
             usuarios = []
             if resultados:
                 for row in resultados.fetchall():
-                    ultimo_acesso = row[10]
-                    if ultimo_acesso:
-                        ultimo_acesso = ultimo_acesso.strftime("%d/%m/%Y %H:%M")
-                    else:
-                        ultimo_acesso = ""
-
-                    data_cadastro = row[9]
-                    if data_cadastro:
-                        data_cadastro = data_cadastro.strftime("%d/%m/%Y %H:%M")
-                    else:
-                        data_cadastro = ""
-
                     usuarios.append({
                         "matricula": row[0],
                         "nome": row[1],
@@ -236,10 +223,10 @@ class UsuariosPage(ctk.CTkFrame):
                         "senha": row[6],
                         "perfil": row[7].capitalize(),
                         "status": "Ativo" if row[8] == "ativo" else "Inativo",
-                        "data_cadastro": data_cadastro,
-                        "ultimo_acesso": ultimo_acesso,
-                        "cadastrado_por": row[11] or "",
-                        "atualizado_por": row[12] or "",
+                        "data_cadastro": "",
+                        "ultimo_acesso": "",
+                        "cadastrado_por": "",
+                        "atualizado_por": "",
                     })
             db.desconectar()
             return usuarios

@@ -144,16 +144,6 @@ class LoginApp(ctk.CTk):
             if registro:
                 if registro[1] == "ativo":
                     self.usuario_logado = registro[0]
-
-                    db2 = Database()
-                    if db2.conectar():
-                        db2.executar(
-                            "UPDATE `agente ibama` SET ultimo_acesso = %s WHERE login = %s",
-                            (datetime.now(), usuario)
-                        )
-                        db2.commitar()
-                        db2.desconectar()
-
                     self.abrir_principal()
                 else:
                     messagebox.showerror("Erro", "Usuario inativo! Contate o administrador.")
