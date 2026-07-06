@@ -66,9 +66,18 @@ class UsuariosPage(ctk.CTkFrame):
             text_color=COLORS["text"], placeholder_text_color="#999999",
         )
         self.entry_busca.pack(side="left", padx=(12, 4), pady=2)
+
+        try:
+            lupa_busca_icon = ctk.CTkImage(
+                light_image=Image.open(os.path.join(ASSETS_DIR, "lupa.png")),
+                dark_image=Image.open(os.path.join(ASSETS_DIR, "lupa.png")),
+                size=(18, 18),
+            )
+        except Exception:
+            lupa_busca_icon = None
+
         ctk.CTkLabel(
-            busca_container, text="\U0001f50d",
-            font=ctk.CTkFont(size=14), text_color="#999999"
+            busca_container, image=lupa_busca_icon, text="",
         ).pack(side="right", padx=(0, 10))
 
         self.entry_filtro1 = ctk.CTkEntry(
