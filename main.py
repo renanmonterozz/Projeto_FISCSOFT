@@ -1,8 +1,7 @@
 import customtkinter as ctk
 from tkinter import messagebox
 from PIL import Image
-import os
-from datetime import datetime
+import os 
 
 from screens.sidebar import Sidebar
 from screens.usuarios import UsuariosPage
