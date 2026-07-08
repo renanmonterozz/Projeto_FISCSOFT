@@ -11,15 +11,20 @@ class Database:
         self.user = os.getenv("DB_USER")
         self.password = os.getenv("DB_PASSWORD")
         self.database = os.getenv("DB_NAME")
+        self.port = os.getenv("DB_PORT")
+        self.ssl_disabled = False
         self.conexao = None
 
     def conectar(self):
         try:
+            print(f"Conectando ao banco de dados {self.database} em {self.host}, {self.user}, {self.password}, {self.ssl_disabled}...")
             self.conexao = mysql.connector.connect(
                 host=self.host,
                 user=self.user,
                 password=self.password,
                 database=self.database,
+                port=self.port,
+                ssl_disabled = self.ssl_disabled
             )
             if self.conexao.is_connected():
                 return True

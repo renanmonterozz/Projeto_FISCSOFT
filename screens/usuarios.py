@@ -32,7 +32,31 @@ class UsuariosPage(CrudBase, ctk.CTkFrame):
         self.entry_filtro1 = self.build_filter_entry(row, "Email")
         self.entry_filtro2 = self.build_filter_entry(row, "Perfil / Status")
 
+<<<<<<< HEAD
         btn_frame = self.build_btn_frame(row)
+=======
+        self.entry_busca = ctk.CTkEntry(
+            busca_container,
+            placeholder_text="Buscar por nome, usuario ou matricula...",
+            width=340, height=38,
+            border_width=0, fg_color=COLORS["white"],
+            text_color=COLORS["text"], placeholder_text_color="#999999",
+        )
+        self.entry_busca.pack(side="left", padx=(12, 4), pady=2)
+
+        try:
+            lupa_busca_icon = ctk.CTkImage(
+                light_image=Image.open(os.path.join(ASSETS_DIR, "lupa.png")),
+                dark_image=Image.open(os.path.join(ASSETS_DIR, "lupa.png")),
+                size=(18, 18),
+            )
+        except Exception:
+            lupa_busca_icon = None
+
+        ctk.CTkLabel(
+            busca_container, image=lupa_busca_icon, text="",
+        ).pack(side="right", padx=(0, 10))
+>>>>>>> main
 
         self.build_action_btn(btn_frame, "  Pesquisar", carregar_icone("lupa.png"), self.pesquisar)
         self.build_action_btn(btn_frame, "  Limpar", carregar_icone("apagar.png"), self.limpar_filtros)
