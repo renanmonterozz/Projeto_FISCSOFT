@@ -3,7 +3,7 @@ from tkinter import messagebox
 from PIL import Image
 import os
 from config.styles import ASSETS_DIR
-from database.connection import Database
+from conexaodb import Database
 
 
 class CadastrarUsuarioWindow(ctk.CTkToplevel):
