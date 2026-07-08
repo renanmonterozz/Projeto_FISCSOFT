@@ -2,14 +2,14 @@ import customtkinter as ctk
 from tkinter import messagebox
 from PIL import Image
 import os
-from datetime import datetime
-
 from screens.sidebar import Sidebar
 from screens.usuarios import UsuariosPage
 from screens.itens import ItensPage
-from screens.infratores import InfratoresPage
+from screens.agenteibama import AgenteIbamaPage
+from screens.relatorios import RelatoriosPage
 from config.styles import ASSETS_DIR, COLORS
 from conexaodb import Database
+from utils import hash_password
 
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
@@ -38,26 +38,27 @@ class LoginApp(ctk.CTk):
         self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
         self.bg_label.image = self.img_bg
 
-        self.bg_label.bind("<Button-1>", self.on_click)
-
         self.form_frame = None
 
-    def on_click(self, event):
+        self.bg_label.bind("<Button-1>", self.clique_bg)
+
+    def clique_bg(self, event):
         if self.mostrando_form:
-            self.voltar_menu()
             return
         x, y = event.x, event.y
-
-        if 650 < x < 970 and 240 < y < 360:
+        if 650 <= x <= 970 and 240 <= y <= 360:
             self.mostrar_formulario()
-        elif 650 < x < 970 and 370 < y < 490:
+        elif 650 <= x <= 970 and 370 <= y <= 490:
             self.login_certificado()
 
     def mostrar_formulario(self):
+        if self.mostrando_form:
+            self.voltar_menu()
+            return
         self.mostrando_form = True
 
         self.form_frame = ctk.CTkFrame(self.bg_label, fg_color="transparent", width=300, height=270)
-        self.form_frame.place(x=660, y=290)
+        self.form_frame.place(x=660, y=240)
 
         frame_user = ctk.CTkFrame(self.form_frame, fg_color="white", corner_radius=8, border_width=1, border_color="#bbbbbb")
         frame_user.pack(pady=(10, 8), padx=25, fill="x")
@@ -137,7 +138,7 @@ class LoginApp(ctk.CTk):
         db = Database()
         if db.conectar():
             sql = "SELECT nome_agente, status FROM `agente ibama` WHERE login = %s AND senha = %s"
-            resultado = db.executar(sql, (usuario, senha))
+            resultado = db.executar(sql, (usuario, hash_password(senha)))
             registro = resultado.fetchone() if resultado else None
             db.desconectar()
 
@@ -168,12 +169,14 @@ class LoginApp(ctk.CTk):
         def navegar(pagina):
             for w in content_frame.winfo_children():
                 w.destroy()
-            if pagina == "Usuarios Externos":
+            if pagina == "Agentes IBAMA":
                 UsuariosPage(content_frame).pack(fill="both", expand=True)
             elif pagina == "Itens":
                 ItensPage(content_frame, on_voltar=lambda: navegar("Menu Inicial")).pack(fill="both", expand=True)
-            elif pagina == "Agente Ibama":
-                InfratoresPage(content_frame).pack(fill="both", expand=True)
+            elif pagina == "Infratores":
+                AgenteIbamaPage(content_frame).pack(fill="both", expand=True)
+            elif pagina == "Relatorios":
+                RelatoriosPage(content_frame).pack(fill="both", expand=True)
             else:
                 ctk.CTkLabel(
                     content_frame,
@@ -185,14 +188,17 @@ class LoginApp(ctk.CTk):
         sidebar = Sidebar(main_app, width=210, on_navigate=navegar)
         sidebar.pack(side="left", fill="y")
 
-        navegar("Usuarios Externos")
+        navegar("Agentes IBAMA")
         main_app.mainloop()
 
     def login_certificado(self):
+        if self.mostrando_form:
+            self.voltar_menu()
+            return
         self.mostrando_form = True
 
         self.form_frame = ctk.CTkFrame(self.bg_label, fg_color="transparent", width=300, height=270)
-        self.form_frame.place(x=660, y=290)
+        self.form_frame.place(x=660, y=240)
 
         ctk.CTkLabel(
             self.form_frame,
