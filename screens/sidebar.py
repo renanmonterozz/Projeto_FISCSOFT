@@ -22,10 +22,11 @@ def carregar_icone(caminho, tamanho_max=20):
 
 
 class Sidebar(ctk.CTkFrame):
-    def __init__(self, master, on_navigate=None, **kwargs):
+    def __init__(self, master, on_navigate=None, on_sair=None, **kwargs):
         super().__init__(master, **kwargs)
         self.configure(fg_color="#FAFAFA", corner_radius=0)
         self.on_navigate = on_navigate
+        self.on_sair = on_sair
         self.pack_propagate(False)
 
         logo_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -123,11 +124,16 @@ class Sidebar(ctk.CTkFrame):
             height=38,
             corner_radius=8,
             font=ctk.CTkFont(family=FONTS["family"], size=FONTS["size_small"], weight="bold"),
+            command=self._sair,
         ).place(relx=0, rely=0, relwidth=1, relheight=1)
 
     def _navigate(self, page_name):
         if self.on_navigate:
             self.on_navigate(page_name)
+
+    def _sair(self):
+        if self.on_sair:
+            self.on_sair()
 
 
 if __name__ == "__main__":

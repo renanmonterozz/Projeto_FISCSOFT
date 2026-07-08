@@ -49,6 +49,8 @@ CREATE TABLE `agente ibama` (
 LOCK TABLES `agente ibama` WRITE;
 /*!40000 ALTER TABLE `agente ibama` DISABLE KEYS */;
 INSERT INTO `agente ibama` VALUES (0,'admin','123456','admin@ibama.gov.br','Carlos Silva','ativo','Administrador','12345678901',NULL);
+INSERT INTO `agente ibama` VALUES (1,'agente','123456','agente@ibama.gov.br','Joao Agente','ativo','Agente','12345678902',NULL);
+INSERT INTO `agente ibama` VALUES (2,'usuario','123456','usuario@ibama.gov.br','Maria Usuario','ativo','Usuario','12345678903',NULL);
 /*!40000 ALTER TABLE `agente ibama` ENABLE KEYS */;
 UNLOCK TABLES;
 
