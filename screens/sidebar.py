@@ -48,8 +48,8 @@ class Sidebar(ctk.CTkFrame):
             ("Relatorios", "relatorios.png"),
             ("Historico", "relogio.png"),
             ("Destinacao", "destinacao.png"),
-            ("Usuarios Externos", "usuarios.png"),
-            ("Agente Ibama", "Agente.png"),
+            ("Agentes IBAMA", "usuarios.png"),
+            ("Infratores", "Agente.png"),
         ]
 
         nav_container = ctk.CTkFrame(self, fg_color="transparent")
@@ -130,36 +130,36 @@ class Sidebar(ctk.CTkFrame):
             self.on_navigate(page_name)
 
 
-if __name__ == "__main__":
-    from screens.usuarios import UsuariosPage
+# if __name__ == "__main__":
+#     from screens.usuarios import UsuariosPage
 
-    ctk.set_appearance_mode("light")
-    ctk.set_default_color_theme("blue")
+#     ctk.set_appearance_mode("light")
+#     ctk.set_default_color_theme("blue")
 
-    app = ctk.CTk()
-    app.title("FISCSOFT")
-    app.geometry("1200x700")
-    app.configure(fg_color=COLORS["white"])
+#     app = ctk.CTk()
+#     app.title("FISCSOFT")
+#     app.geometry("1200x700")
+#     app.configure(fg_color=COLORS["white"])
 
-    content_frame = ctk.CTkFrame(app, fg_color=COLORS["bg"])
-    content_frame.pack(side="right", fill="both", expand=True)
+#     content_frame = ctk.CTkFrame(app, fg_color=COLORS["bg"])
+#     content_frame.pack(side="right", fill="both", expand=True)
 
-    def navegar(pagina):
-        for w in content_frame.winfo_children():
-            w.destroy()
-        if pagina == "Usuarios Externos":
-            UsuariosPage(content_frame).pack(fill="both", expand=True)
-        else:
-            ctk.CTkLabel(
-                content_frame,
-                text=pagina,
-                font=ctk.CTkFont(size=24, weight="bold"),
-                text_color=COLORS["text"],
-            ).pack(expand=True)
+#     def navegar(pagina):
+#         for w in content_frame.winfo_children():
+#             w.destroy()
+#         if pagina == "Usuarios Externos":
+#             UsuariosPage(content_frame).pack(fill="both", expand=True)
+#         else:
+#             ctk.CTkLabel(
+#                 content_frame,
+#                 text=pagina,
+#                 font=ctk.CTkFont(size=24, weight="bold"),
+#                 text_color=COLORS["text"],
+#             ).pack(expand=True)
 
-    sidebar = Sidebar(app, width=210, on_navigate=navegar)
-    sidebar.pack(side="left", fill="y")
+#     sidebar = Sidebar(app, width=210, on_navigate=navegar)
+#     sidebar.pack(side="left", fill="y")
 
-    navegar("Usuarios Externos")
+#     navegar("Usuarios Externos")
 
-    app.mainloop()
+    # app.mainloop()
