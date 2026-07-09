@@ -14,8 +14,14 @@ CREATE TABLE IF NOT EXISTS `fiscsoft`.`agente ibama` (
   `nome_agente` VARCHAR(45) NOT NULL,
   `cpf` VARCHAR(45) NOT NULL,
   `telefone` CHAR(11) NULL,
+  `login` VARCHAR(45) NOT NULL,
+  `perfil` ENUM("agente", "operador", "admin") NOT NULL DEFAULT "agente",
+  `status` ENUM("ativo", "inativo") NOT NULL DEFAULT "ativo",
+  `cadastrado_por` VARCHAR(45) NULL,
+  `atualizado_por` VARCHAR(45) NULL,
   UNIQUE INDEX `matricula_UNIQUE` (`matricula` ASC) VISIBLE,
-  UNIQUE INDEX `email senha_UNIQUE` (`email` ASC) VISIBLE,
+  UNIQUE INDEX `email_UNIQUE` (`email` ASC) VISIBLE,
+  UNIQUE INDEX `login_UNIQUE` (`login` ASC) VISIBLE,
   PRIMARY KEY (`matricula`),
   UNIQUE INDEX `cpf_UNIQUE` (`cpf` ASC) VISIBLE)
 ENGINE = InnoDB;

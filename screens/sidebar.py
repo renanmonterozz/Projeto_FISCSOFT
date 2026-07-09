@@ -22,10 +22,11 @@ def carregar_icone(caminho, tamanho_max=20):
 
 
 class Sidebar(ctk.CTkFrame):
-    def __init__(self, master, on_navigate=None, **kwargs):
+    def __init__(self, master, on_navigate=None, on_sair=None, **kwargs):
         super().__init__(master, **kwargs)
         self.configure(fg_color="#FAFAFA", corner_radius=0)
         self.on_navigate = on_navigate
+        self.on_sair = on_sair
         self.pack_propagate(False)
 
         logo_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -48,8 +49,8 @@ class Sidebar(ctk.CTkFrame):
             ("Relatorios", "relatorios.png"),
             ("Historico", "relogio.png"),
             ("Destinacao", "destinacao.png"),
-            ("Usuarios Externos", "usuarios.png"),
-            ("Agente Ibama", "Agente.png"),
+            ("Agentes IBAMA", "usuarios.png"),
+            ("Infratores", "Agente.png"),
         ]
 
         nav_container = ctk.CTkFrame(self, fg_color="transparent")
@@ -123,43 +124,48 @@ class Sidebar(ctk.CTkFrame):
             height=38,
             corner_radius=8,
             font=ctk.CTkFont(family=FONTS["family"], size=FONTS["size_small"], weight="bold"),
+            command=self._sair,
         ).place(relx=0, rely=0, relwidth=1, relheight=1)
 
     def _navigate(self, page_name):
         if self.on_navigate:
             self.on_navigate(page_name)
 
+    def _sair(self):
+        if self.on_sair:
+            self.on_sair()
 
-if __name__ == "__main__":
-    from screens.usuarios import UsuariosPage
 
-    ctk.set_appearance_mode("light")
-    ctk.set_default_color_theme("blue")
+# if __name__ == "__main__":
+#     from screens.usuarios import UsuariosPage
 
-    app = ctk.CTk()
-    app.title("FISCSOFT")
-    app.geometry("1200x700")
-    app.configure(fg_color=COLORS["white"])
+#     ctk.set_appearance_mode("light")
+#     ctk.set_default_color_theme("blue")
 
-    content_frame = ctk.CTkFrame(app, fg_color=COLORS["bg"])
-    content_frame.pack(side="right", fill="both", expand=True)
+#     app = ctk.CTk()
+#     app.title("FISCSOFT")
+#     app.geometry("1200x700")
+#     app.configure(fg_color=COLORS["white"])
 
-    def navegar(pagina):
-        for w in content_frame.winfo_children():
-            w.destroy()
-        if pagina == "Usuarios Externos":
-            UsuariosPage(content_frame).pack(fill="both", expand=True)
-        else:
-            ctk.CTkLabel(
-                content_frame,
-                text=pagina,
-                font=ctk.CTkFont(size=24, weight="bold"),
-                text_color=COLORS["text"],
-            ).pack(expand=True)
+#     content_frame = ctk.CTkFrame(app, fg_color=COLORS["bg"])
+#     content_frame.pack(side="right", fill="both", expand=True)
 
-    sidebar = Sidebar(app, width=210, on_navigate=navegar)
-    sidebar.pack(side="left", fill="y")
+#     def navegar(pagina):
+#         for w in content_frame.winfo_children():
+#             w.destroy()
+#         if pagina == "Usuarios Externos":
+#             UsuariosPage(content_frame).pack(fill="both", expand=True)
+#         else:
+#             ctk.CTkLabel(
+#                 content_frame,
+#                 text=pagina,
+#                 font=ctk.CTkFont(size=24, weight="bold"),
+#                 text_color=COLORS["text"],
+#             ).pack(expand=True)
 
-    navegar("Usuarios Externos")
+#     sidebar = Sidebar(app, width=210, on_navigate=navegar)
+#     sidebar.pack(side="left", fill="y")
 
-    app.mainloop()
+#     navegar("Usuarios Externos")
+
+    # app.mainloop()
