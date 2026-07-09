@@ -4,9 +4,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import customtkinter as ctk
 from tkinter import messagebox
+from PIL import Image
+import os
 
-from config.styles import COLORS, FONTS
-from database.connection import Database
+from config.styles import COLORS, FONTS, ASSETS_DIR
+from conexaodb import Database
 
 
 class InfratoresPage(ctk.CTkFrame):
@@ -63,9 +65,18 @@ class InfratoresPage(ctk.CTkFrame):
             text_color=COLORS["text"], placeholder_text_color="#999999",
         )
         self.entry_busca.pack(side="left", padx=(12, 4), pady=2)
+
+        try:
+            lupa_busca_icon = ctk.CTkImage(
+                light_image=Image.open(os.path.join(ASSETS_DIR, "lupa.png")),
+                dark_image=Image.open(os.path.join(ASSETS_DIR, "lupa.png")),
+                size=(18, 18),
+            )
+        except Exception:
+            lupa_busca_icon = None
+
         ctk.CTkLabel(
-            busca_container, text="\U0001f50d",
-            font=ctk.CTkFont(size=14), text_color="#999999"
+            busca_container, image=lupa_busca_icon, text="",
         ).pack(side="right", padx=(0, 10))
 
         self.entry_filtro1 = ctk.CTkEntry(
@@ -91,35 +102,68 @@ class InfratoresPage(ctk.CTkFrame):
         btn_frame = ctk.CTkFrame(row, fg_color="transparent")
         btn_frame.pack(side="left", padx=(5, 0))
 
+        try:
+            lupa_icon = ctk.CTkImage(
+                light_image=Image.open(os.path.join(ASSETS_DIR, "lupa.png")),
+                dark_image=Image.open(os.path.join(ASSETS_DIR, "lupa.png")),
+                size=(18, 18),
+            )
+        except Exception:
+            lupa_icon = None
+
         ctk.CTkButton(
             btn_frame,
-            text="\U0001f50d  Pesquisar",
+            image=lupa_icon,
+            text="  Pesquisar",
             height=38, corner_radius=6,
             fg_color=COLORS["white"], hover_color="#F0F0F0",
             text_color=COLORS["text"],
             border_width=1, border_color=COLORS["border"],
-            font=ctk.CTkFont(size=FONTS["size_body"]),
+            font=ctk.CTkFont(size=FONTS["size_body"], weight="normal"),
+            compound="left",
             command=self.pesquisar,
         ).pack(side="left", padx=(0, 8))
 
+        try:
+            apagar_icon = ctk.CTkImage(
+                light_image=Image.open(os.path.join(ASSETS_DIR, "apagar.png")),
+                dark_image=Image.open(os.path.join(ASSETS_DIR, "apagar.png")),
+                size=(18, 18),
+            )
+        except Exception:
+            apagar_icon = None
+
         ctk.CTkButton(
             btn_frame,
-            text="\u2715  Limpar",
+            image=apagar_icon,
+            text="  Limpar",
             height=38, corner_radius=6,
             fg_color=COLORS["white"], hover_color="#F0F0F0",
             text_color=COLORS["text"],
             border_width=1, border_color=COLORS["border"],
-            font=ctk.CTkFont(size=FONTS["size_body"]),
+            font=ctk.CTkFont(size=FONTS["size_body"], weight="normal"),
+            compound="left",
             command=self.limpar_filtros,
         ).pack(side="left", padx=(0, 8))
 
+        try:
+            mais_icon = ctk.CTkImage(
+                light_image=Image.open(os.path.join(ASSETS_DIR, "mais.png")),
+                dark_image=Image.open(os.path.join(ASSETS_DIR, "mais.png")),
+                size=(18, 18),
+            )
+        except Exception:
+            mais_icon = None
+
         ctk.CTkButton(
             btn_frame,
-            text="+  Novo Infrator",
+            image=mais_icon,
+            text="  Novo Infrator",
             height=38, corner_radius=6,
             fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
             text_color="white", border_width=0,
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
+            compound="left",
             command=self.novo_infrator,
         ).pack(side="left")
 

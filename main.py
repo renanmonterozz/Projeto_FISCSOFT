@@ -8,7 +8,7 @@ from screens.usuarios import UsuariosPage
 from screens.itens import ItensPage
 from screens.infratores import InfratoresPage
 from config.styles import ASSETS_DIR, COLORS
-from database.connection import Database
+from conexaodb import Database
 
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
