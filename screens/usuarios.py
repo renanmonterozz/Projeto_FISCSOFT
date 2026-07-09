@@ -9,209 +9,45 @@ import os
 
 from config.styles import COLORS, FONTS, ASSETS_DIR
 from conexaodb import Database
+from screens.crud_base import CrudBase
+from screens.sidebar import carregar_icone
 
 
-class UsuariosPage(ctk.CTkFrame):
+class UsuariosPage(CrudBase, ctk.CTkFrame):
     def __init__(self, master, usuario_logado=None, **kwargs):
         super().__init__(master, **kwargs)
         self.configure(fg_color=COLORS["bg"])
         self.usuario_logado = usuario_logado
 
-        self.build_header()
+        self.build_header("Agentes IBAMA", "Gerencie os agentes cadastrados no sistema")
         self.build_filter_bar()
         self.build_table()
 
-    def build_header(self):
-        header = ctk.CTkFrame(self, fg_color="transparent")
-        header.pack(fill="x", padx=30, pady=(30, 20))
-
-        ctk.CTkLabel(
-            header,
-            text="Usuarios",
-            font=ctk.CTkFont(size=FONTS["size_title"], weight="bold"),
-            text_color=COLORS["text"],
-        ).pack(anchor="w")
-
-        ctk.CTkLabel(
-            header,
-            text="Gerencie os usuarios cadastrados no sistema",
-            font=ctk.CTkFont(size=FONTS["size_subtitle"]),
-            text_color=COLORS["text_muted"],
-        ).pack(anchor="w", pady=(4, 0))
-
     def build_filter_bar(self):
-        container = ctk.CTkFrame(
-            self, fg_color=COLORS["white"], corner_radius=8,
-            border_width=1, border_color=COLORS["border"]
-        )
-        container.pack(fill="x", padx=30, pady=(0, 20))
-
-        inner = ctk.CTkFrame(container, fg_color="transparent")
-        inner.pack(fill="x", padx=20, pady=14)
-
+        inner = self.build_filter_container()
         row = ctk.CTkFrame(inner, fg_color="transparent")
         row.pack(fill="x")
 
-        busca_container = ctk.CTkFrame(
-            row, fg_color=COLORS["white"], border_width=1,
-            border_color=COLORS["border"], corner_radius=6
-        )
-        busca_container.pack(side="left", padx=(0, 10))
+        self.entry_busca = self.build_search_entry(row, "Buscar por nome, usuario ou matricula...", 340)
+        self.entry_filtro1 = self.build_filter_entry(row, "Email")
+        self.entry_filtro2 = self.build_filter_entry(row, "Perfil / Status")
 
-        self.entry_busca = ctk.CTkEntry(
-            busca_container,
-            placeholder_text="Buscar por nome, usuario ou matricula...",
-            width=340, height=38,
-            border_width=0, fg_color=COLORS["white"],
-            text_color=COLORS["text"], placeholder_text_color="#999999",
-        )
-        self.entry_busca.pack(side="left", padx=(12, 4), pady=2)
+        btn_frame = self.build_btn_frame(row)
 
-        try:
-            lupa_busca_icon = ctk.CTkImage(
-                light_image=Image.open(os.path.join(ASSETS_DIR, "lupa.png")),
-                dark_image=Image.open(os.path.join(ASSETS_DIR, "lupa.png")),
-                size=(18, 18),
-            )
-        except Exception:
-            lupa_busca_icon = None
-
-        ctk.CTkLabel(
-            busca_container, image=lupa_busca_icon, text="",
-        ).pack(side="right", padx=(0, 10))
-
-        self.entry_filtro1 = ctk.CTkEntry(
-            row,
-            placeholder_text="Email",
-            width=200, height=38,
-            border_width=1, border_color=COLORS["border"],
-            corner_radius=6, fg_color=COLORS["white"],
-            text_color=COLORS["text"], placeholder_text_color="#999999",
-        )
-        self.entry_filtro1.pack(side="left", padx=(0, 10))
-
-        self.entry_filtro2 = ctk.CTkEntry(
-            row,
-            placeholder_text="Perfil / Status",
-            width=200, height=38,
-            border_width=1, border_color=COLORS["border"],
-            corner_radius=6, fg_color=COLORS["white"],
-            text_color=COLORS["text"], placeholder_text_color="#999999",
-        )
-        self.entry_filtro2.pack(side="left", padx=(0, 10))
-
-        btn_frame = ctk.CTkFrame(row, fg_color="transparent")
-        btn_frame.pack(side="left", padx=(5, 0))
-
-        try:
-            lupa_icon = ctk.CTkImage(
-                light_image=Image.open(os.path.join(ASSETS_DIR, "lupa.png")),
-                dark_image=Image.open(os.path.join(ASSETS_DIR, "lupa.png")),
-                size=(18, 18),
-            )
-        except Exception:
-            lupa_icon = None
-
-        ctk.CTkButton(
-            btn_frame,
-            image=lupa_icon,
-            text="  Pesquisar",
-            height=38, corner_radius=6,
-            fg_color=COLORS["white"], hover_color="#F0F0F0",
-            text_color=COLORS["text"],
-            border_width=1, border_color=COLORS["border"],
-            font=ctk.CTkFont(size=FONTS["size_body"], weight="normal"),
-            compound="left",
-            command=self.pesquisar,
-        ).pack(side="left", padx=(0, 8))
-
-        try:
-            apagar_icon = ctk.CTkImage(
-                light_image=Image.open(os.path.join(ASSETS_DIR, "apagar.png")),
-                dark_image=Image.open(os.path.join(ASSETS_DIR, "apagar.png")),
-                size=(18, 18),
-            )
-        except Exception:
-            apagar_icon = None
-
-        ctk.CTkButton(
-            btn_frame,
-            image=apagar_icon,
-            text="  Limpar",
-            height=38, corner_radius=6,
-            fg_color=COLORS["white"], hover_color="#F0F0F0",
-            text_color=COLORS["text"],
-            border_width=1, border_color=COLORS["border"],
-            font=ctk.CTkFont(size=FONTS["size_body"], weight="normal"),
-            compound="left",
-            command=self.limpar_filtros,
-        ).pack(side="left", padx=(0, 8))
-
-        try:
-            mais_icon = ctk.CTkImage(
-                light_image=Image.open(os.path.join(ASSETS_DIR, "mais.png")),
-                dark_image=Image.open(os.path.join(ASSETS_DIR, "mais.png")),
-                size=(18, 18),
-            )
-        except Exception:
-            mais_icon = None
-
-        ctk.CTkButton(
-            btn_frame,
-            image=mais_icon,
-            text="  Novo Usuario",
-            height=38, corner_radius=6,
-            fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
-            text_color="white", border_width=0,
-            font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
-            compound="left",
-            command=self.novo_usuario,
-        ).pack(side="left")
+        self.build_action_btn(btn_frame, "  Pesquisar", carregar_icone("lupa.png"), self.pesquisar)
+        self.build_action_btn(btn_frame, "  Limpar", carregar_icone("apagar.png"), self.limpar_filtros)
+        self.build_action_btn(btn_frame, "  Novo Usuario", carregar_icone("mais.png"),
+                              self.novo_usuario, fg_color=COLORS["primary"],
+                              hover_color=COLORS["primary_hover"], text_color="white",
+                              border=False, bold=True)
 
     def build_table(self):
-        self.table_frame = ctk.CTkFrame(
-            self, fg_color=COLORS["white"], corner_radius=8,
-            border_width=1, border_color=COLORS["border"]
-        )
-        self.table_frame.pack(fill="both", expand=True, padx=30, pady=(0, 30))
-
-        header = ctk.CTkFrame(
-            self.table_frame, fg_color="#FAFAFA",
-            height=44, corner_radius=0
-        )
-        header.pack(fill="x")
-        header.pack_propagate(False)
-
-        ctk.CTkLabel(header, text="", width=40).pack(side="left", padx=(15, 0))
-
-        cols = ctk.CTkFrame(header, fg_color="transparent")
-        cols.pack(side="left", fill="x", expand=True, padx=(5, 20))
-        cols.grid_columnconfigure(0, weight=3)
-        cols.grid_columnconfigure(1, weight=2)
-        cols.grid_columnconfigure(2, weight=1)
-        cols.grid_columnconfigure(3, weight=1)
-
-        for col_text in ["Usuario", "Email", "Perfil", "Status"]:
-            ctk.CTkLabel(
-                cols, text=col_text,
-                font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                text_color=COLORS["text_muted"]
-            ).grid(row=0, column=["Usuario", "Email", "Perfil", "Status"].index(col_text), sticky="w")
-
-        ctk.CTkLabel(
-            header, text="Acoes",
-            font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-            text_color=COLORS["text_muted"],
-            width=120
-        ).pack(side="right", padx=(0, 15))
-
-        self.table_body = ctk.CTkScrollableFrame(
-            self.table_frame, fg_color=COLORS["white"], corner_radius=0
-        )
-        self.table_body.pack(fill="both", expand=True)
+        CrudBase.build_table(self, pad_y=(0, 30))
+        self.build_table_header(self.table_frame, ["Usuario", "Email", "Perfil", "Status"],
+                                [3, 2, 1, 1], has_checkbox=True)
 
         self.usuarios = self.carregar_do_banco()
-        self.carregar_usuarios()
+        self.render_rows()
 
     def carregar_do_banco(self):
         db = Database()
@@ -232,16 +68,12 @@ class UsuariosPage(ctk.CTkFrame):
                         "senha": row[6],
                         "perfil": row[7].capitalize(),
                         "status": "Ativo" if row[8] == "ativo" else "Inativo",
-                        "data_cadastro": "",
-                        "ultimo_acesso": "",
-                        "cadastrado_por": "",
-                        "atualizado_por": "",
                     })
             db.desconectar()
             return usuarios
         return []
 
-    def carregar_usuarios(self):
+    def render_rows(self):
         for widget in self.table_body.winfo_children():
             widget.destroy()
 
@@ -249,93 +81,71 @@ class UsuariosPage(ctk.CTkFrame):
             self.adicionar_linha(usuario)
 
     def adicionar_linha(self, usuario):
-        linha = ctk.CTkFrame(self.table_body, fg_color="transparent", height=52)
-        linha.pack(fill="x")
-        linha.pack_propagate(False)
+        linha, data, _ = self.add_data_row()
+        self.configure_data_columns(data, [3, 2, 1, 1])
 
-        ctk.CTkFrame(
-            self.table_body, fg_color="#F0F0F0", height=1
-        ).pack(fill="x")
+        ctk.CTkLabel(data, text=usuario["nome"],
+                      font=ctk.CTkFont(size=FONTS["size_body"]),
+                      text_color=COLORS["text"], anchor="w"
+                      ).grid(row=0, column=0, sticky="w")
 
-        cb = ctk.CTkCheckBox(
-            linha, text="", width=20, height=20,
-            border_width=2, corner_radius=4
-        )
-        cb.pack(side="left", padx=(17, 0))
+        ctk.CTkLabel(data, text=usuario["email"],
+                      font=ctk.CTkFont(size=FONTS["size_body"]),
+                      text_color=COLORS["text_muted"], anchor="w"
+                      ).grid(row=0, column=1, sticky="w")
 
-        data = ctk.CTkFrame(linha, fg_color="transparent")
-        data.pack(side="left", fill="x", expand=True, padx=(10, 0))
-        data.grid_columnconfigure(0, weight=3)
-        data.grid_columnconfigure(1, weight=2)
-        data.grid_columnconfigure(2, weight=1)
-        data.grid_columnconfigure(3, weight=1)
-
-        ctk.CTkLabel(
-            data, text=usuario["nome"],
-            font=ctk.CTkFont(size=FONTS["size_body"]), text_color=COLORS["text"], anchor="w"
-        ).grid(row=0, column=0, sticky="w")
-
-        ctk.CTkLabel(
-            data, text=usuario["email"],
-            font=ctk.CTkFont(size=FONTS["size_body"]), text_color=COLORS["text_muted"], anchor="w"
-        ).grid(row=0, column=1, sticky="w")
-
-        ctk.CTkLabel(
-            data, text=usuario["perfil"],
-            font=ctk.CTkFont(size=FONTS["size_body"]), text_color=COLORS["text"], anchor="w"
-        ).grid(row=0, column=2, sticky="w")
+        ctk.CTkLabel(data, text=usuario["perfil"],
+                      font=ctk.CTkFont(size=FONTS["size_body"]),
+                      text_color=COLORS["text"], anchor="w"
+                      ).grid(row=0, column=2, sticky="w")
 
         status_container = ctk.CTkFrame(data, fg_color="transparent")
         status_container.grid(row=0, column=3, sticky="w")
 
         cor = COLORS["primary"] if usuario["status"] == "Ativo" else COLORS["danger"]
-        bolinha = ctk.CTkFrame(
-            status_container, fg_color=cor,
-            width=8, height=8, corner_radius=4
-        )
+        bolinha = ctk.CTkFrame(status_container, fg_color=cor,
+                                width=8, height=8, corner_radius=4)
         bolinha.pack(side="left", padx=(0, 6))
         bolinha.pack_propagate(False)
-        ctk.CTkLabel(
-            status_container, text=usuario["status"],
-            font=ctk.CTkFont(size=FONTS["size_body"]), text_color=COLORS["text"]
-        ).pack(side="left")
+        ctk.CTkLabel(status_container, text=usuario["status"],
+                      font=ctk.CTkFont(size=FONTS["size_body"]),
+                      text_color=COLORS["text"]
+                      ).pack(side="left")
 
-        actions = ctk.CTkFrame(linha, fg_color="transparent")
-        actions.pack(side="right", padx=(0, 10))
-
-        botoes_acoes = [
+        self.add_action_buttons(linha, [
             ("\U0001f441", lambda u=usuario: self.visualizar(u)),
             ("\u270f", lambda u=usuario: self.editar(u)),
             ("\U0001f5d1", lambda u=usuario: self.excluir(u)),
-        ]
-        for icon, cmd in botoes_acoes:
-            ctk.CTkButton(
-                actions,
-                text=icon, width=32, height=32,
-                corner_radius=6, fg_color=COLORS["white"],
-                hover_color="#F0F0F0", text_color=COLORS["text"],
-                border_width=1, border_color=COLORS["border"],
-                font=ctk.CTkFont(size=14),
-                command=cmd,
-            ).pack(side="left", padx=2)
+        ])
 
     def pesquisar(self):
-        messagebox.showinfo(
-            "Pesquisar",
-            "Funcionalidade de pesquisa sera implementada."
-        )
+        busca = self.entry_busca.get().strip().lower()
+        filtro_email = self.entry_filtro1.get().strip().lower()
+        filtro_perfil = self.entry_filtro2.get().strip().lower()
+
+        todos = self.carregar_do_banco()
+        self.usuarios = [
+            u for u in todos
+            if (not busca or busca in u["nome"].lower()
+                or busca in u["login"].lower()
+                or busca in str(u["matricula"]))
+            and (not filtro_email or filtro_email in u["email"].lower())
+            and (not filtro_perfil or filtro_perfil in u["perfil"].lower()
+                 or filtro_perfil in u["status"].lower())
+        ]
+        self.render_rows()
 
     def limpar_filtros(self):
-        self.entry_busca.delete(0, "end")
-        self.entry_filtro1.delete(0, "end")
-        self.entry_filtro2.delete(0, "end")
+        self.clear_entries(self.entry_busca, self.entry_filtro1, self.entry_filtro2)
+        self.usuarios = self.carregar_do_banco()
+        self.render_rows()
 
     def novo_usuario(self):
         from screens.cadastrar_usuario import CadastrarUsuarioWindow
         janela = CadastrarUsuarioWindow(self, usuario_logado=self.usuario_logado)
         self.wait_window(janela)
         self.usuarios = self.carregar_do_banco()
-        self.carregar_usuarios()
+        self.render_rows()
 
     def visualizar(self, usuario):
         from screens.visualizar_usuario import VisualizarUsuarioWindow
@@ -347,12 +157,10 @@ class UsuariosPage(ctk.CTkFrame):
         janela = CadastrarUsuarioWindow(self, usuario=usuario, usuario_logado=self.usuario_logado)
         self.wait_window(janela)
         self.usuarios = self.carregar_do_banco()
-        self.carregar_usuarios()
+        self.render_rows()
 
     def excluir(self, usuario):
-        if messagebox.askyesno(
-            "Excluir", f"Deseja excluir {usuario['nome']}?"
-        ):
+        if messagebox.askyesno("Excluir", f"Deseja excluir {usuario['nome']}?"):
             db = Database()
             if db.conectar():
                 db.executar(
@@ -362,7 +170,7 @@ class UsuariosPage(ctk.CTkFrame):
                 db.commitar()
                 db.desconectar()
             self.usuarios = self.carregar_do_banco()
-            self.carregar_usuarios()
+            self.render_rows()
 
 
 if __name__ == "__main__":
