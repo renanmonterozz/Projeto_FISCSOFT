@@ -140,8 +140,6 @@ class LoginApp(ctk.CTk):
         db = Database()
         if db.conectar():
             sql = "SELECT nome_agente, status, perfil FROM `agente ibama` WHERE login = %s AND senha = %s"
-            resultado = db.executar(sql, (usuario, senha))
-            sql = "SELECT nome_agente, status FROM `agente ibama` WHERE login = %s AND senha = %s"
             resultado = db.executar(sql, (usuario, hash_password(senha)))
             registro = resultado.fetchone() if resultado else None
             db.desconectar()
