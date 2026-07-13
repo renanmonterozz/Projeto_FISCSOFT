@@ -32,9 +32,6 @@ class UsuariosPage(CrudBase, ctk.CTkFrame):
         self.entry_filtro1 = self.build_filter_entry(row, "Email")
         self.entry_filtro2 = self.build_filter_entry(row, "Perfil / Status")
 
-<<<<<<< HEAD
-        btn_frame = self.build_btn_frame(row)
-=======
         self.entry_busca = ctk.CTkEntry(
             busca_container,
             placeholder_text="Buscar por nome, usuario ou matricula...",
@@ -56,7 +53,6 @@ class UsuariosPage(CrudBase, ctk.CTkFrame):
         ctk.CTkLabel(
             busca_container, image=lupa_busca_icon, text="",
         ).pack(side="right", padx=(0, 10))
->>>>>>> main
 
         self.build_action_btn(btn_frame, "  Pesquisar", carregar_icone("lupa.png"), self.pesquisar)
         self.build_action_btn(btn_frame, "  Limpar", carregar_icone("apagar.png"), self.limpar_filtros)
