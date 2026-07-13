@@ -48,7 +48,7 @@ class MenuUsuarioPage(ctk.CTkFrame):
         cards_frame.grid_columnconfigure((0, 1, 2, 3), weight=1)
 
         # Card 1: Notas Fiscais
-        card1 = ctk.CTkFrame(cards_frame, fg_color=COLORS["white"], corner_radius=8,
+        card1 = ctk.CTkFrame(cards_frame, fg_color=COLORS["white"], corner_radius=4,
                              border_width=1, border_color=COLORS["border"])
         card1.grid(row=0, column=0, padx=(0, 10), sticky="nsew")
 
@@ -72,7 +72,7 @@ class MenuUsuarioPage(ctk.CTkFrame):
         ).pack(pady=(0, 15))
 
         # Card 2: Itens Recebidos
-        card2 = ctk.CTkFrame(cards_frame, fg_color=COLORS["white"], corner_radius=8,
+        card2 = ctk.CTkFrame(cards_frame, fg_color=COLORS["white"], corner_radius=4,
                              border_width=1, border_color=COLORS["border"])
         card2.grid(row=0, column=1, padx=5, sticky="nsew")
 
@@ -96,7 +96,7 @@ class MenuUsuarioPage(ctk.CTkFrame):
         ).pack(pady=(0, 15))
 
         # Card 3: Valor Total
-        card3 = ctk.CTkFrame(cards_frame, fg_color=COLORS["white"], corner_radius=8,
+        card3 = ctk.CTkFrame(cards_frame, fg_color=COLORS["white"], corner_radius=4,
                              border_width=1, border_color=COLORS["border"])
         card3.grid(row=0, column=2, padx=5, sticky="nsew")
 
@@ -120,7 +120,7 @@ class MenuUsuarioPage(ctk.CTkFrame):
         ).pack(pady=(0, 15))
 
         # Card 4: TCCMs Ativos
-        card4 = ctk.CTkFrame(cards_frame, fg_color=COLORS["white"], corner_radius=8,
+        card4 = ctk.CTkFrame(cards_frame, fg_color=COLORS["white"], corner_radius=4,
                              border_width=1, border_color=COLORS["border"])
         card4.grid(row=0, column=3, padx=(10, 0), sticky="nsew")
 
@@ -144,7 +144,7 @@ class MenuUsuarioPage(ctk.CTkFrame):
         ).pack(pady=(0, 15))
 
     def build_table(self):
-        container = ctk.CTkFrame(self, fg_color=COLORS["white"], corner_radius=8,
+        container = ctk.CTkFrame(self, fg_color=COLORS["white"], corner_radius=4,
                                  border_width=1, border_color=COLORS["border"])
         container.pack(fill="both", expand=True, padx=30, pady=(0, 30))
 

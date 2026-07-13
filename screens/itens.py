@@ -279,7 +279,7 @@ class ItensPage(CrudBase, ctk.CTkFrame):
                 font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             ).pack(fill="x", pady=(8, 2))
             e = ctk.CTkEntry(
-                frame, height=36, corner_radius=6,
+                frame, height=36, corner_radius=4,
                 fg_color=COLORS["white"], border_width=1, border_color=COLORS["border"],
             )
             e.pack(fill="x")
@@ -315,7 +315,7 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         btn_frame.pack(fill="x", pady=(20, 5))
         ctk.CTkButton(
             btn_frame, text="Salvar",
-            height=40, corner_radius=6,
+            height=40, corner_radius=4,
             fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
             text_color="white", border_width=0,
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
@@ -323,7 +323,7 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         ).pack(side="left", fill="x", expand=True, padx=(0, 5))
         ctk.CTkButton(
             btn_frame, text="Cancelar",
-            height=40, corner_radius=6,
+            height=40, corner_radius=4,
             fg_color=COLORS["white"], hover_color="#F0F0F0",
             text_color=COLORS["text_muted"], border_width=1, border_color=COLORS["border"],
             command=modal.destroy,

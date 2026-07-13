@@ -21,7 +21,7 @@ class CrudBase:
 
     def build_filter_container(self):
         container = ctk.CTkFrame(
-            self, fg_color=COLORS["white"], corner_radius=8,
+            self, fg_color=COLORS["white"], corner_radius=4,
             border_width=1, border_color=COLORS["border"]
         )
         container.pack(fill="x", padx=30, pady=(0, 20))
@@ -32,7 +32,7 @@ class CrudBase:
     def build_search_entry(self, parent, placeholder, width=340):
         frame = ctk.CTkFrame(
             parent, fg_color=COLORS["white"], border_width=1,
-            border_color=COLORS["border"], corner_radius=6
+            border_color=COLORS["border"], corner_radius=4
         )
         frame.pack(side="left", padx=(0, 10))
 
@@ -53,7 +53,7 @@ class CrudBase:
         entry = ctk.CTkEntry(
             parent, placeholder_text=placeholder,
             width=width, height=38, border_width=1,
-            border_color=COLORS["border"], corner_radius=6,
+            border_color=COLORS["border"], corner_radius=4,
             fg_color=COLORS["white"], text_color=COLORS["text"],
             placeholder_text_color="#999999",
         )
@@ -72,7 +72,7 @@ class CrudBase:
             parent,
             image=icon,
             text=text,
-            height=38, corner_radius=6,
+            height=38, corner_radius=4,
             fg_color=fg_color, hover_color=hover_color,
             text_color=text_color,
             border_width=1 if border else 0,
@@ -89,7 +89,7 @@ class CrudBase:
 
     def build_table(self, pad_y=(0, 30)):
         self.table_frame = ctk.CTkFrame(
-            self, fg_color=COLORS["white"], corner_radius=8,
+            self, fg_color=COLORS["white"], corner_radius=4,
             border_width=1, border_color=COLORS["border"]
         )
         self.table_frame.pack(fill="both", expand=True, padx=30, pady=pad_y)
@@ -153,7 +153,7 @@ class CrudBase:
             ctk.CTkButton(
                 frame,
                 text=icon, width=32, height=32,
-                corner_radius=6, fg_color=COLORS["white"],
+                corner_radius=4, fg_color=COLORS["white"],
                 hover_color="#F0F0F0", text_color=COLORS["text"],
                 border_width=1, border_color=COLORS["border"],
                 font=ctk.CTkFont(size=14),
