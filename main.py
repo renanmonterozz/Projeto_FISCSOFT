@@ -5,7 +5,13 @@ import os
 from screens.sidebar import Sidebar
 from screens.usuarios import UsuariosPage
 from screens.itens import ItensPage
+<<<<<<< HEAD
 from screens.agente_mode.agenteibama import AgenteIbamaPage
+=======
+from screens.infratores import InfratoresPage
+from screens.menu_usuario import MenuUsuarioPage
+from screens.agenteibama import AgenteIbamaPage
+>>>>>>> 051c4fc7048577c0b4a28a0ab624646116917de9
 from screens.relatorios import RelatoriosPage
 from config.styles import ASSETS_DIR, COLORS
 from database.conexaodb import Database
@@ -137,7 +143,7 @@ class LoginApp(ctk.CTk):
 
         db = Database()
         if db.conectar():
-            sql = "SELECT nome_agente, status FROM `agente ibama` WHERE login = %s AND senha = %s"
+            sql = "SELECT nome_agente, status, perfil FROM `agente ibama` WHERE login = %s AND senha = %s"
             resultado = db.executar(sql, (usuario, hash_password(senha)))
             registro = resultado.fetchone() if resultado else None
             db.desconectar()
@@ -145,7 +151,11 @@ class LoginApp(ctk.CTk):
             if registro:
                 if registro[1] == "ativo":
                     self.usuario_logado = registro[0]
-                    self.abrir_principal()
+                    perfil = registro[2] if registro[2] else "Agente"
+                    if perfil == "Administrador":
+                        self.abrir_principal()
+                    else:
+                        self.abrir_menu_usuario()
                 else:
                     messagebox.showerror("Erro", "Usuario inativo! Contate o administrador.")
             else:
@@ -189,6 +199,50 @@ class LoginApp(ctk.CTk):
         sidebar.pack(side="left", fill="y")
 
         navegar("Agentes IBAMA")
+        main_app.mainloop()
+
+    def abrir_menu_usuario(self):
+        self.quit()
+        self.destroy()
+
+        main_app = ctk.CTk()
+        main_app.title("FISCSOFT - Usuario")
+        main_app.geometry("1200x700")
+        main_app.configure(fg_color=COLORS["white"])
+        main_app.usuario_logado = self.usuario_logado
+
+        content_frame = ctk.CTkFrame(main_app, fg_color=COLORS["bg"])
+        content_frame.pack(side="right", fill="both", expand=True)
+
+        def navegar(pagina):
+            for w in content_frame.winfo_children():
+                w.destroy()
+            if pagina == "Menu Inicial":
+                MenuUsuarioPage(content_frame, usuario_logado=main_app.usuario_logado).pack(fill="both", expand=True)
+            elif pagina == "Itens":
+                ItensPage(content_frame, on_voltar=lambda: navegar("Menu Inicial")).pack(fill="both", expand=True)
+            elif pagina == "Agente Ibama":
+                InfratoresPage(content_frame).pack(fill="both", expand=True)
+            elif pagina == "Usuarios Externos":
+                UsuariosPage(content_frame).pack(fill="both", expand=True)
+            else:
+                ctk.CTkLabel(
+                    content_frame,
+                    text=pagina,
+                    font=ctk.CTkFont(size=24, weight="bold"),
+                    text_color=COLORS["text"],
+                ).pack(expand=True)
+
+        def logout():
+            main_app.quit()
+            main_app.destroy()
+            app = LoginApp()
+            app.mainloop()
+
+        sidebar = Sidebar(main_app, width=210, on_navigate=navegar, on_sair=logout)
+        sidebar.pack(side="left", fill="y")
+
+        navegar("Menu Inicial")
         main_app.mainloop()
 
     def login_certificado(self):
