@@ -1,6 +1,6 @@
 import customtkinter as ctk
 from config.styles import COLORS, FONTS
-from conexaodb import Database
+from database.conexaodb import Database
 
 
 class MenuUsuarioPage(ctk.CTkFrame):

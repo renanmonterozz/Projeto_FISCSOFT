@@ -117,7 +117,7 @@ class CrudBase:
             ).grid(row=0, column=i, sticky="w")
 
         ctk.CTkLabel(
-            header, text="Acoes",
+            header, text="Açoes",
             font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
             text_color=COLORS["text_muted"],
             width=120

@@ -6,7 +6,7 @@ import customtkinter as ctk
 from tkinter import messagebox
 
 from config.styles import COLORS, FONTS
-from conexaodb import Database
+from database.conexaodb import Database
 from screens.crud_base import CrudBase
 
 
@@ -123,7 +123,7 @@ class AgenteIbamaPage(CrudBase, ctk.CTkFrame):
         self.render_rows()
 
     def novo_agente(self):
-        from screens.cadastrar_agenteibama import CadastrarAgenteIbamaWindow
+        from screens.agente_mode.cadastrar_agenteibama import CadastrarAgenteIbamaWindow
         janela = CadastrarAgenteIbamaWindow(self)
         self.wait_window(janela)
         self.agentes = self.carregar_do_banco()
@@ -135,7 +135,7 @@ class AgenteIbamaPage(CrudBase, ctk.CTkFrame):
         self.wait_window(janela)
 
     def editar(self, agente):
-        from screens.cadastrar_agenteibama import CadastrarAgenteIbamaWindow
+        from screens.agente_mode.cadastrar_agenteibama import CadastrarAgenteIbamaWindow
         janela = CadastrarAgenteIbamaWindow(self, agente=agente)
         self.wait_window(janela)
         self.agentes = self.carregar_do_banco()

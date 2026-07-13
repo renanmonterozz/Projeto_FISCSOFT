@@ -6,7 +6,7 @@ import customtkinter as ctk
 from tkinter import messagebox
 import pandas as pd
 from config.styles import COLORS, FONTS
-from conexaodb import Database
+from database.conexaodb import Database
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
 
@@ -182,7 +182,7 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         self.render_rows()
 
     def importar_excel(self):
-        caminho = Path(__file__).resolve().parent.parent / "telaitens.xlsx"
+        caminho = Path(__file__).resolve().parent.parent / "assets" / "planilhas" / "telaitens.xlsx"
         if not caminho.exists():
             messagebox.showerror("Erro", f"Arquivo n\u00e3o encontrado:\n{caminho}")
             return
