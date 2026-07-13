@@ -25,7 +25,7 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
 
     def build_ui(self):
         container = ctk.CTkFrame(
-            self, fg_color=COLORS["white"], corner_radius=10,
+            self, fg_color=COLORS["white"], corner_radius=4,
             border_width=1, border_color=COLORS["border"]
         )
         container.pack(fill="both", expand=True, padx=20, pady=20)
@@ -48,7 +48,7 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
         ).pack(anchor="w", pady=(2, 0))
 
         form = ctk.CTkFrame(
-            container, fg_color=COLORS["white"], corner_radius=8,
+            container, fg_color=COLORS["white"], corner_radius=4,
             border_width=1, border_color=COLORS["border"]
         )
         form.pack(fill="both", expand=True, padx=25, pady=(15, 30))
@@ -106,7 +106,7 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
             btn_frame,
             image=salvar_icon,
             text="  Salvar Usuario",
-            height=40, corner_radius=8,
+            height=40, corner_radius=4,
             fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
             text_color="white", border_width=0,
             font=ctk.CTkFont(size=14, weight="bold"),
@@ -117,7 +117,7 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
         ctk.CTkButton(
             btn_frame,
             text="Cancelar",
-            height=40, corner_radius=8,
+            height=40, corner_radius=4,
             fg_color=COLORS["border"], hover_color="#C8C8C8",
             text_color=COLORS["text"], border_width=1,
             border_color=COLORS["border"],
@@ -151,7 +151,7 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
         ).pack(anchor="w", pady=(0, 4))
 
         entry = ctk.CTkEntry(
-            frame, height=36, corner_radius=6,
+            frame, height=36, corner_radius=4,
             border_width=1, border_color=COLORS["border"],
             fg_color=COLORS["white"], text_color=COLORS["text"],
             placeholder_text_color="#999999",
@@ -174,7 +174,7 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
 
         combo = ctk.CTkComboBox(
             frame, values=values, height=36,
-            corner_radius=6, border_width=1,
+            corner_radius=4, border_width=1,
             border_color=COLORS["border"],
             fg_color=COLORS["white"], button_color=COLORS["border"],
             button_hover_color="#C8C8C8",

@@ -5,13 +5,7 @@ import os
 from screens.sidebar import Sidebar
 from screens.usuarios import UsuariosPage
 from screens.itens import ItensPage
-<<<<<<< HEAD
 from screens.agente_mode.agenteibama import AgenteIbamaPage
-=======
-from screens.infratores import InfratoresPage
-from screens.menu_usuario import MenuUsuarioPage
-from screens.agenteibama import AgenteIbamaPage
->>>>>>> 051c4fc7048577c0b4a28a0ab624646116917de9
 from screens.relatorios import RelatoriosPage
 from config.styles import ASSETS_DIR, COLORS
 from database.conexaodb import Database
@@ -218,11 +212,11 @@ class LoginApp(ctk.CTk):
             for w in content_frame.winfo_children():
                 w.destroy()
             if pagina == "Menu Inicial":
-                MenuUsuarioPage(content_frame, usuario_logado=main_app.usuario_logado).pack(fill="both", expand=True)
+                UsuariosPage(content_frame, usuario_logado=main_app.usuario_logado).pack(fill="both", expand=True)
             elif pagina == "Itens":
                 ItensPage(content_frame, on_voltar=lambda: navegar("Menu Inicial")).pack(fill="both", expand=True)
             elif pagina == "Agente Ibama":
-                InfratoresPage(content_frame).pack(fill="both", expand=True)
+                AgenteIbamaPage(content_frame).pack(fill="both", expand=True)
             elif pagina == "Usuarios Externos":
                 UsuariosPage(content_frame).pack(fill="both", expand=True)
             else:
