@@ -3,7 +3,7 @@ from tkinter import messagebox
 from PIL import Image
 import os
 from config.styles import COLORS, FONTS, ASSETS_DIR
-from conexaodb import Database
+from database.conexaodb import Database
 from utils import hash_password
 
 

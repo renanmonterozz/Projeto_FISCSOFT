@@ -1,7 +1,7 @@
 import customtkinter as ctk
 from tkinter import messagebox
 from config.styles import COLORS, FONTS
-from conexaodb import Database
+from database.conexaodb import Database
 from utils import hash_password
 
 

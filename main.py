@@ -5,10 +5,10 @@ import os
 from screens.sidebar import Sidebar
 from screens.usuarios import UsuariosPage
 from screens.itens import ItensPage
-from screens.agenteibama import AgenteIbamaPage
+from screens.agente_mode.agenteibama import AgenteIbamaPage
 from screens.relatorios import RelatoriosPage
 from config.styles import ASSETS_DIR, COLORS
-from conexaodb import Database
+from database.conexaodb import Database
 from utils import hash_password
 
 ctk.set_appearance_mode("light")

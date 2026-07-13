@@ -9,7 +9,7 @@ import os
 from datetime import datetime
 
 from config.styles import COLORS, FONTS, ASSETS_DIR
-from conexaodb import Database
+from database.conexaodb import Database
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
 
