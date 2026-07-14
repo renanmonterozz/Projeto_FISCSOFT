@@ -8,7 +8,7 @@ from PIL import Image
 import os
 
 from config.styles import COLORS, FONTS, ASSETS_DIR
-from conexaodb import Database
+from database.conexaodb import Database
 
 
 class InfratoresPage(ctk.CTkFrame):
@@ -40,7 +40,7 @@ class InfratoresPage(ctk.CTkFrame):
 
     def build_filter_bar(self):
         container = ctk.CTkFrame(
-            self, fg_color=COLORS["white"], corner_radius=8,
+            self, fg_color=COLORS["white"], corner_radius=4,
             border_width=1, border_color=COLORS["border"]
         )
         container.pack(fill="x", padx=30, pady=(0, 20))
@@ -53,7 +53,7 @@ class InfratoresPage(ctk.CTkFrame):
 
         busca_container = ctk.CTkFrame(
             row, fg_color=COLORS["white"], border_width=1,
-            border_color=COLORS["border"], corner_radius=6
+            border_color=COLORS["border"], corner_radius=4
         )
         busca_container.pack(side="left", padx=(0, 10))
 
@@ -84,7 +84,7 @@ class InfratoresPage(ctk.CTkFrame):
             placeholder_text="Email",
             width=200, height=38,
             border_width=1, border_color=COLORS["border"],
-            corner_radius=6, fg_color=COLORS["white"],
+            corner_radius=4, fg_color=COLORS["white"],
             text_color=COLORS["text"], placeholder_text_color="#999999",
         )
         self.entry_filtro1.pack(side="left", padx=(0, 10))
@@ -94,7 +94,7 @@ class InfratoresPage(ctk.CTkFrame):
             placeholder_text="Telefone",
             width=200, height=38,
             border_width=1, border_color=COLORS["border"],
-            corner_radius=6, fg_color=COLORS["white"],
+            corner_radius=4, fg_color=COLORS["white"],
             text_color=COLORS["text"], placeholder_text_color="#999999",
         )
         self.entry_filtro2.pack(side="left", padx=(0, 10))
@@ -115,7 +115,7 @@ class InfratoresPage(ctk.CTkFrame):
             btn_frame,
             image=lupa_icon,
             text="  Pesquisar",
-            height=38, corner_radius=6,
+            height=38, corner_radius=4,
             fg_color=COLORS["white"], hover_color="#F0F0F0",
             text_color=COLORS["text"],
             border_width=1, border_color=COLORS["border"],
@@ -137,7 +137,7 @@ class InfratoresPage(ctk.CTkFrame):
             btn_frame,
             image=apagar_icon,
             text="  Limpar",
-            height=38, corner_radius=6,
+            height=38, corner_radius=4,
             fg_color=COLORS["white"], hover_color="#F0F0F0",
             text_color=COLORS["text"],
             border_width=1, border_color=COLORS["border"],
@@ -159,7 +159,7 @@ class InfratoresPage(ctk.CTkFrame):
             btn_frame,
             image=mais_icon,
             text="  Novo Infrator",
-            height=38, corner_radius=6,
+            height=38, corner_radius=4,
             fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
             text_color="white", border_width=0,
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
@@ -169,7 +169,7 @@ class InfratoresPage(ctk.CTkFrame):
 
     def build_table(self):
         self.table_frame = ctk.CTkFrame(
-            self, fg_color=COLORS["white"], corner_radius=8,
+            self, fg_color=COLORS["white"], corner_radius=4,
             border_width=1, border_color=COLORS["border"]
         )
         self.table_frame.pack(fill="both", expand=True, padx=30, pady=(0, 30))
@@ -291,7 +291,7 @@ class InfratoresPage(ctk.CTkFrame):
             ctk.CTkButton(
                 actions,
                 text=icon, width=32, height=32,
-                corner_radius=6, fg_color=COLORS["white"],
+                corner_radius=4, fg_color=COLORS["white"],
                 hover_color="#F0F0F0", text_color=COLORS["text"],
                 border_width=1, border_color=COLORS["border"],
                 font=ctk.CTkFont(size=14),
@@ -371,7 +371,7 @@ class InfratoresPage(ctk.CTkFrame):
         for label, valor in campos.items():
             ctk.CTkLabel(frame, text=label, font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
                           text_color=COLORS["text"], anchor="w").pack(fill="x", pady=(8, 2))
-            entry = ctk.CTkEntry(frame, height=36, corner_radius=6,
+            entry = ctk.CTkEntry(frame, height=36, corner_radius=4,
                                   fg_color=COLORS["white"], border_width=1, border_color=COLORS["border"],
                                   show="*" if label == "Senha" else "")
             entry.pack(fill="x")
@@ -422,14 +422,14 @@ class InfratoresPage(ctk.CTkFrame):
             self.carregar_infratores()
 
         ctk.CTkButton(
-            frame, text="Salvar", height=40, corner_radius=6,
+            frame, text="Salvar", height=40, corner_radius=4,
             fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
             text_color="white", font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             command=salvar
         ).pack(fill="x", pady=(20, 5))
 
         ctk.CTkButton(
-            frame, text="Cancelar", height=34, corner_radius=6,
+            frame, text="Cancelar", height=34, corner_radius=4,
             fg_color="transparent", text_color=COLORS["text_muted"],
             hover_color="#F0F0F0", font=ctk.CTkFont(size=FONTS["size_body"]),
             command=modal.destroy

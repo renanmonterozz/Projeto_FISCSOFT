@@ -18,7 +18,7 @@ class VisualizarUsuarioWindow(ctk.CTkToplevel):
         self.grab_set()
 
         main_container = ctk.CTkFrame(
-            self, fg_color=COLORS["white"], corner_radius=10,
+            self, fg_color=COLORS["white"], corner_radius=4,
             border_width=1, border_color=COLORS["border"]
         )
         main_container.pack(fill="both", expand=True, padx=20, pady=20)
@@ -39,7 +39,7 @@ class VisualizarUsuarioWindow(ctk.CTkToplevel):
         ).pack(anchor="w", pady=(2, 0))
 
         content = ctk.CTkFrame(
-            main_container, fg_color=COLORS["white"], corner_radius=8,
+            main_container, fg_color=COLORS["white"], corner_radius=4,
             border_width=1, border_color=COLORS["border"]
         )
         content.pack(fill="both", expand=True, padx=25, pady=(15, 20))
@@ -80,7 +80,7 @@ class VisualizarUsuarioWindow(ctk.CTkToplevel):
             ).pack(anchor="w")
 
             entry = ctk.CTkEntry(
-                field_frame, height=34, corner_radius=6,
+                field_frame, height=34, corner_radius=4,
                 border_width=1, border_color=COLORS["border"],
                 fg_color="#F5F5F5", text_color=COLORS["text"],
                 font=ctk.CTkFont(size=FONTS["size_body"]),
@@ -127,7 +127,7 @@ class VisualizarUsuarioWindow(ctk.CTkToplevel):
             ).pack(anchor="w")
 
             entry = ctk.CTkEntry(
-                field_frame, height=34, corner_radius=6,
+                field_frame, height=34, corner_radius=4,
                 border_width=1, border_color=COLORS["border"],
                 fg_color="#F5F5F5", text_color=COLORS["text"],
                 font=ctk.CTkFont(size=FONTS["size_body"]),
@@ -143,7 +143,7 @@ class VisualizarUsuarioWindow(ctk.CTkToplevel):
         ctk.CTkButton(
             btn_frame,
             text="Editar Usuario",
-            height=40, corner_radius=8,
+            height=40, corner_radius=4,
             fg_color=COLORS["primary"],
             hover_color=COLORS["primary_hover"],
             text_color="white", border_width=0,

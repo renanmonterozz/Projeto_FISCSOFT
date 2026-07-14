@@ -6,7 +6,7 @@ import customtkinter as ctk
 from tkinter import messagebox
 import pandas as pd
 from config.styles import COLORS, FONTS
-from conexaodb import Database
+from database.conexaodb import Database
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
 
@@ -182,7 +182,7 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         self.render_rows()
 
     def importar_excel(self):
-        caminho = Path(__file__).resolve().parent.parent / "telaitens.xlsx"
+        caminho = Path(__file__).resolve().parent.parent / "assets" / "planilhas" / "telaitens.xlsx"
         if not caminho.exists():
             messagebox.showerror("Erro", f"Arquivo n\u00e3o encontrado:\n{caminho}")
             return
@@ -279,7 +279,7 @@ class ItensPage(CrudBase, ctk.CTkFrame):
                 font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             ).pack(fill="x", pady=(8, 2))
             e = ctk.CTkEntry(
-                frame, height=36, corner_radius=6,
+                frame, height=36, corner_radius=4,
                 fg_color=COLORS["white"], border_width=1, border_color=COLORS["border"],
             )
             e.pack(fill="x")
@@ -315,7 +315,7 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         btn_frame.pack(fill="x", pady=(20, 5))
         ctk.CTkButton(
             btn_frame, text="Salvar",
-            height=40, corner_radius=6,
+            height=40, corner_radius=4,
             fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
             text_color="white", border_width=0,
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
@@ -323,7 +323,7 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         ).pack(side="left", fill="x", expand=True, padx=(0, 5))
         ctk.CTkButton(
             btn_frame, text="Cancelar",
-            height=40, corner_radius=6,
+            height=40, corner_radius=4,
             fg_color=COLORS["white"], hover_color="#F0F0F0",
             text_color=COLORS["text_muted"], border_width=1, border_color=COLORS["border"],
             command=modal.destroy,

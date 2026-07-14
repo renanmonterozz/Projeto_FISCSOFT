@@ -9,7 +9,7 @@ import os
 from datetime import datetime
 
 from config.styles import COLORS, FONTS, ASSETS_DIR
-from conexaodb import Database
+from database.conexaodb import Database
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
 
@@ -57,7 +57,7 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
 
         self.stat_labels = {}
         for i, (titulo, valor) in enumerate(card_data):
-            card = ctk.CTkFrame(cards_frame, fg_color=COLORS["white"], corner_radius=8,
+            card = ctk.CTkFrame(cards_frame, fg_color=COLORS["white"], corner_radius=4,
                                 border_width=1, border_color=COLORS["border"])
             card.grid(row=0, column=i, padx=5, sticky="nsew")
             cards_frame.columnconfigure(i, weight=1)
@@ -79,7 +79,7 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
         self.build_detail_panel(content)
 
     def build_table_panel(self, parent):
-        table_container = ctk.CTkFrame(parent, fg_color=COLORS["white"], corner_radius=8,
+        table_container = ctk.CTkFrame(parent, fg_color=COLORS["white"], corner_radius=4,
                                        border_width=1, border_color=COLORS["border"])
         table_container.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
         parent.rowconfigure(0, weight=1)
@@ -93,7 +93,7 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
                    "Itens Declarados", "Status", "Acoes")
 
         header = ctk.CTkFrame(table_container, fg_color="#FAFAFA", height=40, corner_radius=0)
-        header.pack(fill="x")
+        header.pack(fill="x", padx=3, pady=(1, 0))
         header.pack_propagate(False)
 
         cols_frame = ctk.CTkFrame(header, fg_color="transparent")
@@ -120,7 +120,7 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
         self.render_rows()
 
     def build_detail_panel(self, parent):
-        detail_container = ctk.CTkFrame(parent, fg_color=COLORS["white"], corner_radius=8,
+        detail_container = ctk.CTkFrame(parent, fg_color=COLORS["white"], corner_radius=4,
                                         border_width=1, border_color=COLORS["border"])
         detail_container.grid(row=0, column=1, sticky="nsew")
         parent.rowconfigure(0, weight=1)
@@ -130,7 +130,7 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
                      text_color=COLORS["text"]).pack(anchor="w", padx=15, pady=(12, 10))
 
         self.info_frame = ctk.CTkFrame(detail_container, fg_color=COLORS["white"],
-                                       corner_radius=8, border_width=1, border_color=COLORS["border"])
+                                       corner_radius=4, border_width=1, border_color=COLORS["border"])
         self.info_frame.pack(fill="x", padx=10, pady=(0, 10))
 
         info_inner = ctk.CTkFrame(self.info_frame, fg_color="transparent")
@@ -154,7 +154,7 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
             self.info_labels[campo] = lbl
 
         itens_frame = ctk.CTkFrame(detail_container, fg_color=COLORS["white"],
-                                   corner_radius=8, border_width=1, border_color=COLORS["border"])
+                                   corner_radius=4, border_width=1, border_color=COLORS["border"])
         itens_frame.pack(fill="x", padx=10, pady=(0, 10))
 
         itens_inner = ctk.CTkFrame(itens_frame, fg_color="transparent")
@@ -170,7 +170,7 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
         self.itens_label.pack(anchor="w")
 
         arquivos_frame = ctk.CTkFrame(detail_container, fg_color=COLORS["white"],
-                                      corner_radius=8, border_width=1, border_color=COLORS["border"])
+                                      corner_radius=4, border_width=1, border_color=COLORS["border"])
         arquivos_frame.pack(fill="x", padx=10, pady=(0, 10))
 
         arquivos_inner = ctk.CTkFrame(arquivos_frame, fg_color="transparent")
@@ -187,17 +187,17 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
         btn_frame = ctk.CTkFrame(detail_container, fg_color="transparent")
         btn_frame.pack(fill="x", padx=10, pady=(10, 15))
 
-        ctk.CTkButton(btn_frame, text="Aprovar", height=36, corner_radius=6,
+        ctk.CTkButton(btn_frame, text="Aprovar", height=36, corner_radius=4,
                       fg_color="#28a745", hover_color="#218838", text_color="white",
                       font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
                       command=self.aprovar).pack(side="left", padx=(0, 5))
 
-        ctk.CTkButton(btn_frame, text="Solicitar Correcao", height=36, corner_radius=6,
+        ctk.CTkButton(btn_frame, text="Solicitar Correcao", height=36, corner_radius=4,
                       fg_color="#ffc107", hover_color="#e0a800", text_color="#333333",
                       font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
                       command=self.solicitar_correcao).pack(side="left", padx=(0, 5))
 
-        ctk.CTkButton(btn_frame, text="Rejeitar", height=36, corner_radius=6,
+        ctk.CTkButton(btn_frame, text="Rejeitar", height=36, corner_radius=4,
                       fg_color=COLORS["danger"], hover_color=COLORS["danger_hover"],
                       text_color="white",
                       font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
