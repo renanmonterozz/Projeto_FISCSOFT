@@ -11,7 +11,7 @@ class Database:
         self.user = os.getenv("DB_USER")
         self.password = os.getenv("DB_PASSWORD")
         self.database = os.getenv("DB_NAME")
-        self.port = os.getenv("DB_PORT")
+        self.port = int(os.getenv("DB_PORT", 3306))
         self.ssl_disabled = False
         self.conexao = None
 

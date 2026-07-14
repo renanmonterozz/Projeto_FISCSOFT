@@ -7,6 +7,7 @@ from screens.usuarios import UsuariosPage
 from screens.itens import ItensPage
 from screens.agente_mode.agenteibama import AgenteIbamaPage
 from screens.relatorios import RelatoriosPage
+from screens.relatorio_entrega import RelatorioEntregaPage
 from config.styles import ASSETS_DIR, COLORS
 from database.conexaodb import Database
 from utils import hash_password
@@ -173,7 +174,9 @@ class LoginApp(ctk.CTk):
         def navegar(pagina):
             for w in content_frame.winfo_children():
                 w.destroy()
-            if pagina == "Agentes IBAMA":
+            if pagina == "Novo Relatório":
+                RelatorioEntregaPage(content_frame, on_voltar=lambda: navegar("Menu Inicial")).pack(fill="both", expand=True)
+            elif pagina == "Agentes IBAMA":
                 UsuariosPage(content_frame).pack(fill="both", expand=True)
             elif pagina == "Itens":
                 ItensPage(content_frame, on_voltar=lambda: navegar("Menu Inicial")).pack(fill="both", expand=True)
@@ -211,7 +214,9 @@ class LoginApp(ctk.CTk):
         def navegar(pagina):
             for w in content_frame.winfo_children():
                 w.destroy()
-            if pagina == "Menu Inicial":
+            if pagina == "Novo Relatório":
+                RelatorioEntregaPage(content_frame, on_voltar=lambda: navegar("Menu Inicial")).pack(fill="both", expand=True)
+            elif pagina == "Menu Inicial":
                 UsuariosPage(content_frame, usuario_logado=main_app.usuario_logado).pack(fill="both", expand=True)
             elif pagina == "Itens":
                 ItensPage(content_frame, on_voltar=lambda: navegar("Menu Inicial")).pack(fill="both", expand=True)

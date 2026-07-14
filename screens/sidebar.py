@@ -43,6 +43,7 @@ class Sidebar(ctk.CTkFrame):
             ctk.CTkLabel(logo_frame, text="FiscSoft", font=ctk.CTkFont(size=18, weight="bold"), text_color="#1D4D21").pack()
 
         self.nav_items = [
+            ("Novo Relatório", "relatorios.png"),
             ("Menu Inicial", "casa.png"),
             ("Locais Cadastrados", "predios.png"),
             ("Itens", "caixa.png"),
