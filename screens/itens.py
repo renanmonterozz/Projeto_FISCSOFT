@@ -16,24 +16,10 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         super().__init__(master, **kwargs)
         self.configure(fg_color=COLORS["bg"])
         self.on_voltar = on_voltar
-        self._garantir_colunas_db()
+
         self.build_header("Itens", "Cadastre, visualize, edite e exclua itens do sistema")
         self._build_filter_bar()
         self._build_table()
-
-    def _garantir_colunas_db(self):
-        db = Database()
-        if db.conectar():
-            for sql in [
-                "ALTER TABLE itens ADD COLUMN justificativa TEXT DEFAULT NULL",
-                "ALTER TABLE itens ADD COLUMN unidade_medida VARCHAR(50) DEFAULT NULL",
-            ]:
-                try:
-                    db.executar(sql)
-                except:
-                    pass
-            db.commitar()
-            db.desconectar()
 
     def _build_filter_bar(self):
         inner = self.build_filter_container()

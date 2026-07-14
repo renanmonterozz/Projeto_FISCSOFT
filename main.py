@@ -6,7 +6,6 @@ from screens.sidebar import Sidebar
 from screens.usuarios import UsuariosPage
 from screens.itens import ItensPage
 from screens.agente_mode.agenteibama import AgenteIbamaPage
-from screens.infrator_mode.infratores import InfratoresPage
 from screens.relatorios import RelatoriosPage
 from screens.relatorio_entrega import RelatorioEntregaPage
 from config.styles import ASSETS_DIR, COLORS
@@ -62,12 +61,12 @@ class LoginApp(ctk.CTk):
         self.form_frame = ctk.CTkFrame(self.bg_label, fg_color="transparent", width=300, height=270)
         self.form_frame.place(x=660, y=240)
 
-        frame_user = ctk.CTkFrame(self.form_frame, fg_color="white", corner_radius=8, border_width=1, border_color="#bbbbbb")
+        frame_user = ctk.CTkFrame(self.form_frame, fg_color="white", corner_radius=8, border_width=1, border_color=COLORS["border"])
         frame_user.pack(pady=(10, 8), padx=25, fill="x")
         frame_user.pack_propagate(False)
         frame_user.configure(height=40)
 
-        ctk.CTkLabel(frame_user, text="\U0001f464", font=ctk.CTkFont(size=16), text_color="#999999").pack(side="left", padx=(12, 5))
+        ctk.CTkLabel(frame_user, text="\U0001f464", font=ctk.CTkFont(size=16), text_color=COLORS["text_muted"]).pack(side="left", padx=(12, 5))
         self.entry_usuario = ctk.CTkEntry(
             frame_user,
             placeholder_text="Usuario",
@@ -75,16 +74,16 @@ class LoginApp(ctk.CTk):
             border_width=0,
             fg_color="white",
             text_color="black",
-            placeholder_text_color="#aaaaaa",
+            placeholder_text_color=COLORS["text_muted"],
         )
         self.entry_usuario.pack(side="left", fill="x", expand=True, padx=(0, 10), pady=2)
 
-        frame_senha = ctk.CTkFrame(self.form_frame, fg_color="white", corner_radius=8, border_width=1, border_color="#bbbbbb")
+        frame_senha = ctk.CTkFrame(self.form_frame, fg_color="white", corner_radius=8, border_width=1, border_color=COLORS["border"])
         frame_senha.pack(pady=8, padx=25, fill="x")
         frame_senha.pack_propagate(False)
         frame_senha.configure(height=40)
 
-        ctk.CTkLabel(frame_senha, text="\U0001f512", font=ctk.CTkFont(size=16), text_color="#999999").pack(side="left", padx=(12, 5))
+        ctk.CTkLabel(frame_senha, text="\U0001f512", font=ctk.CTkFont(size=16), text_color=COLORS["text_muted"]).pack(side="left", padx=(12, 5))
         self.entry_senha = ctk.CTkEntry(
             frame_senha,
             placeholder_text="Senha",
@@ -93,7 +92,7 @@ class LoginApp(ctk.CTk):
             border_width=0,
             fg_color="white",
             text_color="black",
-            placeholder_text_color="#aaaaaa",
+            placeholder_text_color=COLORS["text_muted"],
         )
         self.entry_senha.pack(side="left", fill="x", expand=True, padx=(0, 10), pady=2)
 
@@ -102,8 +101,8 @@ class LoginApp(ctk.CTk):
             text="Entrar",
             height=38,
             corner_radius=8,
-            fg_color="#66BB6A",
-            hover_color="#43A047",
+            fg_color=COLORS["primary"],
+            hover_color=COLORS["primary_hover"],
             text_color="white",
             border_width=0,
             font=ctk.CTkFont(size=14, weight="bold"),
@@ -115,8 +114,8 @@ class LoginApp(ctk.CTk):
             text="Sair",
             height=28,
             corner_radius=6,
-            fg_color="#2c2c2c",
-            hover_color="#555555",
+            fg_color=COLORS["dark"],
+            hover_color=COLORS["dark_hover"],
             text_color="white",
             border_width=0,
             font=ctk.CTkFont(size=12),
@@ -182,7 +181,7 @@ class LoginApp(ctk.CTk):
             elif pagina == "Itens":
                 ItensPage(content_frame, on_voltar=lambda: navegar("Menu Inicial")).pack(fill="both", expand=True)
             elif pagina == "Infratores":
-                InfratoresPage(content_frame).pack(fill="both", expand=True)
+                AgenteIbamaPage(content_frame).pack(fill="both", expand=True)
             elif pagina == "Relatorios":
                 RelatoriosPage(content_frame).pack(fill="both", expand=True)
             else:
@@ -221,10 +220,8 @@ class LoginApp(ctk.CTk):
                 UsuariosPage(content_frame, usuario_logado=main_app.usuario_logado).pack(fill="both", expand=True)
             elif pagina == "Itens":
                 ItensPage(content_frame, on_voltar=lambda: navegar("Menu Inicial")).pack(fill="both", expand=True)
-            elif pagina == "Agente Ibama":
-                AgenteIbamaPage(content_frame).pack(fill="both", expand=True)
             elif pagina == "Infratores":
-                InfratoresPage(content_frame).pack(fill="both", expand=True)
+                AgenteIbamaPage(content_frame).pack(fill="both", expand=True)
             elif pagina == "Usuarios Externos":
                 UsuariosPage(content_frame).pack(fill="both", expand=True)
             else:
@@ -274,8 +271,8 @@ class LoginApp(ctk.CTk):
             text="Voltar",
             height=30,
             corner_radius=6,
-            fg_color="#2c2c2c",
-            hover_color="#555555",
+            fg_color=COLORS["dark"],
+            hover_color=COLORS["dark_hover"],
             text_color="white",
             border_width=0,
             font=ctk.CTkFont(size=12),

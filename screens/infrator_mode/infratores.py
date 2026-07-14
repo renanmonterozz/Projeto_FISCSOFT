@@ -62,7 +62,7 @@ class InfratoresPage(ctk.CTkFrame):
             placeholder_text="Buscar por nome, CPF ou email...",
             width=340, height=38,
             border_width=0, fg_color=COLORS["white"],
-            text_color=COLORS["text"], placeholder_text_color="#999999",
+            text_color=COLORS["text"],             placeholder_text_color=COLORS["text_muted"],
         )
         self.entry_busca.pack(side="left", padx=(12, 4), pady=2)
 
@@ -85,7 +85,7 @@ class InfratoresPage(ctk.CTkFrame):
             width=200, height=38,
             border_width=1, border_color=COLORS["border"],
             corner_radius=4, fg_color=COLORS["white"],
-            text_color=COLORS["text"], placeholder_text_color="#999999",
+            text_color=COLORS["text"],             placeholder_text_color=COLORS["text_muted"],
         )
         self.entry_filtro1.pack(side="left", padx=(0, 10))
 
@@ -95,7 +95,7 @@ class InfratoresPage(ctk.CTkFrame):
             width=200, height=38,
             border_width=1, border_color=COLORS["border"],
             corner_radius=4, fg_color=COLORS["white"],
-            text_color=COLORS["text"], placeholder_text_color="#999999",
+            text_color=COLORS["text"],             placeholder_text_color=COLORS["text_muted"],
         )
         self.entry_filtro2.pack(side="left", padx=(0, 10))
 
@@ -292,7 +292,7 @@ class InfratoresPage(ctk.CTkFrame):
                 actions,
                 text=icon, width=32, height=32,
                 corner_radius=4, fg_color=COLORS["white"],
-                hover_color="#F0F0F0", text_color=COLORS["text"],
+                hover_color=COLORS["hover"], text_color=COLORS["text"],
                 border_width=1, border_color=COLORS["border"],
                 font=ctk.CTkFont(size=14),
                 command=cmd,
@@ -431,7 +431,7 @@ class InfratoresPage(ctk.CTkFrame):
         ctk.CTkButton(
             frame, text="Cancelar", height=34, corner_radius=4,
             fg_color="transparent", text_color=COLORS["text_muted"],
-            hover_color="#F0F0F0", font=ctk.CTkFont(size=FONTS["size_body"]),
+            hover_color=COLORS["hover"], font=ctk.CTkFont(size=FONTS["size_body"]),
             command=modal.destroy
         ).pack(fill="x")
 

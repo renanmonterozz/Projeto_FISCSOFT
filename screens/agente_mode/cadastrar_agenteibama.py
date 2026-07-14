@@ -1,3 +1,7 @@
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+
 import customtkinter as ctk
 from tkinter import messagebox
 from config.styles import COLORS, FONTS
@@ -52,7 +56,7 @@ class CadastrarAgenteIbamaWindow(ctk.CTkToplevel):
 
         ctk.CTkLabel(
             form, text="Dados Pessoais",
-            font=ctk.CTkFont(size=14, weight="bold"),
+            font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             text_color=COLORS["text"],
         ).pack(anchor="w", padx=20, pady=(18, 8))
 
@@ -70,7 +74,7 @@ class CadastrarAgenteIbamaWindow(ctk.CTkToplevel):
 
         ctk.CTkLabel(
             form, text="Dados de Acesso",
-            font=ctk.CTkFont(size=14, weight="bold"),
+            font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             text_color=COLORS["text"],
         ).pack(anchor="w", padx=20, pady=(5, 8))
 
@@ -89,7 +93,7 @@ class CadastrarAgenteIbamaWindow(ctk.CTkToplevel):
             height=40, corner_radius=4,
             fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
             text_color="white", border_width=0,
-            font=ctk.CTkFont(size=14, weight="bold"),
+            font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             compound="left",
             command=self.salvar,
         ).pack(side="left", padx=(0, 10))
@@ -98,10 +102,10 @@ class CadastrarAgenteIbamaWindow(ctk.CTkToplevel):
             btn_frame,
             text="Cancelar",
             height=40, corner_radius=4,
-            fg_color=COLORS["border"], hover_color="#C8C8C8",
+            fg_color=COLORS["border"],             hover_color=COLORS["hover"],
             text_color=COLORS["text"], border_width=1,
             border_color=COLORS["border"],
-            font=ctk.CTkFont(size=14),
+            font=ctk.CTkFont(size=FONTS["size_body"]),
             command=self.destroy,
         ).pack(side="right")
 
@@ -131,7 +135,7 @@ class CadastrarAgenteIbamaWindow(ctk.CTkToplevel):
             frame, height=36, corner_radius=4,
             border_width=1, border_color=COLORS["border"],
             fg_color=COLORS["white"], text_color=COLORS["text"],
-            placeholder_text_color="#999999",
+            placeholder_text_color=COLORS["text_muted"],
             show=show,
         )
         entry.pack(fill="x")

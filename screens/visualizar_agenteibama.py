@@ -1,3 +1,7 @@
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 import customtkinter as ctk
 from config.styles import COLORS, FONTS
 
@@ -27,8 +31,8 @@ class VisualizarAgenteIbamaWindow(ctk.CTkToplevel):
         top_bar.pack(fill="x", padx=25, pady=(20, 0))
 
         ctk.CTkLabel(
-            top_bar, text="Visualizacao de Infrator",
-            font=ctk.CTkFont(size=20, weight="bold"),
+            top_bar,             text="Visualizacao de Infrator",
+            font=ctk.CTkFont(size=FONTS["size_title"], weight="bold"),
             text_color=COLORS["primary"]
         ).pack(anchor="w")
 
@@ -73,7 +77,7 @@ class VisualizarAgenteIbamaWindow(ctk.CTkToplevel):
             entry = ctk.CTkEntry(
                 field_frame, height=34, corner_radius=4,
                 border_width=1, border_color=COLORS["border"],
-                fg_color="#F5F5F5", text_color=COLORS["text"],
+                fg_color=COLORS["bg"], text_color=COLORS["text"],
                 font=ctk.CTkFont(size=FONTS["size_body"]),
                 state="normal"
             )

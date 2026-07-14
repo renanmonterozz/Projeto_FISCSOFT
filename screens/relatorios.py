@@ -4,11 +4,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import customtkinter as ctk
 from tkinter import messagebox
-from PIL import Image
-import os
-from datetime import datetime
 
-from config.styles import COLORS, FONTS, ASSETS_DIR
+from config.styles import COLORS, FONTS
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
@@ -92,7 +89,7 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
                    "No. Nota Fiscal", "Data Envio", "Valor Total (R$)",
                    "Itens Declarados", "Status", "Acoes")
 
-        header = ctk.CTkFrame(table_container, fg_color="#FAFAFA", height=40, corner_radius=0)
+        header = ctk.CTkFrame(table_container, fg_color=COLORS["table_header"], height=40, corner_radius=0)
         header.pack(fill="x", padx=3, pady=(1, 0))
         header.pack_propagate(False)
 
@@ -188,12 +185,12 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
         btn_frame.pack(fill="x", padx=10, pady=(10, 15))
 
         ctk.CTkButton(btn_frame, text="Aprovar", height=36, corner_radius=4,
-                      fg_color="#28a745", hover_color="#218838", text_color="white",
+                      fg_color=COLORS["success_dark"], hover_color=COLORS["success_dark_hover"], text_color="white",
                       font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
                       command=self.aprovar).pack(side="left", padx=(0, 5))
 
         ctk.CTkButton(btn_frame, text="Solicitar Correcao", height=36, corner_radius=4,
-                      fg_color="#ffc107", hover_color="#e0a800", text_color="#333333",
+                      fg_color=COLORS["warning"], hover_color=COLORS["warning_hover"], text_color=COLORS["text"],
                       font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
                       command=self.solicitar_correcao).pack(side="left", padx=(0, 5))
 

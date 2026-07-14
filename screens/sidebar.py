@@ -45,11 +45,8 @@ class Sidebar(ctk.CTkFrame):
         self.nav_items = [
             ("Novo Relatório", "relatorios.png"),
             ("Menu Inicial", "casa.png"),
-            ("Locais Cadastrados", "predios.png"),
             ("Itens", "caixa.png"),
             ("Relatorios", "relatorios.png"),
-            ("Historico", "relogio.png"),
-            ("Destinacao", "destinacao.png"),
             ("Agentes IBAMA", "usuarios.png"),
             ("Infratores", "Agente.png"),
         ]
@@ -58,19 +55,7 @@ class Sidebar(ctk.CTkFrame):
         nav_container.pack(fill="x", padx=18, pady=(0, 10))
 
         for text, img_path in self.nav_items:
-            if text == "Agente Ibama":
-                try:
-                    img = Image.open(os.path.join(ASSETS_DIR, img_path))
-                    img.thumbnail((16, 16))
-                    padded = Image.new("RGBA", (20, 20), (0, 0, 0, 0))
-                    pad_x = (20 - img.width) // 2
-                    pad_y = (20 - img.height) // 2
-                    padded.paste(img, (pad_x, pad_y), img if img.mode == "RGBA" else None)
-                    btn_icon = ctk.CTkImage(light_image=padded, dark_image=padded, size=(20, 20))
-                except Exception:
-                    btn_icon = None
-            else:
-                btn_icon = carregar_icone(img_path)
+            btn_icon = carregar_icone(img_path)
 
             btn = ctk.CTkButton(
                 nav_container,
@@ -79,8 +64,8 @@ class Sidebar(ctk.CTkFrame):
                 anchor="w",
                 compound="left",
                 fg_color="transparent",
-                hover_color="#CFFFE3",
-                text_color="#1F1F1F",
+                hover_color=COLORS["nav_hover"],
+                text_color=COLORS["nav_text"],
                 height=42,
                 corner_radius=6,
                 font=ctk.CTkFont(family=FONTS["family"], size=FONTS["size_small"], weight="bold"),
@@ -111,7 +96,7 @@ class Sidebar(ctk.CTkFrame):
         sair_container = ctk.CTkFrame(bottom_frame, fg_color="transparent", height=38)
         sair_container.pack(fill="x")
 
-        ctk.CTkFrame(sair_container, fg_color="#C8C8C8", corner_radius=8).place(relx=0, rely=0, relwidth=1, relheight=1, x=2, y=2)
+        ctk.CTkFrame(sair_container, fg_color=COLORS["border"], corner_radius=8).place(relx=0, rely=0, relwidth=1, relheight=1, x=2, y=2)
 
         ctk.CTkButton(
             sair_container,
@@ -119,8 +104,8 @@ class Sidebar(ctk.CTkFrame):
             text="   Sair",
             anchor="w",
             compound="left",
-            fg_color="#FF1212",
-            hover_color="#D00E0E",
+            fg_color=COLORS["danger"],
+            hover_color=COLORS["danger_hover"],
             text_color="white",
             height=38,
             corner_radius=8,

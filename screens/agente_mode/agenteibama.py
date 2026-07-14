@@ -8,6 +8,7 @@ from tkinter import messagebox
 from config.styles import COLORS, FONTS
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
+from screens.sidebar import carregar_icone
 
 
 class AgenteIbamaPage(CrudBase, ctk.CTkFrame):
@@ -30,9 +31,9 @@ class AgenteIbamaPage(CrudBase, ctk.CTkFrame):
 
         btn_frame = self.build_btn_frame(row)
 
-        self.build_action_btn(btn_frame, "\U0001f50d  Pesquisar", None, self.pesquisar)
-        self.build_action_btn(btn_frame, "\u2715  Limpar", None, self.limpar_filtros)
-        self.build_action_btn(btn_frame, "+  Novo Infrator", None,
+        self.build_action_btn(btn_frame, "  Pesquisar", carregar_icone("lupa.png"), self.pesquisar)
+        self.build_action_btn(btn_frame, "  Limpar", carregar_icone("apagar.png"), self.limpar_filtros)
+        self.build_action_btn(btn_frame, "  Novo Infrator", carregar_icone("mais.png"),
                               self.novo_agente, fg_color=COLORS["primary"],
                               hover_color=COLORS["primary_hover"], text_color="white",
                               border=False, bold=True)

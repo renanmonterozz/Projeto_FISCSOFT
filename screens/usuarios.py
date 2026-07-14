@@ -4,10 +4,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import customtkinter as ctk
 from tkinter import messagebox
-from PIL import Image
-import os
 
-from config.styles import COLORS, FONTS, ASSETS_DIR
+from config.styles import COLORS, FONTS
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone

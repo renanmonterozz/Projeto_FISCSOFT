@@ -36,7 +36,7 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
         ctk.CTkLabel(
             header,
             text="Cadastro / Edicao de Agente IBAMA",
-            font=ctk.CTkFont(size=20, weight="bold"),
+            font=ctk.CTkFont(size=FONTS["size_title"], weight="bold"),
             text_color=COLORS["primary"],
         ).pack(anchor="w")
 
@@ -55,7 +55,7 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
 
         ctk.CTkLabel(
             form, text="Dados Pessoais",
-            font=ctk.CTkFont(size=14, weight="bold"),
+            font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             text_color=COLORS["text"],
         ).pack(anchor="w", padx=20, pady=(18, 8))
 
@@ -74,7 +74,7 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
 
         ctk.CTkLabel(
             form, text="Dados de Acesso",
-            font=ctk.CTkFont(size=14, weight="bold"),
+            font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             text_color=COLORS["text"],
         ).pack(anchor="w", padx=20, pady=(5, 8))
 
@@ -109,7 +109,7 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
             height=40, corner_radius=4,
             fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
             text_color="white", border_width=0,
-            font=ctk.CTkFont(size=14, weight="bold"),
+            font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             compound="left",
             command=self.salvar,
         ).pack(side="left", padx=(0, 10))
@@ -121,7 +121,7 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
             fg_color=COLORS["border"], hover_color="#C8C8C8",
             text_color=COLORS["text"], border_width=1,
             border_color=COLORS["border"],
-            font=ctk.CTkFont(size=14),
+            font=ctk.CTkFont(size=FONTS["size_body"]),
             command=self.destroy,
         ).pack(side="right")
 
@@ -154,7 +154,7 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
             frame, height=36, corner_radius=4,
             border_width=1, border_color=COLORS["border"],
             fg_color=COLORS["white"], text_color=COLORS["text"],
-            placeholder_text_color="#999999",
+            placeholder_text_color=COLORS["text_muted"],
             show=show,
         )
         entry.pack(fill="x")
@@ -177,7 +177,7 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
             corner_radius=4, border_width=1,
             border_color=COLORS["border"],
             fg_color=COLORS["white"], button_color=COLORS["border"],
-            button_hover_color="#C8C8C8",
+            button_hover_color=COLORS["hover"],
             dropdown_fg_color=COLORS["white"],
             text_color=COLORS["text"],
         )

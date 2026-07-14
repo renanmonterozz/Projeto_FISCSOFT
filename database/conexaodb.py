@@ -17,7 +17,7 @@ class Database:
 
     def conectar(self):
         try:
-            print(f"Conectando ao banco de dados {self.database} em {self.host}, {self.user}, {self.password}, {self.ssl_disabled}...")
+            print(f"Conectando ao banco de dados {self.database} em {self.host}...")
             self.conexao = mysql.connector.connect(
                 host=self.host,
                 user=self.user,

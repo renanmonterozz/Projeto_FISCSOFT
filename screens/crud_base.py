@@ -40,7 +40,7 @@ class CrudBase:
             frame, placeholder_text=placeholder,
             width=width, height=38, border_width=0,
             fg_color=COLORS["white"], text_color=COLORS["text"],
-            placeholder_text_color="#999999",
+            placeholder_text_color=COLORS["text_muted"],
         )
         entry.pack(side="left", padx=(12, 4), pady=2)
         ctk.CTkLabel(
@@ -55,7 +55,7 @@ class CrudBase:
             width=width, height=38, border_width=1,
             border_color=COLORS["border"], corner_radius=4,
             fg_color=COLORS["white"], text_color=COLORS["text"],
-            placeholder_text_color="#999999",
+            placeholder_text_color=COLORS["text_muted"],
         )
         entry.pack(side="left", padx=(0, 10))
         return entry
@@ -96,7 +96,7 @@ class CrudBase:
         return self.table_frame
 
     def build_table_header(self, parent, columns, weights, has_checkbox=True):
-        header = ctk.CTkFrame(parent, fg_color="#FAFAFA", height=44, corner_radius=0)
+        header = ctk.CTkFrame(parent, fg_color=COLORS["table_header"], height=44, corner_radius=0)
         header.pack(fill="x")
         header.pack_propagate(False)
 
