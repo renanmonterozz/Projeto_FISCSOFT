@@ -93,7 +93,7 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
                    "Itens Declarados", "Status", "Acoes")
 
         header = ctk.CTkFrame(table_container, fg_color="#FAFAFA", height=40, corner_radius=0)
-        header.pack(fill="x")
+        header.pack(fill="x", padx=3, pady=(1, 0))
         header.pack_propagate(False)
 
         cols_frame = ctk.CTkFrame(header, fg_color="transparent")

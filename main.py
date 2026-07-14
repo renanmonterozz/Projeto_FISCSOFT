@@ -6,6 +6,7 @@ from screens.sidebar import Sidebar
 from screens.usuarios import UsuariosPage
 from screens.itens import ItensPage
 from screens.agente_mode.agenteibama import AgenteIbamaPage
+from screens.infrator_mode.infratores import InfratoresPage
 from screens.relatorios import RelatoriosPage
 from screens.relatorio_entrega import RelatorioEntregaPage
 from config.styles import ASSETS_DIR, COLORS
@@ -181,7 +182,7 @@ class LoginApp(ctk.CTk):
             elif pagina == "Itens":
                 ItensPage(content_frame, on_voltar=lambda: navegar("Menu Inicial")).pack(fill="both", expand=True)
             elif pagina == "Infratores":
-                AgenteIbamaPage(content_frame).pack(fill="both", expand=True)
+                InfratoresPage(content_frame).pack(fill="both", expand=True)
             elif pagina == "Relatorios":
                 RelatoriosPage(content_frame).pack(fill="both", expand=True)
             else:
@@ -222,6 +223,8 @@ class LoginApp(ctk.CTk):
                 ItensPage(content_frame, on_voltar=lambda: navegar("Menu Inicial")).pack(fill="both", expand=True)
             elif pagina == "Agente Ibama":
                 AgenteIbamaPage(content_frame).pack(fill="both", expand=True)
+            elif pagina == "Infratores":
+                InfratoresPage(content_frame).pack(fill="both", expand=True)
             elif pagina == "Usuarios Externos":
                 UsuariosPage(content_frame).pack(fill="both", expand=True)
             else:
