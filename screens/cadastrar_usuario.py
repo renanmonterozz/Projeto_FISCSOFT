@@ -1,10 +1,13 @@
+import _path  # noqa: F401
+
 import customtkinter as ctk
 from tkinter import messagebox
 from PIL import Image
 import os
+
 from config.styles import COLORS, FONTS, ASSETS_DIR
 from database.conexaodb import Database
-from utils import hash_password
+from utils import hash_password, registrar_log
 
 
 class CadastrarUsuarioWindow(ctk.CTkToplevel):
@@ -36,7 +39,7 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
         ctk.CTkLabel(
             header,
             text="Cadastro / Edicao de Agente IBAMA",
-            font=ctk.CTkFont(size=20, weight="bold"),
+            font=ctk.CTkFont(size=FONTS["size_title"], weight="bold"),
             text_color=COLORS["primary"],
         ).pack(anchor="w")
 
@@ -55,7 +58,7 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
 
         ctk.CTkLabel(
             form, text="Dados Pessoais",
-            font=ctk.CTkFont(size=14, weight="bold"),
+            font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             text_color=COLORS["text"],
         ).pack(anchor="w", padx=20, pady=(18, 8))
 
@@ -74,7 +77,7 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
 
         ctk.CTkLabel(
             form, text="Dados de Acesso",
-            font=ctk.CTkFont(size=14, weight="bold"),
+            font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             text_color=COLORS["text"],
         ).pack(anchor="w", padx=20, pady=(5, 8))
 
@@ -109,7 +112,7 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
             height=40, corner_radius=4,
             fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
             text_color="white", border_width=0,
-            font=ctk.CTkFont(size=14, weight="bold"),
+            font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             compound="left",
             command=self.salvar,
         ).pack(side="left", padx=(0, 10))
@@ -121,7 +124,7 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
             fg_color=COLORS["border"], hover_color="#C8C8C8",
             text_color=COLORS["text"], border_width=1,
             border_color=COLORS["border"],
-            font=ctk.CTkFont(size=14),
+            font=ctk.CTkFont(size=FONTS["size_body"]),
             command=self.destroy,
         ).pack(side="right")
 
@@ -134,9 +137,6 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
         self.entry_matricula.insert(0, str(u["matricula"]))
         self.entry_matricula.configure(state="disabled")
         self.entry_login.insert(0, u["login"])
-        self.entry_senha.insert(0, u["senha"])
-        self.entry_confirmar.insert(0, u["senha"])
-        self.combo_perfil.set(u["perfil"].lower())
 
     def _criar_campo(self, parent, label, col, weight=1, show=None):
         parent.grid_columnconfigure(col, weight=weight)
@@ -154,7 +154,7 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
             frame, height=36, corner_radius=4,
             border_width=1, border_color=COLORS["border"],
             fg_color=COLORS["white"], text_color=COLORS["text"],
-            placeholder_text_color="#999999",
+            placeholder_text_color=COLORS["text_muted"],
             show=show,
         )
         entry.pack(fill="x")
@@ -177,7 +177,7 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
             corner_radius=4, border_width=1,
             border_color=COLORS["border"],
             fg_color=COLORS["white"], button_color=COLORS["border"],
-            button_hover_color="#C8C8C8",
+            button_hover_color=COLORS["hover"],
             dropdown_fg_color=COLORS["white"],
             text_color=COLORS["text"],
         )
@@ -196,13 +196,17 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
         confirmar = self.entry_confirmar.get()
         perfil = self.combo_perfil.get()
 
-        if not all([nome, cpf, email, matricula, login, senha, confirmar, perfil]):
+        if not all([nome, cpf, email, matricula, login, perfil]):
             messagebox.showwarning("Atencao", "Preencha todos os campos obrigatorios!")
             return
 
-        if senha != confirmar:
-            messagebox.showerror("Erro", "As senhas nao conferem!")
-            return
+        if not self.usuario_edicao:
+            if not senha or not confirmar:
+                messagebox.showwarning("Atencao", "Preencha todos os campos obrigatorios!")
+                return
+            if senha != confirmar:
+                messagebox.showerror("Erro", "As senhas nao conferem!")
+                return
 
         try:
             matricula_int = int(matricula)
@@ -210,30 +214,46 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
             messagebox.showerror("Erro", "Matricula deve ser um numero!")
             return
 
-        db = Database()
-        if db.conectar():
-            senha_hash = hash_password(senha)
+        with Database() as db:
+            if not db.conexao:
+                messagebox.showerror("Erro", "Nao foi possivel conectar ao banco de dados!")
+                return
+
             if self.usuario_edicao:
-                sql = """UPDATE `agente ibama` SET
-                         nome_agente=%s, cpf=%s, email=%s, telefone=%s,
-                         login=%s, senha=%s, perfil=%s, atualizado_por=%s
-                         WHERE matricula=%s"""
-                params = (nome, cpf, email, telefone, login, senha_hash, perfil,
-                          self.usuario_logado or "", matricula_int)
+                if senha and confirmar and senha == confirmar:
+                    senha_hash = hash_password(senha)
+                    sql = """UPDATE "agente ibama" SET
+                             nome_agente=?, cpf=?, email=?, telefone=?,
+                             login=?, senha=?, perfil=?, atualizado_por=?
+                             WHERE matricula=?"""
+                    params = (nome, cpf, email, telefone, login, senha_hash, perfil,
+                              self.usuario_logado or "", matricula_int)
+                else:
+                    sql = """UPDATE "agente ibama" SET
+                             nome_agente=?, cpf=?, email=?, telefone=?,
+                             login=?, perfil=?, atualizado_por=?
+                             WHERE matricula=?"""
+                    params = (nome, cpf, email, telefone, login, perfil,
+                              self.usuario_logado or "", matricula_int)
                 mensagem = f"Usuario '{nome}' atualizado com sucesso!"
             else:
-                sql = """INSERT INTO `agente ibama`
+                senha_hash = hash_password(senha)
+                sql = """INSERT INTO "agente ibama"
                          (matricula, nome_agente, cpf, email, telefone, login, senha, perfil, status, cadastrado_por)
-                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'ativo', %s)"""
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ativo', ?)"""
                 params = (matricula_int, nome, cpf, email, telefone, login, senha_hash, perfil,
                           self.usuario_logado or "")
                 mensagem = f"Usuario '{nome}' cadastrado com sucesso!"
 
             db.executar(sql, params)
             db.commitar()
-            db.desconectar()
 
-            messagebox.showinfo("Sucesso", mensagem)
-            self.destroy()
-        else:
-            messagebox.showerror("Erro", "Nao foi possivel conectar ao banco de dados!")
+        registrar_log(
+            self.usuario_logado or "Sistema",
+            "edicao" if self.usuario_edicao else "cadastro",
+            "agente ibama",
+            mensagem
+        )
+
+        messagebox.showinfo("Sucesso", mensagem)
+        self.destroy()

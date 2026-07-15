@@ -1,8 +1,7 @@
-
--- Schema fiscsoft
+-- Schema fiscsoft (unificado)
 -- -----------------------------------------------------
-CREATE SCHEMA IF NOT EXISTS `fiscsoft` DEFAULT CHARACTER SET utf8 ;
-USE `fiscsoft` ;
+CREATE SCHEMA IF NOT EXISTS `fiscsoft` DEFAULT CHARACTER SET utf8;
+USE `fiscsoft`;
 
 -- -----------------------------------------------------
 -- Table `fiscsoft`.`agente ibama`
@@ -84,7 +83,8 @@ CREATE TABLE IF NOT EXISTS `fiscsoft`.`nota fiscal` (
   `chave_de_acesso` VARCHAR(44) NOT NULL,
   `valor_total` DECIMAL(8,2) NOT NULL,
   `agente ibama_matricula` INT NOT NULL,
-  UNIQUE INDEX `Nº nota-fiscal_UNIQUE` (`nota_fiscal` ASC) VISIBLE,
+  `status_nota` VARCHAR(30) NULL DEFAULT 'Pendente',
+  UNIQUE INDEX `nota_fiscal_UNIQUE` (`nota_fiscal` ASC) VISIBLE,
   UNIQUE INDEX `chave_de_acesso_UNIQUE` (`chave_de_acesso` ASC) VISIBLE,
   PRIMARY KEY (`nota_fiscal`, `agente ibama_matricula`),
   INDEX `fk_nota fiscal_agente ibama1_idx` (`agente ibama_matricula` ASC) VISIBLE,
@@ -103,7 +103,7 @@ CREATE TABLE IF NOT EXISTS `fiscsoft`.`produtos` (
   `lote` VARCHAR(255) NOT NULL,
   `status_entrega` ENUM("pendente", "entregue", "parcial") NOT NULL DEFAULT 'pendente',
   `quantidade` INT NOT NULL DEFAULT 0,
-  `preço_unitário` DECIMAL(10,2) NOT NULL,
+  `preco_unitario` DECIMAL(10,2) NOT NULL,
   `data_validade` DATE NULL,
   `nota fiscal_nota_fiscal` VARCHAR(50) NOT NULL,
   `nota fiscal_agente ibama_matricula` INT NOT NULL,
@@ -124,10 +124,10 @@ ENGINE = InnoDB;
 CREATE TABLE IF NOT EXISTS `fiscsoft`.`insumo` (
   `nome` VARCHAR(255) NOT NULL,
   `tipo` VARCHAR(255) NOT NULL,
-  `descrição` TEXT(255) NULL,
-  `justificativa` TEXT(255) NULL,
+  `descricao` TEXT NULL,
+  `justificativa` TEXT NULL,
   `link` TINYTEXT NULL,
-  `preço_orcado` DECIMAL(8,2) NOT NULL,
+  `preco_orcado` DECIMAL(8,2) NOT NULL,
   `id_insumo` INT NOT NULL AUTO_INCREMENT,
   `infrator_id_infrator` INT NOT NULL,
   `produtos_lote` VARCHAR(255) NOT NULL,
@@ -174,3 +174,23 @@ CREATE TABLE IF NOT EXISTS `fiscsoft`.`insumo_has_TCCM` (
 ENGINE = InnoDB;
 
 
+-- -----------------------------------------------------
+-- Table `fiscsoft`.`itens`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `fiscsoft`.`itens` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `nome` VARCHAR(200) NULL,
+  `descricao` VARCHAR(200) NOT NULL,
+  `codigo_interno` VARCHAR(50) NOT NULL,
+  `categoria` VARCHAR(100) NULL,
+  `tipo` VARCHAR(50) NULL,
+  `justificativa` TEXT NULL,
+  `unidade_medida` VARCHAR(50) NULL,
+  `semestre` VARCHAR(20) NULL,
+  `quantidade_prevista` INT DEFAULT 0,
+  `status` VARCHAR(30) DEFAULT 'Ativo',
+  `notas_fiscais` VARCHAR(100) NULL,
+  `criado_em` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE INDEX `codigo_interno_UNIQUE` (`codigo_interno` ASC) VISIBLE,
+  PRIMARY KEY (`id`))
+ENGINE = InnoDB;

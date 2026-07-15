@@ -1,14 +1,10 @@
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import _path  # noqa: F401
+
+from tkinter import messagebox
 
 import customtkinter as ctk
-from tkinter import messagebox
-from PIL import Image
-import os
-from datetime import datetime
 
-from config.styles import COLORS, FONTS, ASSETS_DIR
+from config.styles import COLORS, FONTS
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
@@ -92,7 +88,7 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
                    "No. Nota Fiscal", "Data Envio", "Valor Total (R$)",
                    "Itens Declarados", "Status", "Acoes")
 
-        header = ctk.CTkFrame(table_container, fg_color="#FAFAFA", height=40, corner_radius=0)
+        header = ctk.CTkFrame(table_container, fg_color=COLORS["table_header"], height=40, corner_radius=0)
         header.pack(fill="x", padx=3, pady=(1, 0))
         header.pack_propagate(False)
 
@@ -188,12 +184,12 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
         btn_frame.pack(fill="x", padx=10, pady=(10, 15))
 
         ctk.CTkButton(btn_frame, text="Aprovar", height=36, corner_radius=4,
-                      fg_color="#28a745", hover_color="#218838", text_color="white",
+                      fg_color=COLORS["success_dark"], hover_color=COLORS["success_dark_hover"], text_color="white",
                       font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
                       command=self.aprovar).pack(side="left", padx=(0, 5))
 
         ctk.CTkButton(btn_frame, text="Solicitar Correcao", height=36, corner_radius=4,
-                      fg_color="#ffc107", hover_color="#e0a800", text_color="#333333",
+                      fg_color=COLORS["warning"], hover_color=COLORS["warning_hover"], text_color=COLORS["text"],
                       font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
                       command=self.solicitar_correcao).pack(side="left", padx=(0, 5))
 
@@ -204,18 +200,30 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
                       command=self.rejeitar).pack(side="left")
 
     def carregar_do_banco(self):
-        db = Database()
-        if db.conectar():
+        with Database() as db:
+            if not db.conexao:
+                return []
             sql = """SELECT nf.nota_fiscal, nf.data, nf.valor_total,
                             i.nome_infrator, i.cpf,
-                            t.processo, nf.`agente ibama_matricula`
-                     FROM `nota fiscal` nf
-                     JOIN tccm t ON t.`agente ibama_matricula` = nf.`agente ibama_matricula`
-                     JOIN infrator i ON i.id_infrator = t.`infrator_id_infrator`"""
-            resultados = db.executar(sql)
+                            t.processo, nf."agente ibama_matricula", nf.status_nota
+                     FROM "nota fiscal" nf
+                     JOIN tccm t ON t."agente ibama_matricula" = nf."agente ibama_matricula"
+                     JOIN infrator i ON i.id_infrator = t."infrator_id_infrator" """
+            try:
+                resultados = db.executar(sql)
+            except Exception:
+                sql = """SELECT nf.nota_fiscal, nf.data, nf.valor_total,
+                                i.nome_infrator, i.cpf,
+                                t.processo, nf."agente ibama_matricula"
+                         FROM "nota fiscal" nf
+                         JOIN tccm t ON t."agente ibama_matricula" = nf."agente ibama_matricula"
+                         JOIN infrator i ON i.id_infrator = t."infrator_id_infrator" """
+                resultados = db.executar(sql)
+
             notas = []
             if resultados:
                 for row in resultados.fetchall():
+                    status = row[7] if len(row) > 7 and row[7] else "Pendente"
                     notas.append({
                         "nota_fiscal": row[0],
                         "data": row[1].strftime("%d/%m/%Y") if row[1] else "--",
@@ -224,12 +232,10 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
                         "cpf": row[4],
                         "processo": row[5],
                         "matricula": row[6],
-                        "status": "Pendente",
+                        "status": status,
                         "itens": 0,
                     })
-            db.desconectar()
             return notas
-        return []
 
     def render_rows(self):
         for widget in self.table_body.winfo_children():
@@ -245,7 +251,7 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
         linha.pack(fill="x")
         linha.pack_propagate(False)
 
-        ctk.CTkFrame(self.table_body, fg_color="#F0F0F0", height=1).pack(fill="x")
+        ctk.CTkFrame(self.table_body, fg_color="#E0E0E0", height=1).pack(fill="x")
 
         cols = ctk.CTkFrame(linha, fg_color="transparent")
         cols.pack(side="left", fill="x", expand=True, padx=(15, 0))
@@ -259,9 +265,10 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
                  str(nota["itens"]), nota["status"]]
 
         for i, valor in enumerate(dados):
+            cor = COLORS["text"] if i == 0 else COLORS["text_muted"]
             ctk.CTkLabel(cols, text=valor,
                          font=ctk.CTkFont(size=FONTS["size_small"]),
-                         text_color=COLORS["text"], anchor="w").grid(row=0, column=i, sticky="w", padx=5)
+                         text_color=cor, anchor="w").grid(row=0, column=i, sticky="w", padx=5)
 
         btn_frame = ctk.CTkFrame(linha, fg_color="transparent")
         btn_frame.pack(side="right", padx=(0, 10))
@@ -299,6 +306,22 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
         self.stat_labels["Valor Total (Periodo)"].configure(
             text=f"R$ {valor_total:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
 
+    def _atualizar_status_nota(self, novo_status):
+        if not self.nf_selecionada:
+            return
+        with Database() as db:
+            if db.conexao:
+                try:
+                    db.executar(
+                        'UPDATE "nota fiscal" SET status_nota = ? WHERE nota_fiscal = ?',
+                        (novo_status, self.nf_selecionada["nota_fiscal"])
+                    )
+                    db.commitar()
+                except Exception:
+                    pass
+        self.nf_selecionada["status"] = novo_status
+        self.render_rows()
+
     def filtrar(self):
         periodo = self.entry_periodo.get().strip().lower()
         status = self.entry_status.get().strip().lower()
@@ -325,14 +348,14 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
             messagebox.showwarning("Aviso", "Selecione uma nota fiscal primeiro.")
             return
         if messagebox.askyesno("Confirmar", "Deseja aprovar esta nota fiscal?"):
-            self.nf_selecionada["status"] = "Aprovada"
-            self.render_rows()
+            self._atualizar_status_nota("Aprovada")
             messagebox.showinfo("Sucesso", "Nota fiscal aprovada com sucesso!")
 
     def solicitar_correcao(self):
         if not self.nf_selecionada:
             messagebox.showwarning("Aviso", "Selecione uma nota fiscal primeiro.")
             return
+        self._atualizar_status_nota("Correcao Solicitada")
         messagebox.showinfo("Informacao", "Solicitacao de correcao enviada.")
 
     def rejeitar(self):
@@ -340,8 +363,7 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
             messagebox.showwarning("Aviso", "Selecione uma nota fiscal primeiro.")
             return
         if messagebox.askyesno("Confirmar", "Deseja rejeitar esta nota fiscal?"):
-            self.nf_selecionada["status"] = "Rejeitada"
-            self.render_rows()
+            self._atualizar_status_nota("Rejeitada")
             messagebox.showinfo("Informacao", "Nota fiscal rejeitada.")
 
 

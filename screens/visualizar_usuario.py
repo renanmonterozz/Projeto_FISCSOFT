@@ -1,4 +1,7 @@
+import _path  # noqa: F401
+
 import customtkinter as ctk
+
 from config.styles import COLORS, FONTS
 
 
@@ -8,9 +11,9 @@ class VisualizarUsuarioWindow(ctk.CTkToplevel):
         self.usuario = usuario
 
         self.title("Visualizacao de Agente IBAMA")
-        self.geometry("700+{}+{}".format(
-            (self.winfo_screenwidth() - 700) // 2,
-            (self.winfo_screenheight() - 620) // 2
+        self.geometry("750x680+{}+{}".format(
+            (self.winfo_screenwidth() - 750) // 2,
+            (self.winfo_screenheight() - 680) // 2
         ))
         self.resizable(False, False)
         self.configure(fg_color=COLORS["white"])
@@ -46,14 +49,6 @@ class VisualizarUsuarioWindow(ctk.CTkToplevel):
 
         self._build_dados_pessoais(content)
         self._build_dados_acesso(content)
-        extras = [
-            (self.usuario.get("data_cadastro"), "Data de cadastro"),
-            (self.usuario.get("ultimo_acesso"), "Ultimo Acesso"),
-            (self.usuario.get("cadastrado_por"), "Cadastrado por"),
-            (self.usuario.get("atualizado_por"), "Atualizado por"),
-        ]
-        if any(v for v, _ in extras):
-            self._build_informacoes_adicionais(content, extras)
         self._build_botao_editar(content)
 
     def _build_section_label(self, parent, text):
@@ -107,34 +102,6 @@ class VisualizarUsuarioWindow(ctk.CTkToplevel):
             ("Login", self.usuario.get("login", "")),
             ("Perfil", self.usuario.get("perfil", "")),
         ])
-
-    def _build_informacoes_adicionais(self, parent, extras):
-        self._build_section_label(parent, "Informacoes Adicionais")
-        row = ctk.CTkFrame(parent, fg_color="transparent")
-        row.pack(fill="x", padx=20, pady=(5, 0))
-
-        for i, (valor, label) in enumerate(extras):
-            if not valor:
-                continue
-            field_frame = ctk.CTkFrame(row, fg_color="transparent")
-            field_frame.pack(side="left", fill="x", expand=True,
-                             padx=(0, 10) if i < 3 else (0, 0))
-
-            ctk.CTkLabel(
-                field_frame, text=label,
-                font=ctk.CTkFont(size=FONTS["size_small"]),
-                text_color=COLORS["text_muted"], anchor="w"
-            ).pack(anchor="w")
-
-            entry = ctk.CTkEntry(
-                field_frame, height=34, corner_radius=4,
-                border_width=1, border_color=COLORS["border"],
-                fg_color="#F5F5F5", text_color=COLORS["text"],
-                font=ctk.CTkFont(size=FONTS["size_body"]),
-            )
-            entry.pack(fill="x", pady=(2, 0))
-            entry.insert(0, valor)
-            entry.configure(state="disabled")
 
     def _build_botao_editar(self, parent):
         btn_frame = ctk.CTkFrame(parent, fg_color="transparent")

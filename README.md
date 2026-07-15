@@ -1,42 +1,60 @@
 # Projeto_FISCSOFT
 
-Sistema desktop para gerenciamento de fiscalização do IBAMA, construído com CustomTkinter e MySQL.
+Sistema desktop para gerenciamento de fiscalizacao do IBAMA, construido com CustomTkinter e MySQL.
 
 ## Funcionalidades
 
-- Tela de login com autenticação por usuário/senha
-- Navegação por sidebar com múltiplas páginas
-- Gerenciamento de usuários externos (CRUD)
-- Cadastro de agentes IBAMA, infratores, TCCM, notas fiscais, produtos e insumos
-- Conexão com banco de dados MySQL
+- Tela de login com autenticacao por usuario/senha (bcrypt)
+- Controle de acesso por perfil (Admin / Agente)
+- Navegacao por sidebar com multiplas paginas
+- Gerenciamento de Agentes IBAMA (CRUD)
+- Gerenciamento de Infratores (CRUD)
+- Gerenciamento de Itens (CRUD + importacao Excel)
+- Monitoramento de Notas Fiscais com acoes (Aprovar/Rejeitar)
+- Relatorio de Entrega de Materiais
+- Conexao com banco de dados MySQL (Aiven Cloud)
 
 ## Estrutura do projeto
 
 ```
 Projeto_FISCSOFT/
-├── main.py              # Ponto de entrada (tela de login e app principal)
+├── main.py                    # Ponto de entrada (login + navegacao)
+├── utils.py                   # Hash de senhas (bcrypt)
+├── .env.example               # Template de variaveis de ambiente
 ├── config/
-│   ├── styles.py        # Cores, fontes e constantes visuais
-│   └── database.py      # Credenciais de conexão com o banco
-├── screens/
-│   ├── sidebar.py       # Componente de navegação lateral
-│   └── usuarios.py      # Página de gerenciamento de usuários
+│   └── styles.py              # Cores, fontes e constantes visuais
 ├── database/
-│   ├── connection.py    # Classe de conexão com MySQL
-│   └── schema.sql       # Script de criação do banco de dados
-├── assets/              # Imagens e ícones do sistema
-└── requirements.txt     # Dependências do projeto
+│   ├── conexaodb.py           # Classe Database (com context manager)
+│   ├── schema.sql             # Script DDL unificado
+│   └── bd_FiscSoft.sql        # Dump com dados de teste
+├── screens/
+│   ├── crud_base.py           # Mixin reutilizavel para paginas CRUD
+│   ├── sidebar.py             # Componente de navegacao lateral
+│   ├── usuarios.py            # Gerenciamento de Agentes IBAMA
+│   ├── cadastrar_usuario.py   # Formulario cadastro/edicao agente
+│   ├── visualizar_usuario.py  # Visualizacao de agente
+│   ├── itens.py               # Gerenciamento de Itens + Excel
+│   ├── relatorios.py          # Monitoramento de Notas Fiscais
+│   ├── relatorio_entrega.py   # Relatorio de Entrega
+│   └── agente_mode/
+│       ├── infratores.py         # Gerenciamento de Infratores
+│       ├── cadastrar_infrator.py  # Formulario cadastro/edicao infrator
+│       └── visualizar_infrator.py # Visualizacao de infrator
+├── assets/
+│   ├── imagens/               # Icones e imagens do sistema
+│   └── planilhas/             # Planilhas para importacao
+└── requirements.txt           # Dependencias do projeto
 ```
 
-## Pré-requisitos
+## Pre-requisitos
 
 - Python 3.8+
 - MySQL Server
 - pip
 
-## Instalação
+## Instalacao
 
-1. Clone o repositório:
+1. Clone o repositorio:
 ```bash
 git clone <url-do-repositorio>
 cd Projeto_FISCSOFT
@@ -51,17 +69,14 @@ python -m venv .venv
 source .venv/bin/activate
 ```
 
-3. Instale as dependências:
+3. Instale as dependencias:
 ```bash
 pip install -r requirements.txt
 ```
 
-4. Crie o banco de dados MySQL executando o schema:
-```bash
-mysql -u root < database/schema.sql
-```
-
-5. Atualize as credenciais em `config/database.py` conforme seu ambiente.
+4. Configure o banco de dados:
+   - Copie `.env.example` para `.env` e preencha suas credenciais
+   - Execute `database/schema.sql` para criar as tabelas
 
 ## Executando
 
@@ -69,8 +84,18 @@ mysql -u root < database/schema.sql
 python main.py
 ```
 
-## Dependências
+## Seguranca
 
-- customtkinter - Interface gráfica moderna baseada em tkinter
-- mysql-connector-python - Driver de conexão com MySQL
+- Senhas armazenadas com bcrypt (hash com salt)
+- Credenciais do banco em `.env` (nao versionado)
+- Queries parametrizadas (prevencao de SQL Injection)
+- Controle de acesso por perfil de usuario
+
+## Dependencias
+
+- customtkinter - Interface grafica moderna baseada em tkinter
+- mysql-connector-python - Driver de conexao com MySQL
 - Pillow - Processamento de imagens
+- pandas - Leitura de planilhas Excel
+- python-dotenv - Carregamento de variaveis de ambiente
+- bcrypt - Hash seguro de senhas

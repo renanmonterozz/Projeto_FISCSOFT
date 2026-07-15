@@ -1,14 +1,17 @@
+import _path  # noqa: F401
+
 import customtkinter as ctk
 from tkinter import messagebox
+
 from config.styles import COLORS, FONTS
 from database.conexaodb import Database
-from utils import hash_password
+from utils import hash_password, registrar_log
 
 
-class CadastrarAgenteIbamaWindow(ctk.CTkToplevel):
-    def __init__(self, master=None, agente=None):
+class CadastrarInfratorWindow(ctk.CTkToplevel):
+    def __init__(self, master=None, infrator=None):
         super().__init__(master)
-        self.agente_edicao = agente
+        self.infrator_edicao = infrator
         self.title("FISCSOFT - Cadastrar Infrator")
         self.geometry("820x700")
         self.resizable(False, False)
@@ -17,7 +20,7 @@ class CadastrarAgenteIbamaWindow(ctk.CTkToplevel):
 
         self.build_ui()
 
-        if self.agente_edicao:
+        if self.infrator_edicao:
             self.preencher_campos()
 
     def build_ui(self):
@@ -39,7 +42,7 @@ class CadastrarAgenteIbamaWindow(ctk.CTkToplevel):
 
         ctk.CTkLabel(
             header,
-            text="Informe os dados do agente.",
+            text="Informe os dados do infrator.",
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             text_color=COLORS["text"],
         ).pack(anchor="w", pady=(2, 0))
@@ -52,7 +55,7 @@ class CadastrarAgenteIbamaWindow(ctk.CTkToplevel):
 
         ctk.CTkLabel(
             form, text="Dados Pessoais",
-            font=ctk.CTkFont(size=14, weight="bold"),
+            font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             text_color=COLORS["text"],
         ).pack(anchor="w", padx=20, pady=(18, 8))
 
@@ -70,7 +73,7 @@ class CadastrarAgenteIbamaWindow(ctk.CTkToplevel):
 
         ctk.CTkLabel(
             form, text="Dados de Acesso",
-            font=ctk.CTkFont(size=14, weight="bold"),
+            font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             text_color=COLORS["text"],
         ).pack(anchor="w", padx=20, pady=(5, 8))
 
@@ -89,7 +92,7 @@ class CadastrarAgenteIbamaWindow(ctk.CTkToplevel):
             height=40, corner_radius=4,
             fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
             text_color="white", border_width=0,
-            font=ctk.CTkFont(size=14, weight="bold"),
+            font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             compound="left",
             command=self.salvar,
         ).pack(side="left", padx=(0, 10))
@@ -98,22 +101,19 @@ class CadastrarAgenteIbamaWindow(ctk.CTkToplevel):
             btn_frame,
             text="Cancelar",
             height=40, corner_radius=4,
-            fg_color=COLORS["border"], hover_color="#C8C8C8",
+            fg_color=COLORS["border"], hover_color=COLORS["hover"],
             text_color=COLORS["text"], border_width=1,
             border_color=COLORS["border"],
-            font=ctk.CTkFont(size=14),
+            font=ctk.CTkFont(size=FONTS["size_body"]),
             command=self.destroy,
         ).pack(side="right")
 
     def preencher_campos(self):
-        a = self.agente_edicao
-        self.entry_nome.insert(0, a["nome"])
-        self.entry_cpf.insert(0, a["cpf"])
-        self.entry_email.insert(0, a["email"])
-        self.entry_telefone.insert(0, a.get("telefone", ""))
-        if "senha" in a:
-            self.entry_senha.insert(0, a["senha"])
-            self.entry_confirmar.insert(0, a["senha"])
+        i = self.infrator_edicao
+        self.entry_nome.insert(0, i["nome"])
+        self.entry_cpf.insert(0, i["cpf"])
+        self.entry_email.insert(0, i["email"])
+        self.entry_telefone.insert(0, i.get("telefone", ""))
 
     def _criar_campo(self, parent, label, col, weight=1, show=None):
         parent.grid_columnconfigure(col, weight=weight)
@@ -131,7 +131,7 @@ class CadastrarAgenteIbamaWindow(ctk.CTkToplevel):
             frame, height=36, corner_radius=4,
             border_width=1, border_color=COLORS["border"],
             fg_color=COLORS["white"], text_color=COLORS["text"],
-            placeholder_text_color="#999999",
+            placeholder_text_color=COLORS["text_muted"],
             show=show,
         )
         entry.pack(fill="x")
@@ -153,28 +153,35 @@ class CadastrarAgenteIbamaWindow(ctk.CTkToplevel):
             messagebox.showerror("Erro", "As senhas nao conferem!")
             return
 
-        db = Database()
-        if db.conectar():
+        with Database() as db:
+            if not db.conexao:
+                messagebox.showerror("Erro", "Nao foi possivel conectar ao banco de dados!")
+                return
+
             senha_hash = hash_password(senha)
-            if self.agente_edicao:
+            if self.infrator_edicao:
                 db.executar(
-                    "UPDATE infrator SET nome_infrator=%s, cpf=%s, email=%s, "
-                    "telefone_infrator=%s, senha=%s WHERE id_infrator=%s",
-                    (nome, cpf, email, telefone, senha_hash, self.agente_edicao["id"])
+                    "UPDATE infrator SET nome_infrator=?, cpf=?, email=?, "
+                    "telefone_infrator=?, senha=? WHERE id_infrator=?",
+                    (nome, cpf, email, telefone, senha_hash, self.infrator_edicao["id"])
                 )
                 mensagem = f"Infrator '{nome}' atualizado com sucesso!"
             else:
                 db.executar(
                     "INSERT INTO infrator (nome_infrator, cpf, email, telefone_infrator, senha) "
-                    "VALUES (%s, %s, %s, %s, %s)",
+                    "VALUES (?, ?, ?, ?, ?)",
                     (nome, cpf, email, telefone, senha_hash)
                 )
-                mensagem = f"Agente '{nome}' cadastrado com sucesso!"
+                mensagem = f"Infrator '{nome}' cadastrado com sucesso!"
 
             db.commitar()
-            db.desconectar()
 
-            messagebox.showinfo("Sucesso", mensagem)
-            self.destroy()
-        else:
-            messagebox.showerror("Erro", "Nao foi possivel conectar ao banco de dados!")
+        registrar_log(
+            getattr(self.master, 'usuario_logado', None) or "Sistema",
+            "edicao" if self.infrator_edicao else "cadastro",
+            "infrator",
+            mensagem
+        )
+
+        messagebox.showinfo("Sucesso", mensagem)
+        self.destroy()

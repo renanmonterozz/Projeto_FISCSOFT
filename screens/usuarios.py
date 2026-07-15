@@ -1,16 +1,13 @@
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import _path  # noqa: F401
 
 import customtkinter as ctk
 from tkinter import messagebox
-from PIL import Image
-import os
 
-from config.styles import COLORS, FONTS, ASSETS_DIR
+from config.styles import COLORS, FONTS
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
+from utils import registrar_log
 
 
 class UsuariosPage(CrudBase, ctk.CTkFrame):
@@ -50,10 +47,11 @@ class UsuariosPage(CrudBase, ctk.CTkFrame):
         self.render_rows()
 
     def carregar_do_banco(self):
-        db = Database()
-        if db.conectar():
-            sql = """SELECT matricula, nome_agente, cpf, email, telefone, login, senha, perfil, status
-                     FROM `agente ibama`"""
+        with Database() as db:
+            if not db.conexao:
+                return []
+            sql = """SELECT matricula, nome_agente, cpf, email, telefone, login, perfil, status
+                     FROM "agente ibama" """
             resultados = db.executar(sql)
             usuarios = []
             if resultados:
@@ -65,13 +63,10 @@ class UsuariosPage(CrudBase, ctk.CTkFrame):
                         "email": row[3],
                         "telefone": row[4],
                         "login": row[5],
-                        "senha": row[6],
-                        "perfil": row[7].capitalize(),
-                        "status": "Ativo" if row[8] == "ativo" else "Inativo",
+                        "perfil": row[6].capitalize() if row[6] else "Agente",
+                        "status": "Ativo" if row[7] == "ativo" else "Inativo",
                     })
-            db.desconectar()
             return usuarios
-        return []
 
     def render_rows(self):
         for widget in self.table_body.winfo_children():
@@ -87,20 +82,22 @@ class UsuariosPage(CrudBase, ctk.CTkFrame):
         ctk.CTkLabel(data, text=usuario["nome"],
                       font=ctk.CTkFont(size=FONTS["size_body"]),
                       text_color=COLORS["text"], anchor="w"
-                      ).grid(row=0, column=0, sticky="w")
+                      ).grid(row=0, column=0, sticky="w", padx=(10, 5))
 
         ctk.CTkLabel(data, text=usuario["email"],
                       font=ctk.CTkFont(size=FONTS["size_body"]),
-                      text_color=COLORS["text_muted"], anchor="w"
-                      ).grid(row=0, column=1, sticky="w")
+                      text_color=COLORS["text_muted"], anchor="w",
+                      width=200
+                      ).grid(row=0, column=1, sticky="w", padx=5)
 
         ctk.CTkLabel(data, text=usuario["perfil"],
                       font=ctk.CTkFont(size=FONTS["size_body"]),
-                      text_color=COLORS["text"], anchor="w"
-                      ).grid(row=0, column=2, sticky="w")
+                      text_color=COLORS["text_muted"], anchor="w",
+                      width=100
+                      ).grid(row=0, column=2, sticky="w", padx=5)
 
         status_container = ctk.CTkFrame(data, fg_color="transparent")
-        status_container.grid(row=0, column=3, sticky="w")
+        status_container.grid(row=0, column=3, sticky="w", padx=(5, 10))
 
         cor = COLORS["primary"] if usuario["status"] == "Ativo" else COLORS["danger"]
         bolinha = ctk.CTkFrame(status_container, fg_color=cor,
@@ -109,7 +106,7 @@ class UsuariosPage(CrudBase, ctk.CTkFrame):
         bolinha.pack_propagate(False)
         ctk.CTkLabel(status_container, text=usuario["status"],
                       font=ctk.CTkFont(size=FONTS["size_body"]),
-                      text_color=COLORS["text"]
+                      text_color=COLORS["text_muted"]
                       ).pack(side="left")
 
         self.add_action_buttons(linha, [
@@ -161,14 +158,19 @@ class UsuariosPage(CrudBase, ctk.CTkFrame):
 
     def excluir(self, usuario):
         if messagebox.askyesno("Excluir", f"Deseja excluir {usuario['nome']}?"):
-            db = Database()
-            if db.conectar():
-                db.executar(
-                    "DELETE FROM `agente ibama` WHERE nome_agente = %s",
-                    (usuario["nome"],)
-                )
-                db.commitar()
-                db.desconectar()
+            with Database() as db:
+                if db.conexao:
+                    db.executar(
+                        "DELETE FROM \"agente ibama\" WHERE matricula = ?",
+                        (usuario["matricula"],)
+                    )
+                    db.commitar()
+            registrar_log(
+                self.usuario_logado or "Sistema",
+                "exclusao",
+                "agente ibama",
+                f"Usuario '{usuario['nome']}' (matricula: {usuario['matricula']}) excluido"
+            )
             self.usuarios = self.carregar_do_banco()
             self.render_rows()
 

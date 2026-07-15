@@ -1,4 +1,7 @@
-import customtkinter as ctk
+import _path  # noqa: F401 — garante que o root do projeto está no sys.path
+
+import logging
+import sys
 from tkinter import messagebox
 from PIL import Image
 <<<<<<< HEAD
@@ -6,19 +9,32 @@ import os
 
 =======
 import os
->>>>>>> main
+
+import customtkinter as ctk
+
+from config.styles import ASSETS_DIR, COLORS
+from database.conexaodb import Database
 from screens.sidebar import Sidebar
 from screens.usuarios import UsuariosPage
 from screens.itens import ItensPage
-from screens.agente_mode.agenteibama import AgenteIbamaPage
-from screens.infrator_mode.infratores import InfratoresPage
+from screens.agente_mode.infratores import InfratoresPage
 from screens.relatorios import RelatoriosPage
-from config.styles import ASSETS_DIR, COLORS
-from database.conexaodb import Database
-from utils import hash_password
+from screens.relatorio_entrega import RelatorioEntregaPage
+from screens.locais import LocaisPage
+from screens.historico import HistoricoPage
+from utils import verify_password
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)],
+)
 
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
+
+PERMISSOES_ADMIN = {"Menu Principal", "Itens", "Destinacao", "Agente", "Usuario Externo", "Locais Cadastrados", "Relatorio", "Historico"}
+PERMISSOES_AGENTE = {"Menu Principal", "Itens", "Destinacao", "Agente", "Usuario Externo", "Locais Cadastrados", "Relatorio", "Historico"}
 
 
 class LoginApp(ctk.CTk):
@@ -66,12 +82,12 @@ class LoginApp(ctk.CTk):
         self.form_frame = ctk.CTkFrame(self.bg_label, fg_color="transparent", width=300, height=270)
         self.form_frame.place(x=660, y=240)
 
-        frame_user = ctk.CTkFrame(self.form_frame, fg_color="white", corner_radius=8, border_width=1, border_color="#bbbbbb")
+        frame_user = ctk.CTkFrame(self.form_frame, fg_color="white", corner_radius=8, border_width=1, border_color=COLORS["border"])
         frame_user.pack(pady=(10, 8), padx=25, fill="x")
         frame_user.pack_propagate(False)
         frame_user.configure(height=40)
 
-        ctk.CTkLabel(frame_user, text="\U0001f464", font=ctk.CTkFont(size=16), text_color="#999999").pack(side="left", padx=(12, 5))
+        ctk.CTkLabel(frame_user, text="\U0001f464", font=ctk.CTkFont(size=16), text_color=COLORS["text_muted"]).pack(side="left", padx=(12, 5))
         self.entry_usuario = ctk.CTkEntry(
             frame_user,
             placeholder_text="Usuario",
@@ -79,16 +95,16 @@ class LoginApp(ctk.CTk):
             border_width=0,
             fg_color="white",
             text_color="black",
-            placeholder_text_color="#aaaaaa",
+            placeholder_text_color=COLORS["text_muted"],
         )
         self.entry_usuario.pack(side="left", fill="x", expand=True, padx=(0, 10), pady=2)
 
-        frame_senha = ctk.CTkFrame(self.form_frame, fg_color="white", corner_radius=8, border_width=1, border_color="#bbbbbb")
+        frame_senha = ctk.CTkFrame(self.form_frame, fg_color="white", corner_radius=8, border_width=1, border_color=COLORS["border"])
         frame_senha.pack(pady=8, padx=25, fill="x")
         frame_senha.pack_propagate(False)
         frame_senha.configure(height=40)
 
-        ctk.CTkLabel(frame_senha, text="\U0001f512", font=ctk.CTkFont(size=16), text_color="#999999").pack(side="left", padx=(12, 5))
+        ctk.CTkLabel(frame_senha, text="\U0001f512", font=ctk.CTkFont(size=16), text_color=COLORS["text_muted"]).pack(side="left", padx=(12, 5))
         self.entry_senha = ctk.CTkEntry(
             frame_senha,
             placeholder_text="Senha",
@@ -97,7 +113,7 @@ class LoginApp(ctk.CTk):
             border_width=0,
             fg_color="white",
             text_color="black",
-            placeholder_text_color="#aaaaaa",
+            placeholder_text_color=COLORS["text_muted"],
         )
         self.entry_senha.pack(side="left", fill="x", expand=True, padx=(0, 10), pady=2)
 
@@ -106,8 +122,8 @@ class LoginApp(ctk.CTk):
             text="Entrar",
             height=38,
             corner_radius=8,
-            fg_color="#66BB6A",
-            hover_color="#43A047",
+            fg_color=COLORS["primary"],
+            hover_color=COLORS["primary_hover"],
             text_color="white",
             border_width=0,
             font=ctk.CTkFont(size=14, weight="bold"),
@@ -119,8 +135,8 @@ class LoginApp(ctk.CTk):
             text="Sair",
             height=28,
             corner_radius=6,
-            fg_color="#2c2c2c",
-            hover_color="#555555",
+            fg_color=COLORS["dark"],
+            hover_color=COLORS["dark_hover"],
             text_color="white",
             border_width=0,
             font=ctk.CTkFont(size=12),
@@ -141,92 +157,76 @@ class LoginApp(ctk.CTk):
             messagebox.showwarning("Atencao", "Preencha todos os campos!")
             return
 
-        db = Database()
-        if db.conectar():
-            sql = "SELECT nome_agente, status, perfil FROM `agente ibama` WHERE login = %s AND senha = %s"
-            resultado = db.executar(sql, (usuario, hash_password(senha)))
+        with Database() as db:
+            if not db.conexao:
+                messagebox.showerror("Erro", "Nao foi possivel conectar ao banco de dados!")
+                return
+
+            sql = "SELECT nome_agente, senha, status, perfil FROM \"agente ibama\" WHERE login = ?"
+            resultado = db.executar(sql, (usuario,))
             registro = resultado.fetchone() if resultado else None
-            db.desconectar()
 
-            if registro:
-                if registro[1] == "ativo":
-                    self.usuario_logado = registro[0]
-                    perfil = registro[2] if registro[2] else "Agente"
-                    if perfil == "Administrador":
-                        self.abrir_principal()
-                    else:
-                        self.abrir_menu_usuario()
-                else:
-                    messagebox.showerror("Erro", "Usuario inativo! Contate o administrador.")
-            else:
-                messagebox.showerror("Erro", "Usuario ou senha incorretos!")
+        if not registro:
+            messagebox.showerror("Erro", "Usuario ou senha incorretos!")
+            return
+
+        nome, hash_bd, status, perfil = registro
+
+        if not verify_password(senha, hash_bd):
+            messagebox.showerror("Erro", "Usuario ou senha incorretos!")
+            return
+
+        if status != "ativo":
+            messagebox.showerror("Erro", "Usuario inativo! Contate o administrador.")
+            return
+
+        self.usuario_logado = nome
+        self.perfil = (perfil or "agente").capitalize()
+
+        if self.perfil == "Admin":
+            self._abrir_tela_principal(perfil="admin")
         else:
-            messagebox.showerror("Erro", "Nao foi possivel conectar ao banco de dados!")
+            self._abrir_tela_principal(perfil="agente")
 
-    def abrir_principal(self):
+    def _abrir_tela_principal(self, perfil: str = "admin"):
         self.quit()
         self.destroy()
 
         main_app = ctk.CTk()
-        main_app.title("FISCSOFT")
+        main_app.title("FISCSOFT" if perfil == "admin" else "FISCSOFT - Usuario")
         main_app.geometry("1200x700")
         main_app.configure(fg_color=COLORS["white"])
         main_app.usuario_logado = self.usuario_logado
+        main_app.perfil = perfil
 
-        content_frame = ctk.CTkFrame(main_app, fg_color=COLORS["bg"])
-        content_frame.pack(side="right", fill="both", expand=True)
+        permissoes = PERMISSOES_ADMIN if perfil == "admin" else PERMISSOES_AGENTE
 
-        def navegar(pagina):
+        def navegar(pagina: str):
+            if pagina not in permissoes:
+                messagebox.showwarning("Acesso Negado", "Voce nao tem permissao para acessar esta pagina.")
+                return
+
             for w in content_frame.winfo_children():
                 w.destroy()
-            if pagina == "Agentes IBAMA":
-                UsuariosPage(content_frame).pack(fill="both", expand=True)
+
+            usuario_logado = main_app.usuario_logado if perfil == "agente" else None
+
+            if pagina == "Menu Principal":
+                UsuariosPage(content_frame, usuario_logado=usuario_logado).pack(fill="both", expand=True)
             elif pagina == "Itens":
-                ItensPage(content_frame, on_voltar=lambda: navegar("Menu Inicial")).pack(fill="both", expand=True)
-            elif pagina == "Infratores":
+                ItensPage(content_frame, on_voltar=lambda: navegar("Menu Principal")).pack(fill="both", expand=True)
+            elif pagina == "Destinacao":
+                RelatorioEntregaPage(content_frame, on_voltar=lambda: navegar("Menu Principal")).pack(fill="both", expand=True)
+            elif pagina == "Agente":
+                UsuariosPage(content_frame, usuario_logado=usuario_logado).pack(fill="both", expand=True)
+            elif pagina == "Usuario Externo":
                 InfratoresPage(content_frame).pack(fill="both", expand=True)
-            elif pagina == "Relatorios":
-                RelatoriosPage(content_frame).pack(fill="both", expand=True)
-            else:
-                ctk.CTkLabel(
-                    content_frame,
-                    text=pagina,
-                    font=ctk.CTkFont(size=24, weight="bold"),
-                    text_color=COLORS["text"],
-                ).pack(expand=True)
-
-        sidebar = Sidebar(main_app, width=210, on_navigate=navegar)
-        sidebar.pack(side="left", fill="y")
-
-        navegar("Agentes IBAMA")
-        main_app.mainloop()
-
-    def abrir_menu_usuario(self):
-        self.quit()
-        self.destroy()
-
-        main_app = ctk.CTk()
-        main_app.title("FISCSOFT - Usuario")
-        main_app.geometry("1200x700")
-        main_app.configure(fg_color=COLORS["white"])
-        main_app.usuario_logado = self.usuario_logado
-
-        content_frame = ctk.CTkFrame(main_app, fg_color=COLORS["bg"])
-        content_frame.pack(side="right", fill="both", expand=True)
-
-        def navegar(pagina):
-            for w in content_frame.winfo_children():
-                w.destroy()
-            if pagina == "Menu Inicial":
-                UsuariosPage(content_frame, usuario_logado=main_app.usuario_logado).pack(fill="both", expand=True)
-            elif pagina == "Itens":
-                ItensPage(content_frame, on_voltar=lambda: navegar("Menu Inicial")).pack(fill="both", expand=True)
-            elif pagina == "Agente Ibama":
-                AgenteIbamaPage(content_frame).pack(fill="both", expand=True)
-            elif pagina == "Infratores":
-                InfratoresPage(content_frame).pack(fill="both", expand=True)
-            elif pagina == "Usuarios Externos":
-                UsuariosPage(content_frame).pack(fill="both", expand=True)
+            elif pagina == "Locais Cadastrados":
+                LocaisPage(content_frame, usuario_logado=usuario_logado).pack(fill="both", expand=True)
+            elif pagina == "Relatorio":
+                RelatoriosPage(content_frame, usuario_logado=usuario_logado).pack(fill="both", expand=True)
+            elif pagina == "Historico":
+                HistoricoPage(content_frame, usuario_logado=usuario_logado).pack(fill="both", expand=True)
             else:
                 ctk.CTkLabel(
                     content_frame,
@@ -244,7 +244,11 @@ class LoginApp(ctk.CTk):
         sidebar = Sidebar(main_app, width=210, on_navigate=navegar, on_sair=logout)
         sidebar.pack(side="left", fill="y")
 
-        navegar("Menu Inicial")
+        content_frame = ctk.CTkFrame(main_app, fg_color=COLORS["bg"])
+        content_frame.pack(side="right", fill="both", expand=True)
+
+        pagina_inicial = "Menu Principal"
+        navegar(pagina_inicial)
         main_app.mainloop()
 
     def login_certificado(self):
@@ -274,8 +278,8 @@ class LoginApp(ctk.CTk):
             text="Voltar",
             height=30,
             corner_radius=6,
-            fg_color="#2c2c2c",
-            hover_color="#555555",
+            fg_color=COLORS["dark"],
+            hover_color=COLORS["dark_hover"],
             text_color="white",
             border_width=0,
             font=ctk.CTkFont(size=12),

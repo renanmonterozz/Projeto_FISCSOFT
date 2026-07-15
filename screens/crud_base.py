@@ -1,3 +1,5 @@
+import _path  # noqa: F401
+
 import customtkinter as ctk
 from config.styles import COLORS, FONTS
 
@@ -40,7 +42,7 @@ class CrudBase:
             frame, placeholder_text=placeholder,
             width=width, height=38, border_width=0,
             fg_color=COLORS["white"], text_color=COLORS["text"],
-            placeholder_text_color="#999999",
+            placeholder_text_color=COLORS["text_muted"],
         )
         entry.pack(side="left", padx=(12, 4), pady=2)
         ctk.CTkLabel(
@@ -55,7 +57,7 @@ class CrudBase:
             width=width, height=38, border_width=1,
             border_color=COLORS["border"], corner_radius=4,
             fg_color=COLORS["white"], text_color=COLORS["text"],
-            placeholder_text_color="#999999",
+            placeholder_text_color=COLORS["text_muted"],
         )
         entry.pack(side="left", padx=(0, 10))
         return entry
@@ -96,25 +98,26 @@ class CrudBase:
         return self.table_frame
 
     def build_table_header(self, parent, columns, weights, has_checkbox=True):
-        header = ctk.CTkFrame(parent, fg_color="#FAFAFA", height=44, corner_radius=0)
+        header = ctk.CTkFrame(parent, fg_color=COLORS["table_header"], height=44, corner_radius=0)
         header.pack(fill="x")
         header.pack_propagate(False)
 
         if has_checkbox:
-            ctk.CTkLabel(header, text="", width=40).pack(side="left", padx=(15, 0))
+            ctk.CTkLabel(header, text="", width=20).pack(side="left", padx=(17, 0))
 
         cols = ctk.CTkFrame(header, fg_color="transparent")
-        cols.pack(side="left", fill="x", expand=True, padx=(5, 20))
+        cols.pack(side="left", fill="x", expand=True, padx=(10, 0))
 
         for i, w in enumerate(weights):
             cols.grid_columnconfigure(i, weight=w)
 
         for i, col_text in enumerate(columns):
+            padx = (10, 5) if i == 0 else (5, 5) if i < len(columns) - 1 else (5, 10)
             ctk.CTkLabel(
                 cols, text=col_text,
                 font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
                 text_color=COLORS["text_muted"]
-            ).grid(row=0, column=i, sticky="w")
+            ).grid(row=0, column=i, sticky="w", padx=padx)
 
         ctk.CTkLabel(
             header, text="Açoes",
@@ -134,7 +137,7 @@ class CrudBase:
         linha.pack(fill="x")
         linha.pack_propagate(False)
 
-        ctk.CTkFrame(self.table_body, fg_color="#F0F0F0", height=1).pack(fill="x")
+        ctk.CTkFrame(self.table_body, fg_color="#E0E0E0", height=1).pack(fill="x")
 
         cb = ctk.CTkCheckBox(linha, text="", width=20, height=20,
                               border_width=2, corner_radius=4)

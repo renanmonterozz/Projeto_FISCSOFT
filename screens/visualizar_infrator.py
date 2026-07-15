@@ -1,16 +1,19 @@
+import _path  # noqa: F401
+
 import customtkinter as ctk
+
 from config.styles import COLORS, FONTS
 
 
-class VisualizarAgenteIbamaWindow(ctk.CTkToplevel):
-    def __init__(self, master, agente):
+class VisualizarInfratorWindow(ctk.CTkToplevel):
+    def __init__(self, master, infrator):
         super().__init__(master)
-        self.agente = agente
+        self.infrator = infrator
 
         self.title("Visualizacao de Infrator")
-        self.geometry("700+{}+{}".format(
-            (self.winfo_screenwidth() - 700) // 2,
-            (self.winfo_screenheight() - 620) // 2
+        self.geometry("750x680+{}+{}".format(
+            (self.winfo_screenwidth() - 750) // 2,
+            (self.winfo_screenheight() - 680) // 2
         ))
         self.resizable(False, False)
         self.configure(fg_color=COLORS["white"])
@@ -27,8 +30,9 @@ class VisualizarAgenteIbamaWindow(ctk.CTkToplevel):
         top_bar.pack(fill="x", padx=25, pady=(20, 0))
 
         ctk.CTkLabel(
-            top_bar, text="Visualizacao de Infrator",
-            font=ctk.CTkFont(size=20, weight="bold"),
+            top_bar,
+            text="Visualizacao de Infrator",
+            font=ctk.CTkFont(size=FONTS["size_title"], weight="bold"),
             text_color=COLORS["primary"]
         ).pack(anchor="w")
 
@@ -73,7 +77,7 @@ class VisualizarAgenteIbamaWindow(ctk.CTkToplevel):
             entry = ctk.CTkEntry(
                 field_frame, height=34, corner_radius=4,
                 border_width=1, border_color=COLORS["border"],
-                fg_color="#F5F5F5", text_color=COLORS["text"],
+                fg_color=COLORS["bg"], text_color=COLORS["text"],
                 font=ctk.CTkFont(size=FONTS["size_body"]),
                 state="normal"
             )
@@ -84,12 +88,12 @@ class VisualizarAgenteIbamaWindow(ctk.CTkToplevel):
     def _build_dados_pessoais(self, parent):
         self._build_section_label(parent, "Dados Pessoais")
         self._build_field_row(parent, [
-            ("Nome Completo", self.agente.get("nome", "")),
-            ("CPF", self.agente.get("cpf", "")),
+            ("Nome Completo", self.infrator.get("nome", "")),
+            ("CPF", self.infrator.get("cpf", "")),
         ])
         self._build_field_row(parent, [
-            ("E-mail", self.agente.get("email", "")),
-            ("Telefone", self.agente.get("telefone", "")),
+            ("E-mail", self.infrator.get("email", "")),
+            ("Telefone", self.infrator.get("telefone", "")),
         ], pad_top=10)
 
     def _build_botao_editar(self, parent):
@@ -98,7 +102,7 @@ class VisualizarAgenteIbamaWindow(ctk.CTkToplevel):
 
         ctk.CTkButton(
             btn_frame,
-            text="Editar Agente",
+            text="Editar Infrator",
             height=40, corner_radius=4,
             fg_color=COLORS["primary"],
             hover_color=COLORS["primary_hover"],
@@ -110,4 +114,4 @@ class VisualizarAgenteIbamaWindow(ctk.CTkToplevel):
     def _on_editar(self):
         self.destroy()
         if hasattr(self.master, "editar"):
-            self.master.editar(self.agente)
+            self.master.editar(self.infrator)
