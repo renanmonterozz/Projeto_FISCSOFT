@@ -1,6 +1,4 @@
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import _path  # noqa: F401
 
 import customtkinter as ctk
 from tkinter import messagebox
@@ -9,9 +7,10 @@ from config.styles import COLORS, FONTS
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
+from utils import registrar_log
 
 
-class AgenteIbamaPage(CrudBase, ctk.CTkFrame):
+class InfratoresPage(CrudBase, ctk.CTkFrame):
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
         self.configure(fg_color=COLORS["bg"])
@@ -34,7 +33,7 @@ class AgenteIbamaPage(CrudBase, ctk.CTkFrame):
         self.build_action_btn(btn_frame, "  Pesquisar", carregar_icone("lupa.png"), self.pesquisar)
         self.build_action_btn(btn_frame, "  Limpar", carregar_icone("apagar.png"), self.limpar_filtros)
         self.build_action_btn(btn_frame, "  Novo Infrator", carregar_icone("mais.png"),
-                              self.novo_agente, fg_color=COLORS["primary"],
+                              self.novo_infrator, fg_color=COLORS["primary"],
                               hover_color=COLORS["primary_hover"], text_color="white",
                               border=False, bold=True)
 
@@ -43,64 +42,66 @@ class AgenteIbamaPage(CrudBase, ctk.CTkFrame):
         self.build_table_header(self.table_frame, ["Nome", "CPF", "Email", "Telefone"],
                                 [3, 2, 2, 2], has_checkbox=True)
 
-        self.agentes = self.carregar_do_banco()
+        self.infratores = self.carregar_do_banco()
         self.render_rows()
 
     def carregar_do_banco(self):
-        db = Database()
-        if db.conectar():
+        with Database() as db:
+            if not db.conexao:
+                return []
             resultados = db.executar(
                 "SELECT id_infrator, nome_infrator, cpf, email, telefone_infrator FROM infrator"
             )
-            agentes = []
+            infratores = []
             if resultados:
                 for row in resultados.fetchall():
-                    agentes.append({
+                    infratores.append({
                         "id": row[0],
                         "nome": row[1],
                         "cpf": row[2],
                         "email": row[3],
                         "telefone": row[4] or "-",
                     })
-            db.desconectar()
-            return agentes
-        return []
+            return infratores
 
     def render_rows(self):
         for widget in self.table_body.winfo_children():
             widget.destroy()
 
-        for agente in self.agentes:
-            self.adicionar_linha(agente)
+        for infrator in self.infratores:
+            self.adicionar_linha(infrator)
 
-    def adicionar_linha(self, agente):
+    def adicionar_linha(self, infrator):
         linha, data, _ = self.add_data_row()
         self.configure_data_columns(data, [3, 2, 2, 2])
 
-        ctk.CTkLabel(data, text=agente["nome"],
+        ctk.CTkLabel(data, text=infrator["nome"],
                       font=ctk.CTkFont(size=FONTS["size_body"]),
                       text_color=COLORS["text"], anchor="w"
-                      ).grid(row=0, column=0, sticky="w")
+                      ).grid(row=0, column=0, sticky="w", padx=(10, 5))
 
-        ctk.CTkLabel(data, text=agente["cpf"],
+        ctk.CTkLabel(data, text=infrator["cpf"],
                       font=ctk.CTkFont(size=FONTS["size_body"]),
-                      text_color=COLORS["text_muted"], anchor="w"
-                      ).grid(row=0, column=1, sticky="w")
+                      text_color=COLORS["text_muted"], anchor="w",
+                      width=120
+                      ).grid(row=0, column=1, sticky="w", padx=5)
 
-        ctk.CTkLabel(data, text=agente["email"],
+        ctk.CTkLabel(data, text=infrator["email"],
                       font=ctk.CTkFont(size=FONTS["size_body"]),
-                      text_color=COLORS["text_muted"], anchor="w"
-                      ).grid(row=0, column=2, sticky="w")
+                      text_color=COLORS["text_muted"], anchor="w",
+                      width=200
+                      ).grid(row=0, column=2, sticky="w", padx=5)
 
-        ctk.CTkLabel(data, text=agente["telefone"],
+        ctk.CTkLabel(data, text=infrator["telefone"],
                       font=ctk.CTkFont(size=FONTS["size_body"]),
-                      text_color=COLORS["text"], anchor="w"
-                      ).grid(row=0, column=3, sticky="w")
+                      text_color=COLORS["text_muted"], anchor="w",
+                      width=110
+                      ).grid(row=0, column=3, sticky="w", padx=(5, 10))
 
         self.add_action_buttons(linha, [
-            ("\U0001f441", lambda u=agente: self.visualizar(u)),
-            ("\u270f", lambda u=agente: self.editar(u)),
-            ("\U0001f5d1", lambda u=agente: self.excluir(u)),
+            ("\U0001f441", lambda i=infrator: self.visualizar(i)),
+            ("\u270f", lambda i=infrator: self.editar(i)),
+            ("\U0001f5d1", lambda i=infrator: self.excluir(i)),
         ])
 
     def pesquisar(self):
@@ -109,50 +110,55 @@ class AgenteIbamaPage(CrudBase, ctk.CTkFrame):
         filtro_tel = self.entry_filtro2.get().strip().lower()
 
         todos = self.carregar_do_banco()
-        self.agentes = [
-            a for a in todos
-            if (not busca or busca in a["nome"].lower()
-                or busca in a["cpf"] or busca in a["email"].lower())
-            and (not filtro_email or filtro_email in a["email"].lower())
-            and (not filtro_tel or filtro_tel in a["telefone"])
+        self.infratores = [
+            i for i in todos
+            if (not busca or busca in i["nome"].lower()
+                or busca in i["cpf"] or busca in i["email"].lower())
+            and (not filtro_email or filtro_email in i["email"].lower())
+            and (not filtro_tel or filtro_tel in i["telefone"])
         ]
         self.render_rows()
 
     def limpar_filtros(self):
         self.clear_entries(self.entry_busca, self.entry_filtro1, self.entry_filtro2)
-        self.agentes = self.carregar_do_banco()
+        self.infratores = self.carregar_do_banco()
         self.render_rows()
 
-    def novo_agente(self):
-        from screens.agente_mode.cadastrar_agenteibama import CadastrarAgenteIbamaWindow
-        janela = CadastrarAgenteIbamaWindow(self)
+    def novo_infrator(self):
+        from screens.agente_mode.cadastrar_infrator import CadastrarInfratorWindow
+        janela = CadastrarInfratorWindow(self)
         self.wait_window(janela)
-        self.agentes = self.carregar_do_banco()
+        self.infratores = self.carregar_do_banco()
         self.render_rows()
 
-    def visualizar(self, agente):
-        from screens.visualizar_agenteibama import VisualizarAgenteIbamaWindow
-        janela = VisualizarAgenteIbamaWindow(self, agente)
+    def visualizar(self, infrator):
+        from screens.visualizar_infrator import VisualizarInfratorWindow
+        janela = VisualizarInfratorWindow(self, infrator)
         self.wait_window(janela)
 
-    def editar(self, agente):
-        from screens.agente_mode.cadastrar_agenteibama import CadastrarAgenteIbamaWindow
-        janela = CadastrarAgenteIbamaWindow(self, agente=agente)
+    def editar(self, infrator):
+        from screens.agente_mode.cadastrar_infrator import CadastrarInfratorWindow
+        janela = CadastrarInfratorWindow(self, infrator=infrator)
         self.wait_window(janela)
-        self.agentes = self.carregar_do_banco()
+        self.infratores = self.carregar_do_banco()
         self.render_rows()
 
-    def excluir(self, agente):
-        if messagebox.askyesno("Excluir", f"Deseja excluir {agente['nome']}?"):
-            db = Database()
-            if db.conectar():
-                db.executar(
-                    "DELETE FROM infrator WHERE id_infrator = %s",
-                    (agente["id"],)
-                )
-                db.commitar()
-                db.desconectar()
-            self.agentes = self.carregar_do_banco()
+    def excluir(self, infrator):
+        if messagebox.askyesno("Excluir", f"Deseja excluir {infrator['nome']}?"):
+            with Database() as db:
+                if db.conexao:
+                    db.executar(
+                        "DELETE FROM infrator WHERE id_infrator = ?",
+                        (infrator["id"],)
+                    )
+                    db.commitar()
+            registrar_log(
+                "Sistema",
+                "exclusao",
+                "infrator",
+                f"Infrator '{infrator['nome']}' (ID: {infrator['id']}) excluido"
+            )
+            self.infratores = self.carregar_do_banco()
             self.render_rows()
 
 
@@ -161,9 +167,9 @@ if __name__ == "__main__":
     ctk.set_default_color_theme("blue")
 
     app = ctk.CTk()
-    app.title("FISCSOFT - Agentes IBAMA")
+    app.title("FISCSOFT - Infratores")
     app.geometry("1200x700")
     app.configure(fg_color=COLORS["bg"])
 
-    AgenteIbamaPage(app).pack(fill="both", expand=True)
+    InfratoresPage(app).pack(fill="both", expand=True)
     app.mainloop()

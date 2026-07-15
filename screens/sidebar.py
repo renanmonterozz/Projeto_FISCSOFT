@@ -1,6 +1,4 @@
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import _path  # noqa: F401
 
 import customtkinter as ctk
 from PIL import Image
@@ -9,7 +7,7 @@ import os
 from config.styles import ASSETS_DIR, COLORS, FONTS
 
 
-def carregar_icone(caminho, tamanho_max=20):
+def carregar_icone(caminho: str, tamanho_max: int = 20):
     try:
         img = Image.open(os.path.join(ASSETS_DIR, caminho))
         w, h = img.size
@@ -43,12 +41,14 @@ class Sidebar(ctk.CTkFrame):
             ctk.CTkLabel(logo_frame, text="FiscSoft", font=ctk.CTkFont(size=18, weight="bold"), text_color="#1D4D21").pack()
 
         self.nav_items = [
-            ("Novo Relatório", "relatorios.png"),
-            ("Menu Inicial", "casa.png"),
+            ("Menu Principal", "casa.png"),
             ("Itens", "caixa.png"),
-            ("Relatorios", "relatorios.png"),
-            ("Agentes IBAMA", "usuarios.png"),
-            ("Infratores", "Agente.png"),
+            ("Destinacao", "destinacao.png"),
+            ("Agente", "Agente.png"),
+            ("Usuario Externo", "usuarios.png"),
+            ("Locais Cadastrados", "predios.png"),
+            ("Relatorio", "relatorios.png"),
+            ("Historico", "relogio.png"),
         ]
 
         nav_container = ctk.CTkFrame(self, fg_color="transparent")
@@ -113,45 +113,10 @@ class Sidebar(ctk.CTkFrame):
             command=self._sair,
         ).place(relx=0, rely=0, relwidth=1, relheight=1)
 
-    def _navigate(self, page_name):
+    def _navigate(self, page_name: str):
         if self.on_navigate:
             self.on_navigate(page_name)
 
     def _sair(self):
         if self.on_sair:
             self.on_sair()
-
-
-# if __name__ == "__main__":
-#     from screens.usuarios import UsuariosPage
-
-#     ctk.set_appearance_mode("light")
-#     ctk.set_default_color_theme("blue")
-
-#     app = ctk.CTk()
-#     app.title("FISCSOFT")
-#     app.geometry("1200x700")
-#     app.configure(fg_color=COLORS["white"])
-
-#     content_frame = ctk.CTkFrame(app, fg_color=COLORS["bg"])
-#     content_frame.pack(side="right", fill="both", expand=True)
-
-#     def navegar(pagina):
-#         for w in content_frame.winfo_children():
-#             w.destroy()
-#         if pagina == "Usuarios Externos":
-#             UsuariosPage(content_frame).pack(fill="both", expand=True)
-#         else:
-#             ctk.CTkLabel(
-#                 content_frame,
-#                 text=pagina,
-#                 font=ctk.CTkFont(size=24, weight="bold"),
-#                 text_color=COLORS["text"],
-#             ).pack(expand=True)
-
-#     sidebar = Sidebar(app, width=210, on_navigate=navegar)
-#     sidebar.pack(side="left", fill="y")
-
-#     navegar("Usuarios Externos")
-
-    # app.mainloop()

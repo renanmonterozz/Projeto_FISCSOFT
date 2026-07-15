@@ -48,9 +48,9 @@ CREATE TABLE `agente ibama` (
 
 LOCK TABLES `agente ibama` WRITE;
 /*!40000 ALTER TABLE `agente ibama` DISABLE KEYS */;
-INSERT INTO `agente ibama` VALUES (0,'admin','123456','admin@ibama.gov.br','Carlos Silva','ativo','Administrador','12345678901',NULL);
-INSERT INTO `agente ibama` VALUES (1,'agente','123456','agente@ibama.gov.br','Joao Agente','ativo','Agente','12345678902',NULL);
-INSERT INTO `agente ibama` VALUES (2,'usuario','123456','usuario@ibama.gov.br','Maria Usuario','ativo','Usuario','12345678903',NULL);
+INSERT INTO `agente ibama` VALUES (0,'admin','8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92','admin@ibama.gov.br','Carlos Silva','ativo','Administrador','12345678901',NULL);
+INSERT INTO `agente ibama` VALUES (1,'agente','8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92','agente@ibama.gov.br','Joao Agente','ativo','Agente','12345678902',NULL);
+INSERT INTO `agente ibama` VALUES (2,'usuario','8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92','usuario@ibama.gov.br','Maria Usuario','ativo','Usuario','12345678903',NULL);
 /*!40000 ALTER TABLE `agente ibama` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -81,7 +81,7 @@ CREATE TABLE `infrator` (
 
 LOCK TABLES `infrator` WRITE;
 /*!40000 ALTER TABLE `infrator` DISABLE KEYS */;
-INSERT INTO `infrator` VALUES ('12345678901','joao@email.com','senha123',1,'João Silva','11987654321'),('23456789012','maria@email.com','senha456',2,'Maria Oliveira','11976543210'),('34567890123','pedro@email.com','senha789',3,'Pedro Santos','11965432109'),('45678901234','ana@email.com','senha321',4,'Ana Costa','11954321098');
+INSERT INTO `infrator` VALUES ('12345678901','joao@email.com','55a5e9e78207b4df8699d60886fa070079463547b095d1a05bc719bb4e6cd251',1,'João Silva','11987654321'),('23456789012','maria@email.com','6b08d780140e292a4af8ba3f2333fc1357091442d7e807c6cad92e8dcd0240b7',2,'Maria Oliveira','11976543210'),('34567890123','pedro@email.com','b578dc5fcbfabbc7e96400601d0858c951f04929faef033bbbc117ab935c6ae9',3,'Pedro Santos','11965432109'),('45678901234','ana@email.com','2288821c6b799cf47a8c9aa231f361ffb906bbee0d5fb5e1767509e27442cc62',4,'Ana Costa','11954321098');
 /*!40000 ALTER TABLE `infrator` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -157,22 +157,24 @@ UNLOCK TABLES;
 
 DROP TABLE IF EXISTS `itens`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `itens` (
   `id` int NOT NULL AUTO_INCREMENT,
   `nome` varchar(200) DEFAULT NULL,
   `descricao` varchar(200) NOT NULL,
   `codigo_interno` varchar(50) NOT NULL,
   `categoria` varchar(100) DEFAULT NULL,
+  `tipo` varchar(50) DEFAULT NULL,
+  `justificativa` text,
+  `unidade_medida` varchar(50) DEFAULT NULL,
   `semestre` varchar(20) DEFAULT NULL,
   `quantidade_prevista` int DEFAULT '0',
   `status` varchar(30) DEFAULT 'Ativo',
-  `tipo` varchar(50) DEFAULT NULL,
   `notas_fiscais` varchar(100) DEFAULT NULL,
   `criado_em` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `codigo_interno` (`codigo_interno`)
-) ENGINE=MyISAM AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -181,7 +183,7 @@ CREATE TABLE `itens` (
 
 LOCK TABLES `itens` WRITE;
 /*!40000 ALTER TABLE `itens` DISABLE KEYS */;
-INSERT INTO `itens` VALUES (1,'Monitor Dell 24\"','Monitor Dell 24\"','IT-001','Eletrônicos',NULL,0,'Ativo','Equipamento','NF-001234','2026-06-26 23:05:18'),(2,'Cadeira Ergonômica','Cadeira Ergonômica','IT-002','Mobiliário',NULL,0,'Ativo','Móvel','NF-001235','2026-06-26 23:05:18'),(3,'Notebook Lenovo','Notebook Lenovo','IT-003','Eletrônicos',NULL,0,'Pendente','Equipamento','NF-001236','2026-06-26 23:05:18'),(4,'Mesa de Escritório','Mesa de Escritório','IT-004','Mobiliário',NULL,0,'Ativo','Móvel','NF-001234','2026-06-26 23:05:18'),(5,'Impressora HP','Impressora HP','IT-005','Eletrônicos',NULL,0,'Inativo','Equipamento','NF-001235','2026-06-26 23:05:18'),(6,'Teclado USB','Teclado USB','IT-006','Eletrônicos',NULL,0,'Ativo','Periférico','NF-001236','2026-06-26 23:05:18'),(7,'Cadeira Executiva','Cadeira Executiva','IT-007','Mobiliário',NULL,0,'Ativo','Móvel','NF-001234','2026-06-26 23:05:18'),(8,'computador','dell','',NULL,'3',100,'Ativo',NULL,NULL,'2026-06-27 00:11:24');
+INSERT INTO `itens` VALUES (1,'Monitor Dell 24\"','Monitor Dell 24\"','IT-001','Eletrônicos','Equipamento','Monitor para estacao de trabalho','Unidade',NULL,0,'Ativo','NF-001234','2026-06-26 23:05:18'),(2,'Cadeira Ergonômica','Cadeira Ergonômica','IT-002','Mobiliário','Móvel','Cadeira para escritorio','Unidade',NULL,0,'Ativo','NF-001235','2026-06-26 23:05:18'),(3,'Notebook Lenovo','Notebook Lenovo','IT-003','Eletrônicos','Equipamento','Notebook para uso administrativo','Unidade',NULL,0,'Pendente','NF-001236','2026-06-26 23:05:18'),(4,'Mesa de Escritório','Mesa de Escritório','IT-004','Mobiliário','Móvel','Mesa para trabalho','Unidade',NULL,0,'Ativo','NF-001234','2026-06-26 23:05:18'),(5,'Impressora HP','Impressora HP','IT-005','Eletrônicos','Equipamento','Impressora multifuncional','Unidade',NULL,0,'Inativo','NF-001235','2026-06-26 23:05:18'),(6,'Teclado USB','Teclado USB','IT-006','Eletrônicos','Periférico','Teclado USB padrao','Unidade',NULL,0,'Ativo','NF-001236','2026-06-26 23:05:18'),(7,'Cadeira Executiva','Cadeira Executiva','IT-007','Mobiliário','Móvel','Cadeira executiva','Unidade',NULL,0,'Ativo','NF-001234','2026-06-26 23:05:18'),(8,'computador','dell','',NULL,NULL,NULL,NULL,'3',100,'Ativo',NULL,'2026-06-27 00:11:24');
 /*!40000 ALTER TABLE `itens` ENABLE KEYS */;
 UNLOCK TABLES;
 

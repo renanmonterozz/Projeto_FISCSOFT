@@ -1,14 +1,16 @@
-import sys
+import _path  # noqa: F401
+
+from tkinter import messagebox
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import customtkinter as ctk
-from tkinter import messagebox
 import pandas as pd
+
 from config.styles import COLORS, FONTS
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
+from utils import registrar_log
 
 
 class ItensPage(CrudBase, ctk.CTkFrame):
@@ -47,12 +49,12 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         self.itens = self.carregar_do_banco()
         self.render_rows()
 
-    def carregar_do_excel(self, caminho):
+    def carregar_do_excel(self, caminho: str):
         try:
             ext = Path(caminho).suffix.lower()
             engine = "odf" if ext == ".ods" else "openpyxl" if ext == ".xlsx" else None
             if not engine:
-                raise ValueError(f"Formato n\u00e3o suportado: {ext}")
+                raise ValueError(f"Formato nao suportado: {ext}")
             df = pd.read_excel(caminho, engine=engine, sheet_name=0)
         except Exception as e:
             messagebox.showerror("Erro", f"Erro ao ler o arquivo:\n{e}")
@@ -61,7 +63,7 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         col_map = {c.replace('\xa0', ' ').strip(): c for c in df.columns}
         itens = []
 
-        for idx, row in df.iterrows():
+        for _, row in df.iterrows():
             def get(col, d=None):
                 c = col_map.get(col)
                 if c is None:
@@ -69,10 +71,10 @@ class ItensPage(CrudBase, ctk.CTkFrame):
                 v = row.get(c)
                 return d if pd.isna(v) else v
 
-            nome = get("ITEM") or get("DESCRI\u00c7\u00c3O") or "-"
+            nome = get("ITEM") or get("DESCRICAO") or "-"
             itens.append(dict(
                 nome=str(nome)[:200],
-                descricao=str(get("DESCRI\u00c7\u00c3O") or nome)[:200],
+                descricao=str(get("DESCRICAO") or nome)[:200],
                 tipo=str(get("TIPO DE MATERIAL") or ""),
                 justificativa=str(get("JUSTIFICATIVA") or ""),
                 unidade_medida=str(get("Unidade de Medida") or ""),
@@ -80,33 +82,32 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         return itens
 
     def carregar_do_banco(self):
-        db = Database()
-        if not db.conectar():
-            return []
-        try:
-            r = db.executar(
-                "SELECT id, nome, descricao, tipo, justificativa, unidade_medida "
-                "FROM itens ORDER BY id"
-            )
-        except:
-            r = db.executar(
-                "SELECT id, nome, descricao, categoria, NULL, '' "
-                "FROM itens ORDER BY id"
-            )
-        itens = []
-        if r:
-            for row in r.fetchall():
-                itens.append(dict(
-                    id=row[0],
-                    nome=row[1] or "-",
-                    descricao=row[2] or "-",
-                    tipo=row[3] or "-",
-                    justificativa=row[4] or "",
-                    unidade_medida=row[5] or "",
-                ))
-        db.desconectar()
-        self._todos_os_itens = itens[:]
-        return itens
+        with Database() as db:
+            if not db.conexao:
+                return []
+            try:
+                r = db.executar(
+                    "SELECT id, nome, descricao, tipo, justificativa, unidade_medida "
+                    "FROM itens ORDER BY id"
+                )
+            except Exception:
+                r = db.executar(
+                    "SELECT id, nome, descricao, categoria, NULL, '' "
+                    "FROM itens ORDER BY id"
+                )
+            itens = []
+            if r:
+                for row in r.fetchall():
+                    itens.append(dict(
+                        id=row[0],
+                        nome=row[1] or "-",
+                        descricao=row[2] or "-",
+                        tipo=row[3] or "-",
+                        justificativa=row[4] or "",
+                        unidade_medida=row[5] or "",
+                    ))
+            self._todos_os_itens = itens[:]
+            return itens
 
     def render_rows(self):
         for w in self.table_body.winfo_children():
@@ -122,7 +123,7 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         ctk.CTkLabel(data, text=item["nome"],
                       font=ctk.CTkFont(size=FONTS["size_body"]),
                       text_color=COLORS["text"], anchor="w",
-                      ).grid(row=0, column=0, sticky="w", padx=5)
+                      ).grid(row=0, column=0, sticky="w", padx=(10, 5))
 
         ctk.CTkLabel(data, text=item["tipo"],
                       font=ctk.CTkFont(size=FONTS["size_body"]),
@@ -138,8 +139,8 @@ class ItensPage(CrudBase, ctk.CTkFrame):
 
         ctk.CTkLabel(data, text=item.get("unidade_medida", "") or "-",
                       font=ctk.CTkFont(size=FONTS["size_body"]),
-                      text_color=COLORS["text"], anchor="w",
-                      ).grid(row=0, column=3, sticky="w", padx=5)
+                      text_color=COLORS["text_muted"], anchor="w",
+                      ).grid(row=0, column=3, sticky="w", padx=(5, 10))
 
         self.add_action_buttons(linha, [
             ("\U0001f441", lambda i=item: self.visualizar(i)),
@@ -170,22 +171,33 @@ class ItensPage(CrudBase, ctk.CTkFrame):
     def importar_excel(self):
         caminho = Path(__file__).resolve().parent.parent / "assets" / "planilhas" / "telaitens.xlsx"
         if not caminho.exists():
-            messagebox.showerror("Erro", f"Arquivo n\u00e3o encontrado:\n{caminho}")
+            messagebox.showerror("Erro", f"Arquivo nao encontrado:\n{caminho}")
             return
 
         itens_excel = self.carregar_do_excel(str(caminho))
         if not itens_excel:
             return
 
-        db = Database()
-        if not db.conectar():
+        confirmacao = messagebox.askyesnocancel(
+            "Importar Excel",
+            f"Encontrados {len(itens_excel)} itens na planilha.\n\n"
+            "SIM = Substituir todos os itens existentes\n"
+            "NAO = Adicionar aos itens existentes\n"
+            "CANCELAR = Abortar importacao"
+        )
+        if confirmacao is None:
             return
-        db.executar("DELETE FROM itens")
-        db.commitar()
-        db.desconectar()
 
-        for i, item in enumerate(itens_excel):
-            self._inserir_item(item, codigo_interno=f"IT-{i+1:03d}")
+        with Database() as db:
+            if not db.conexao:
+                return
+
+            if confirmacao:
+                db.executar("DELETE FROM itens")
+                db.commitar()
+
+            for i, item in enumerate(itens_excel):
+                self._inserir_item_db(db, item, codigo_interno=f"IT-{i+1:03d}")
 
         self.itens = self.carregar_do_banco()
         self.render_rows()
@@ -194,17 +206,14 @@ class ItensPage(CrudBase, ctk.CTkFrame):
             f"'{caminho.name}' carregado com {len(self.itens)} itens."
         )
 
-    def _inserir_item(self, data, codigo_interno=None):
-        db = Database()
-        if not db.conectar():
-            return False
+    def _inserir_item_db(self, db, data, codigo_interno=None):
         if codigo_interno is None:
             c = db.executar("SELECT COALESCE(MAX(id), 0) + 1 FROM itens")
             nid = c.fetchone()[0] if c else 1
             codigo_interno = f"IT-{nid:03d}"
         db.executar(
             "INSERT INTO itens (nome, descricao, codigo_interno, tipo, justificativa, unidade_medida, status) "
-            "VALUES (%s, %s, %s, %s, %s, %s, %s)",
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
             (
                 data.get("nome", "")[:200],
                 data.get("descricao", "")[:200],
@@ -216,26 +225,30 @@ class ItensPage(CrudBase, ctk.CTkFrame):
             ),
         )
         db.commitar()
-        db.desconectar()
+
+    def _inserir_item(self, data, codigo_interno=None):
+        with Database() as db:
+            if not db.conexao:
+                return False
+            self._inserir_item_db(db, data, codigo_interno)
         return True
 
     def _atualizar_item(self, item_id, data):
-        db = Database()
-        if not db.conectar():
-            return False
-        db.executar(
-            "UPDATE itens SET nome=%s, descricao=%s, tipo=%s, justificativa=%s, unidade_medida=%s WHERE id=%s",
-            (
-                data.get("nome", "")[:200],
-                data.get("descricao", "")[:200],
-                data.get("tipo", ""),
-                data.get("justificativa", ""),
-                data.get("unidade_medida", ""),
-                item_id,
-            ),
-        )
-        db.commitar()
-        db.desconectar()
+        with Database() as db:
+            if not db.conexao:
+                return False
+            db.executar(
+                "UPDATE itens SET nome=?, descricao=?, tipo=?, justificativa=?, unidade_medida=? WHERE id=?",
+                (
+                    data.get("nome", "")[:200],
+                    data.get("descricao", "")[:200],
+                    data.get("tipo", ""),
+                    data.get("justificativa", ""),
+                    data.get("unidade_medida", ""),
+                    item_id,
+                ),
+            )
+            db.commitar()
         return True
 
     def abrir_formulario(self, item=None):
@@ -257,7 +270,7 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         frame = ctk.CTkFrame(modal, fg_color="transparent")
         frame.pack(padx=30, fill="x")
 
-        campos = ["Nome do Item", "Descri\u00e7\u00e3o", "Tipo de Material", "Justificativa", "Unidade de Medida"]
+        campos = ["Nome do Item", "Descricao", "Tipo de Material", "Justificativa", "Unidade de Medida"]
         entries = {}
         for label in campos:
             ctk.CTkLabel(
@@ -273,7 +286,7 @@ class ItensPage(CrudBase, ctk.CTkFrame):
 
         if editando:
             entries["Nome do Item"].insert(0, item.get("nome", ""))
-            entries["Descri\u00e7\u00e3o"].insert(0, item.get("descricao", ""))
+            entries["Descricao"].insert(0, item.get("descricao", ""))
             entries["Tipo de Material"].insert(0, item.get("tipo", ""))
             entries["Justificativa"].insert(0, item.get("justificativa", ""))
             entries["Unidade de Medida"].insert(0, item.get("unidade_medida", ""))
@@ -281,10 +294,10 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         def salvar():
             nome = entries["Nome do Item"].get().strip()
             if not nome:
-                return messagebox.showwarning("Aviso", "Nome do Item \u00e9 obrigat\u00f3rio!", parent=modal)
+                return messagebox.showwarning("Aviso", "Nome do Item e obrigatorio!", parent=modal)
             data = dict(
                 nome=nome,
-                descricao=entries["Descri\u00e7\u00e3o"].get().strip() or nome,
+                descricao=entries["Descricao"].get().strip() or nome,
                 tipo=entries["Tipo de Material"].get().strip(),
                 justificativa=entries["Justificativa"].get().strip(),
                 unidade_medida=entries["Unidade de Medida"].get().strip(),
@@ -327,10 +340,10 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         frame.pack(fill="both", expand=True, padx=25, pady=20)
 
         campos = [
-            ("N\u00ba", str(item["id"])),
+            ("No.", str(item["id"])),
             ("Item", item.get("nome", "-")),
             ("Tipo de Material", item.get("tipo", "-")),
-            ("Descri\u00e7\u00e3o", item.get("descricao", "-")),
+            ("Descricao", item.get("descricao", "-")),
             ("Justificativa", item.get("justificativa", "-") or "-"),
             ("Unidade de Medida", item.get("unidade_medida", "") or "-"),
         ]
@@ -357,16 +370,17 @@ class ItensPage(CrudBase, ctk.CTkFrame):
     def excluir(self, item):
         if not messagebox.askyesno("Excluir", f"Deseja excluir o item \"{item['nome']}\"?"):
             return
-        db = Database()
-        if db.conectar():
-            db.executar("DELETE FROM itens WHERE id = %s", (item["id"],))
-            db.commitar()
-            db.desconectar()
+        with Database() as db:
+            if db.conexao:
+                db.executar("DELETE FROM itens WHERE id = ?", (item["id"],))
+                db.commitar()
+        registrar_log("Sistema", "exclusao", "itens", f"Item '{item['nome']}' (ID: {item['id']}) excluido")
         self.itens = self.carregar_do_banco()
         self.render_rows()
 
     def voltar(self):
-        self.on_voltar() if self.on_voltar else self.master.destroy()
+        if self.on_voltar:
+            self.on_voltar()
 
 
 if __name__ == "__main__":
