@@ -4,6 +4,10 @@ import logging
 import sys
 from tkinter import messagebox
 from PIL import Image
+<<<<<<< HEAD
+import os 
+
+=======
 import os
 
 import customtkinter as ctk
