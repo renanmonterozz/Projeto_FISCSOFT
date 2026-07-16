@@ -115,6 +115,10 @@ class LoginApp(ctk.CTk):
         )
         self.entry_senha.pack(side="left", fill="x", expand=True, padx=(0, 10), pady=2)
 
+        self.entry_usuario.bind("<Return>", lambda e: self.fazer_login())
+        self.entry_senha.bind("<Return>", lambda e: self.fazer_login())
+        self.bind("<Return>", lambda e: self.fazer_login())
+
         ctk.CTkButton(
             self.form_frame,
             text="Entrar",
@@ -143,6 +147,7 @@ class LoginApp(ctk.CTk):
 
     def voltar_menu(self):
         self.mostrando_form = False
+        self.unbind("<Return>")
         if self.form_frame:
             self.form_frame.destroy()
             self.form_frame = None
