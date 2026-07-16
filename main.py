@@ -11,6 +11,7 @@ import customtkinter as ctk
 from config.styles import ASSETS_DIR, COLORS
 from database.conexaodb import Database
 from screens.sidebar import Sidebar
+from screens.menu_inicial import MenuInicialPage
 from screens.usuarios import UsuariosPage
 from screens.itens import ItensPage
 from screens.agente_mode.infratores import InfratoresPage
@@ -208,7 +209,7 @@ class LoginApp(ctk.CTk):
             usuario_logado = main_app.usuario_logado if perfil == "agente" else None
 
             if pagina == "Menu Principal":
-                UsuariosPage(content_frame, usuario_logado=usuario_logado).pack(fill="both", expand=True)
+                MenuInicialPage(content_frame, usuario_logado=usuario_logado, perfil=perfil).pack(fill="both", expand=True)
             elif pagina == "Itens":
                 ItensPage(content_frame, on_voltar=lambda: navegar("Menu Principal")).pack(fill="both", expand=True)
             elif pagina == "Destinacao":
