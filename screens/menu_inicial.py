@@ -1,10 +1,23 @@
 import _path  # noqa: F401
 
+from datetime import datetime as _dt
+
 import customtkinter as ctk
 
 from config.styles import COLORS, FONTS
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
+
+
+def _fmt_date(val):
+    if not val:
+        return "--"
+    if hasattr(val, "strftime"):
+        return val.strftime("%d/%m/%Y")
+    try:
+        return _dt.strptime(str(val), "%Y-%m-%d").strftime("%d/%m/%Y")
+    except Exception:
+        return str(val)
 
 
 class MenuInicialPage(CrudBase, ctk.CTkFrame):
@@ -134,9 +147,6 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
         )
         self.table_body.pack(fill="both", expand=True, padx=15, pady=(0, 5))
 
-        self.notas = self._carregar_notas()
-        self._render_rows()
-
         footer = ctk.CTkFrame(section, fg_color="transparent")
         footer.pack(fill="x", padx=20, pady=(5, 15))
 
@@ -153,6 +163,9 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
             text_color=COLORS["text_muted"]
         )
         self.lbl_valor_total.pack(side="right")
+
+        self.notas = self._carregar_notas()
+        self._render_rows()
 
     def _carregar_notas(self):
         with Database() as db:
@@ -173,7 +186,7 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
                         notas.append({
                             "nota_fiscal": row[0] or "--",
                             "chave_de_acesso": row[1] or "--",
-                            "data": row[2].strftime("%d/%m/%Y") if row[2] else "--",
+                            "data": _fmt_date(row[2]),
                             "valor_total": float(row[3]) if row[3] else 0,
                             "status": row[4] or "Pendente",
                             "usuario": row[5] or "--",

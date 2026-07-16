@@ -200,9 +200,20 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
                 dados = []
                 if resultado:
                     for row in resultado.fetchall():
+                        raw_data = row[1]
+                        if hasattr(raw_data, "strftime"):
+                            data_fmt = raw_data.strftime("%d/%m/%Y")
+                        elif raw_data:
+                            from datetime import datetime as _dt
+                            try:
+                                data_fmt = _dt.strptime(str(raw_data), "%Y-%m-%d").strftime("%d/%m/%Y")
+                            except Exception:
+                                data_fmt = str(raw_data)
+                        else:
+                            data_fmt = "--"
                         dados.append({
                             "nota_fiscal": row[0] or "--",
-                            "data": row[1].strftime("%d/%m/%Y") if row[1] else "--",
+                            "data": data_fmt,
                             "valor_total": float(row[2]) if row[2] else 0,
                             "status": row[3] or "Pendente",
                             "qtd_itens": row[4] if row[4] else 0,
@@ -256,6 +267,9 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
             elif item["status"] == "Rejeitada":
                 status_color = COLORS["danger"]
                 status_text = "\u2718 Rejeitada"
+            elif item["status"] == "Correcao Solicitada":
+                status_color = "#D97706"
+                status_text = "\u270F Correcao"
             else:
                 status_color = COLORS["warning"]
                 status_text = "\u26A0 Pendente"
@@ -280,11 +294,13 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
             if not db.conexao:
                 return
 
+            base = '''FROM "nota fiscal" nf
+                      JOIN tccm t ON t."agente ibama_matricula" = nf."agente ibama_matricula"
+                      WHERE t."infrator_id_infrator" = ?'''
+
             try:
                 r = db.executar(
-                    '''SELECT COUNT(*) FROM "nota fiscal" nf
-                       JOIN tccm t ON t."agente ibama_matricula" = nf."agente ibama_matricula"
-                       WHERE t."infrator_id_infrator" = ?''',
+                    f'SELECT COUNT(DISTINCT nf.nota_fiscal) {base}',
                     (self.id_infrator,)
                 ).fetchone()
                 total = r[0] if r else 0
@@ -293,9 +309,7 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
 
             try:
                 r = db.executar(
-                    '''SELECT COUNT(*) FROM "nota fiscal" nf
-                       JOIN tccm t ON t."agente ibama_matricula" = nf."agente ibama_matricula"
-                       WHERE t."infrator_id_infrator" = ? AND nf.status_nota = 'Aprovada' ''',
+                    f'SELECT COUNT(DISTINCT nf.nota_fiscal) {base} AND nf.status_nota = 'Aprovada'',
                     (self.id_infrator,)
                 ).fetchone()
                 aprovadas = r[0] if r else 0
@@ -304,9 +318,7 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
 
             try:
                 r = db.executar(
-                    '''SELECT COUNT(*) FROM "nota fiscal" nf
-                       JOIN tccm t ON t."agente ibama_matricula" = nf."agente ibama_matricula"
-                       WHERE t."infrator_id_infrator" = ? AND nf.status_nota = 'Pendente' ''',
+                    f'SELECT COUNT(DISTINCT nf.nota_fiscal) {base} AND nf.status_nota = 'Pendente'',
                     (self.id_infrator,)
                 ).fetchone()
                 pendentes = r[0] if r else 0
@@ -315,9 +327,7 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
 
             try:
                 r = db.executar(
-                    '''SELECT COALESCE(SUM(nf.valor_total), 0) FROM "nota fiscal" nf
-                       JOIN tccm t ON t."agente ibama_matricula" = nf."agente ibama_matricula"
-                       WHERE t."infrator_id_infrator" = ?''',
+                    f'''SELECT COALESCE(SUM(nf.valor_total), 0) {base}''',
                     (self.id_infrator,)
                 ).fetchone()
                 valor_total = float(r[0]) if r else 0

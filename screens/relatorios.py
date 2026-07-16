@@ -1,5 +1,6 @@
 import _path  # noqa: F401
 
+from datetime import datetime as _dt
 from tkinter import messagebox
 
 import customtkinter as ctk
@@ -8,6 +9,17 @@ from config.styles import COLORS, FONTS
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
+
+
+def _fmt_date(val):
+    if not val:
+        return "--"
+    if hasattr(val, "strftime"):
+        return val.strftime("%d/%m/%Y")
+    try:
+        return _dt.strptime(str(val), "%Y-%m-%d").strftime("%d/%m/%Y")
+    except Exception:
+        return str(val)
 
 
 class RelatoriosPage(CrudBase, ctk.CTkFrame):
@@ -230,7 +242,7 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
                         status = row[7] if len(row) > 7 and row[7] else "Pendente"
                         notas.append({
                             "nota_fiscal": row[0],
-                            "data": row[1].strftime("%d/%m/%Y") if row[1] else "--",
+                            "data": _fmt_date(row[1]),
                             "valor_total": float(row[2]) if row[2] else 0,
                             "interessado": row[3],
                             "cpf": row[4],

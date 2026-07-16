@@ -46,8 +46,8 @@ class SidebarExterno(ctk.CTkFrame):
                          text_color="#1D4D21").pack()
 
         self.nav_items = [
-            ("Dashboard", "casa.png"),
-            ("Notas Fiscais", "relatorios.png"),
+            ("Menu Inicial", "casa.png"),
+            ("Cadastrar Notas", "relatorios.png"),
             ("Relatorio", "relatorios.png"),
         ]
 

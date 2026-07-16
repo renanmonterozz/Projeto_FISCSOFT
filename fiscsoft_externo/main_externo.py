@@ -27,7 +27,7 @@ logging.basicConfig(
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
-PERMISSOES_EXTERNO = {"Dashboard", "Notas Fiscais", "Relatorio"}
+PERMISSOES_EXTERNO = {"Menu Inicial", "Cadastrar Notas", "Relatorio"}
 
 
 class LoginExterno(ctk.CTk):
@@ -102,6 +102,10 @@ class LoginExterno(ctk.CTk):
         )
         self.entry_senha.pack(side="left", fill="x", expand=True, padx=(0, 10), pady=2)
 
+        self.entry_usuario.bind("<Return>", lambda e: self.fazer_login())
+        self.entry_senha.bind("<Return>", lambda e: self.fazer_login())
+        self.bind("<Return>", lambda e: self.fazer_login())
+
         ctk.CTkButton(
             self.form_frame, text="Entrar", height=38, corner_radius=8,
             fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
@@ -120,6 +124,7 @@ class LoginExterno(ctk.CTk):
 
     def voltar_menu(self):
         self.mostrando_form = False
+        self.unbind("<Return>")
         if self.form_frame:
             self.form_frame.destroy()
             self.form_frame = None
@@ -177,17 +182,18 @@ class LoginExterno(ctk.CTk):
             for w in content_frame.winfo_children():
                 w.destroy()
 
-            if pagina == "Dashboard":
+            if pagina == "Menu Inicial":
                 DashboardExterno(
                     content_frame,
                     usuario_logado=self.usuario_logado,
                     id_infrator=self.id_infrator
                 ).pack(fill="both", expand=True)
-            elif pagina == "Notas Fiscais":
+            elif pagina == "Cadastrar Notas":
                 NotasFiscaisExterno(
                     content_frame,
                     usuario_logado=self.usuario_logado,
-                    id_infrator=self.id_infrator
+                    id_infrator=self.id_infrator,
+                    on_voltar=lambda: navegar("Menu Inicial"),
                 ).pack(fill="both", expand=True)
             elif pagina == "Relatorio":
                 RelatorioExterno(
@@ -208,7 +214,7 @@ class LoginExterno(ctk.CTk):
         content_frame = ctk.CTkFrame(main_app, fg_color=COLORS["bg"])
         content_frame.pack(side="right", fill="both", expand=True)
 
-        navegar("Dashboard")
+        navegar("Menu Inicial")
         main_app.mainloop()
 
 

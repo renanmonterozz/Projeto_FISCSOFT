@@ -243,15 +243,27 @@ class DashboardExterno(CrudBase, ctk.CTkFrame):
                      FROM "nota fiscal" nf
                      JOIN tccm t ON t."agente ibama_matricula" = nf."agente ibama_matricula"
                      WHERE t."infrator_id_infrator" = ?
+                     GROUP BY nf.nota_fiscal, nf.data, nf.valor_total, nf.status_nota
                      ORDER BY nf.data DESC"""
             try:
                 resultado = db.executar(sql, (self.id_infrator,))
                 notas = []
                 if resultado:
                     for row in resultado.fetchall():
+                        raw_data = row[1]
+                        if hasattr(raw_data, "strftime"):
+                            data_fmt = raw_data.strftime("%d/%m/%Y")
+                        elif raw_data:
+                            from datetime import datetime as _dt
+                            try:
+                                data_fmt = _dt.strptime(str(raw_data), "%Y-%m-%d").strftime("%d/%m/%Y")
+                            except Exception:
+                                data_fmt = str(raw_data)
+                        else:
+                            data_fmt = "--"
                         notas.append({
                             "nota_fiscal": row[0] or "--",
-                            "data": row[1].strftime("%d/%m/%Y") if row[1] else "--",
+                            "data": data_fmt,
                             "valor_total": float(row[2]) if row[2] else 0,
                             "status": row[3] or "Pendente",
                         })
@@ -301,6 +313,9 @@ class DashboardExterno(CrudBase, ctk.CTkFrame):
             elif nota["status"] == "Rejeitada":
                 status_color = COLORS["danger"]
                 status_text = "\u2718"
+            elif nota["status"] == "Correcao Solicitada":
+                status_color = "#D97706"
+                status_text = "\u270F"
             else:
                 status_color = COLORS["warning"]
                 status_text = "\u26A0"
@@ -319,6 +334,10 @@ class DashboardExterno(CrudBase, ctk.CTkFrame):
             if not db.conexao:
                 return
 
+            base = '''FROM "nota fiscal" nf
+                      JOIN tccm t ON t."agente ibama_matricula" = nf."agente ibama_matricula"
+                      WHERE t."infrator_id_infrator" = ?'''
+
             try:
                 r = db.executar(
                     'SELECT COUNT(*) FROM tccm WHERE "infrator_id_infrator" = ?',
@@ -330,9 +349,7 @@ class DashboardExterno(CrudBase, ctk.CTkFrame):
 
             try:
                 r = db.executar(
-                    '''SELECT COUNT(*) FROM "nota fiscal" nf
-                       JOIN tccm t ON t."agente ibama_matricula" = nf."agente ibama_matricula"
-                       WHERE t."infrator_id_infrator" = ?''',
+                    f'SELECT COUNT(DISTINCT nf.nota_fiscal) {base}',
                     (self.id_infrator,)
                 ).fetchone()
                 total_nf = r[0] if r else 0
@@ -341,9 +358,7 @@ class DashboardExterno(CrudBase, ctk.CTkFrame):
 
             try:
                 r = db.executar(
-                    '''SELECT COALESCE(SUM(nf.valor_total), 0) FROM "nota fiscal" nf
-                       JOIN tccm t ON t."agente ibama_matricula" = nf."agente ibama_matricula"
-                       WHERE t."infrator_id_infrator" = ?''',
+                    f'''SELECT COALESCE(SUM(nf.valor_total), 0) {base}''',
                     (self.id_infrator,)
                 ).fetchone()
                 valor_total = float(r[0]) if r else 0
@@ -352,9 +367,8 @@ class DashboardExterno(CrudBase, ctk.CTkFrame):
 
             try:
                 r = db.executar(
-                    '''SELECT COUNT(*) FROM "nota fiscal" nf
-                       JOIN tccm t ON t."agente ibama_matricula" = nf."agente ibama_matricula"
-                       WHERE t."infrator_id_infrator" = ? AND nf.status_nota = 'Pendente' ''',
+                    f"""SELECT COUNT(DISTINCT nf.nota_fiscal) {base}
+                        AND nf.status_nota = 'Pendente'""",
                     (self.id_infrator,)
                 ).fetchone()
                 total_pendentes = r[0] if r else 0
