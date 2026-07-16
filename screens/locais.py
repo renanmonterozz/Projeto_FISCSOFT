@@ -40,8 +40,50 @@ class LocaisPage(CrudBase, ctk.CTkFrame):
 
     def build_table(self):
         CrudBase.build_table(self, pad_y=(0, 30))
-        self.build_table_header(self.table_frame, ["CEP", "Endereco", "Instituicao", "Responsavel", "Telefone"],
-                                [1, 2, 2, 2, 1], has_checkbox=True)
+
+        # Container interno com borda
+        self.table_container = ctk.CTkFrame(
+            self.table_frame, fg_color="transparent",
+            border_width=1, border_color="#999999", corner_radius=4
+        )
+        self.table_container.pack(fill="both", expand=True, padx=10, pady=10)
+
+        # --- cabeçalho com PLACE ---
+        header = ctk.CTkFrame(self.table_container, fg_color=COLORS["table_header"],
+                              height=44, corner_radius=0)
+        header.pack(fill="x")
+        header.pack_propagate(False)
+
+        cols = ctk.CTkFrame(header, fg_color="transparent")
+        cols.pack(side="left", fill="x", expand=True, padx=(10, 0))
+
+        colunas = ["CEP", "Endereco", "Instituicao", "Responsavel", "Telefone"]
+        col_cfg = [
+            (0.0, 0.15, "w"),    # CEP
+            (0.15, 0.25, "w"),   # Endereco
+            (0.40, 0.25, "w"),   # Instituicao
+            (0.65, 0.20, "w"),   # Responsavel
+            (0.85, 0.15, "w"),   # Telefone
+        ]
+
+        for texto, (rx, rw, anchor) in zip(colunas, col_cfg):
+            ctk.CTkLabel(
+                cols, text=texto,
+                font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
+                text_color=COLORS["text_muted"],
+                anchor=anchor,
+            ).place(relx=rx, relwidth=rw, rely=0, relheight=1)
+
+        ctk.CTkLabel(
+            header, text="Ações",
+            font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
+            text_color=COLORS["text_muted"], width=120,
+        ).pack(side="right", padx=(0, 15))
+
+        self.table_body = ctk.CTkScrollableFrame(
+            self.table_container, fg_color=COLORS["white"], corner_radius=0
+        )
+        self.table_body.pack(fill="both", expand=True)
 
         self.locais = self.carregar_do_banco()
         self.render_rows()
@@ -74,33 +116,34 @@ class LocaisPage(CrudBase, ctk.CTkFrame):
             self._add_row(local)
 
     def _add_row(self, local):
-        linha, data, _ = self.add_data_row()
-        self.configure_data_columns(data, [1, 2, 2, 2, 1])
+        linha, data, _ = self.add_data_row(has_checkbox=False)
 
-        ctk.CTkLabel(data, text=local["cep"],
-                      font=ctk.CTkFont(size=FONTS["size_body"]),
-                      text_color=COLORS["text"], anchor="w",
-                      width=100).grid(row=0, column=0, sticky="w", padx=(10, 5))
+        # pesos → relx / relwidth (idêntico ao cabeçalho)
+        col_cfg = [
+            (0.0,  0.15, "w"),      # CEP
+            (0.15, 0.25, "w"),      # Endereco
+            (0.40, 0.25, "w"),      # Instituicao
+            (0.65, 0.20, "w"),      # Responsavel
+            (0.85, 0.15, "w"),      # Telefone
+        ]
 
-        ctk.CTkLabel(data, text=local["endereco"][:40] + ("..." if len(local["endereco"]) > 40 else ""),
-                      font=ctk.CTkFont(size=FONTS["size_body"]),
-                      text_color=COLORS["text_muted"], anchor="w",
-                      width=200).grid(row=0, column=1, sticky="w", padx=5)
+        endereco = local["endereco"][:40] + ("..." if len(local["endereco"]) > 40 else "")
 
-        ctk.CTkLabel(data, text=local["instituicao"],
-                      font=ctk.CTkFont(size=FONTS["size_body"]),
-                      text_color=COLORS["text_muted"], anchor="w",
-                      width=180).grid(row=0, column=2, sticky="w", padx=5)
+        valores = [
+            local["cep"],
+            endereco,
+            local["instituicao"],
+            local["responsavel"],
+            local["telefone"],
+        ]
 
-        ctk.CTkLabel(data, text=local["responsavel"],
-                      font=ctk.CTkFont(size=FONTS["size_body"]),
-                      text_color=COLORS["text_muted"], anchor="w",
-                      width=150).grid(row=0, column=3, sticky="w", padx=5)
-
-        ctk.CTkLabel(data, text=local["telefone"],
-                      font=ctk.CTkFont(size=FONTS["size_body"]),
-                      text_color=COLORS["text_muted"], anchor="w",
-                      width=120).grid(row=0, column=4, sticky="w", padx=(5, 10))
+        for (rx, rw, anchor), texto in zip(col_cfg, valores):
+            ctk.CTkLabel(
+                data, text=texto,
+                font=ctk.CTkFont(size=FONTS["size_body"]),
+                text_color=COLORS["text"] if anchor == "w" else COLORS["text_muted"],
+                anchor=anchor,
+            ).place(relx=rx, relwidth=rw, rely=0, relheight=1)
 
         self.add_action_buttons(linha, [
             ("\U0001f441", lambda l=local: self.visualizar_local(l)),
