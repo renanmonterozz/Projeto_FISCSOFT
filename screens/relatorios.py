@@ -200,42 +200,48 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
                       command=self.rejeitar).pack(side="left")
 
     def carregar_do_banco(self):
-        with Database() as db:
-            if not db.conexao:
-                return []
-            sql = """SELECT nf.nota_fiscal, nf.data, nf.valor_total,
-                            i.nome_infrator, i.cpf,
-                            t.processo, nf."agente ibama_matricula", nf.status_nota
-                     FROM "nota fiscal" nf
-                     JOIN tccm t ON t."agente ibama_matricula" = nf."agente ibama_matricula"
-                     JOIN infrator i ON i.id_infrator = t."infrator_id_infrator" """
-            try:
-                resultados = db.executar(sql)
-            except Exception:
+        try:
+            with Database() as db:
+                if not db.conexao:
+                    return []
                 sql = """SELECT nf.nota_fiscal, nf.data, nf.valor_total,
                                 i.nome_infrator, i.cpf,
-                                t.processo, nf."agente ibama_matricula"
+                                t.processo, nf."agente ibama_matricula", nf.status_nota
                          FROM "nota fiscal" nf
                          JOIN tccm t ON t."agente ibama_matricula" = nf."agente ibama_matricula"
                          JOIN infrator i ON i.id_infrator = t."infrator_id_infrator" """
-                resultados = db.executar(sql)
+                try:
+                    resultados = db.executar(sql)
+                except Exception:
+                    sql = """SELECT nf.nota_fiscal, nf.data, nf.valor_total,
+                                    i.nome_infrator, i.cpf,
+                                    t.processo, nf."agente ibama_matricula"
+                             FROM "nota fiscal" nf
+                             JOIN tccm t ON t."agente ibama_matricula" = nf."agente ibama_matricula"
+                             JOIN infrator i ON i.id_infrator = t."infrator_id_infrator" """
+                    try:
+                        resultados = db.executar(sql)
+                    except Exception:
+                        return []
 
-            notas = []
-            if resultados:
-                for row in resultados.fetchall():
-                    status = row[7] if len(row) > 7 and row[7] else "Pendente"
-                    notas.append({
-                        "nota_fiscal": row[0],
-                        "data": row[1].strftime("%d/%m/%Y") if row[1] else "--",
-                        "valor_total": float(row[2]) if row[2] else 0,
-                        "interessado": row[3],
-                        "cpf": row[4],
-                        "processo": row[5],
-                        "matricula": row[6],
-                        "status": status,
-                        "itens": 0,
-                    })
-            return notas
+                notas = []
+                if resultados:
+                    for row in resultados.fetchall():
+                        status = row[7] if len(row) > 7 and row[7] else "Pendente"
+                        notas.append({
+                            "nota_fiscal": row[0],
+                            "data": row[1].strftime("%d/%m/%Y") if row[1] else "--",
+                            "valor_total": float(row[2]) if row[2] else 0,
+                            "interessado": row[3],
+                            "cpf": row[4],
+                            "processo": row[5],
+                            "matricula": row[6],
+                            "status": status,
+                            "itens": 0,
+                        })
+                return notas
+        except Exception:
+            return []
 
     def render_rows(self):
         for widget in self.table_body.winfo_children():
