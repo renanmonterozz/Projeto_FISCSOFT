@@ -204,6 +204,13 @@ def criar_schema():
         ('34567890123', 'pedro@email.com', 'b578dc5fcbfabbc7e96400601d0858c951f04929faef033bbbc117ab935c6ae9', 3, 'Pedro Santos', '11965432109'),
         ('45678901234', 'ana@email.com', '2288821c6b799cf47a8c9aa231f361ffb906bbee0d5fb5e1767509e27442cc62', 4, 'Ana Costa', '11954321098');
 
+    INSERT OR IGNORE INTO tccm (processo, total_pago, total_validado, data_validade, intervalo, total_devido, status, "agente ibama_matricula", "infrator_id_infrator")
+    VALUES
+        ('PROC-2026-001', 1500.00, 2000.00, '2026-12-31', 6, 5000.00, 'pendente', 0, 1),
+        ('PROC-2026-002', 3000.00, 4000.00, '2026-12-31', 6, 8000.00, 'pendente', 0, 2),
+        ('PROC-2026-003', 800.00, 1000.00, '2026-12-31', 6, 2500.00, 'pendente', 0, 3),
+        ('PROC-2026-004', 2200.00, 3000.00, '2026-12-31', 6, 6500.00, 'pendente', 0, 4);
+
     INSERT OR IGNORE INTO itens (id, nome, descricao, codigo_interno, categoria, tipo, justificativa, unidade_medida, semestre, quantidade_prevista, status, notas_fiscais, criado_em)
     VALUES
         (1, 'Monitor Dell 24"', 'Monitor Dell 24"', 'IT-001', 'Eletrônicos', 'Equipamento', 'Monitor para estacao de trabalho', 'Unidade', NULL, 0, 'Ativo', 'NF-001234', '2026-06-26 23:05:18'),
