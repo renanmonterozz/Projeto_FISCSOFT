@@ -150,7 +150,7 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
 
         self.info_labels = {}
         campos = ["No. Processo:", "No. Nota Fiscal:", "Interessado:", "CPF/CNPJ:",
-                  "Data Envio:", "Valor Total:", "Status:"]
+                  "Data Envio:", "Valor Total:", "Total Devido:", "Total Pago:", "Status:"]
         for campo in campos:
             linha = ctk.CTkFrame(info_inner, fg_color="transparent")
             linha.pack(fill="x", pady=2)
@@ -218,18 +218,26 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
                     return []
                 sql = """SELECT nf.nota_fiscal, nf.data, nf.valor_total,
                                 i.nome_infrator, i.cpf,
-                                t.processo, nf."agente ibama_matricula", nf.status_nota
+                                nf.processo, nf."agente ibama_matricula", nf.status_nota,
+                                t.total_devido, t.total_pago,
+                                COUNT(p.lote) as qtd_itens
                          FROM "nota fiscal" nf
-                         JOIN tccm t ON t."agente ibama_matricula" = nf."agente ibama_matricula"
-                         JOIN infrator i ON i.id_infrator = t."infrator_id_infrator" """
+                         JOIN tccm t ON nf.processo = t.processo
+                         JOIN infrator i ON i.id_infrator = t."infrator_id_infrator"
+                         LEFT JOIN produtos p ON p."nota fiscal_nota_fiscal" = nf.nota_fiscal
+                            AND p."nota fiscal_agente ibama_matricula" = nf."agente ibama_matricula"
+                         GROUP BY nf.nota_fiscal, nf.data, nf.valor_total,
+                                i.nome_infrator, i.cpf, nf.processo,
+                                nf."agente ibama_matricula", nf.status_nota,
+                                t.total_devido, t.total_pago"""
                 try:
                     resultados = db.executar(sql)
                 except Exception:
                     sql = """SELECT nf.nota_fiscal, nf.data, nf.valor_total,
                                     i.nome_infrator, i.cpf,
-                                    t.processo, nf."agente ibama_matricula"
+                                    nf.processo, nf."agente ibama_matricula", nf.status_nota
                              FROM "nota fiscal" nf
-                             JOIN tccm t ON t."agente ibama_matricula" = nf."agente ibama_matricula"
+                             JOIN tccm t ON nf.processo = t.processo
                              JOIN infrator i ON i.id_infrator = t."infrator_id_infrator" """
                     try:
                         resultados = db.executar(sql)
@@ -240,6 +248,9 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
                 if resultados:
                     for row in resultados.fetchall():
                         status = row[7] if len(row) > 7 and row[7] else "Pendente"
+                        qtd_itens = row[10] if len(row) > 10 else 0
+                        total_devido = float(row[8]) if len(row) > 8 and row[8] else 0
+                        total_pago = float(row[9]) if len(row) > 9 and row[9] else 0
                         notas.append({
                             "nota_fiscal": row[0],
                             "data": _fmt_date(row[1]),
@@ -249,7 +260,9 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
                             "processo": row[5],
                             "matricula": row[6],
                             "status": status,
-                            "itens": 0,
+                            "itens": qtd_itens,
+                            "total_devido": total_devido,
+                            "total_pago": total_pago,
                         })
                 return notas
         except Exception:
@@ -307,6 +320,10 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
         self.info_labels["CPF/CNPJ:"].configure(text=nota["cpf"])
         self.info_labels["Data Envio:"].configure(text=nota["data"])
         self.info_labels["Valor Total:"].configure(text=f"R$ {nota['valor_total']:,.2f}")
+        total_devido = nota.get("total_devido", 0)
+        total_pago = nota.get("total_pago", 0)
+        self.info_labels["Total Devido:"].configure(text=f"R$ {total_devido:,.2f}")
+        self.info_labels["Total Pago:"].configure(text=f"R$ {total_pago:,.2f}")
         self.info_labels["Status:"].configure(text=nota["status"])
         self.itens_label.configure(text=f"{nota['itens']} itens declarados")
 
@@ -321,8 +338,8 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
         self.stat_labels["Pendentes"].configure(text=str(pendentes))
         self.stat_labels["Aprovadas"].configure(text=str(aprovadas))
         self.stat_labels["Rejeitadas"].configure(text=str(rejeitadas))
-        self.stat_labels["Valor Total (Periodo)"].configure(
-            text=f"R$ {valor_total:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+        valor_fmt = f"R$ {valor_total:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        self.stat_labels["Valor Total (Periodo)"].configure(text=valor_fmt)
 
     def _atualizar_status_nota(self, novo_status):
         if not self.nf_selecionada:
@@ -330,14 +347,44 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
         with Database() as db:
             if db.conexao:
                 try:
+                    nota_fiscal = self.nf_selecionada["nota_fiscal"]
+                    matricula = self.nf_selecionada["matricula"]
+                    processo = self.nf_selecionada["processo"]
+
+                    sql_soma = """SELECT COALESCE(SUM(quantidade * preco_unitario), 0)
+                                 FROM produtos
+                                 WHERE "nota fiscal_nota_fiscal" = ?
+                                   AND "nota fiscal_agente ibama_matricula" = ?"""
+                    r = db.executar(sql_soma, (nota_fiscal, matricula))
+                    soma_produtos = float(r.fetchone()[0]) if r else 0
+
+                    if soma_produtos > 0:
+                        db.executar(
+                            'UPDATE "nota fiscal" SET valor_total = ? WHERE nota_fiscal = ?',
+                            (soma_produtos, nota_fiscal)
+                        )
+
                     db.executar(
                         'UPDATE "nota fiscal" SET status_nota = ? WHERE nota_fiscal = ?',
-                        (novo_status, self.nf_selecionada["nota_fiscal"])
+                        (novo_status, nota_fiscal)
                     )
+
+                    if novo_status == "Aprovada" and processo:
+                        valor_adicionar = soma_produtos if soma_produtos > 0 else self.nf_selecionada["valor_total"]
+                        sql_tccm = """UPDATE tccm
+                                      SET total_pago = total_pago + ?,
+                                          status = CASE
+                                              WHEN (total_pago + ?) >= total_devido THEN 'concluido'
+                                              ELSE 'pendente'
+                                          END
+                                      WHERE processo = ?"""
+                        db.executar(sql_tccm, (valor_adicionar, valor_adicionar, processo))
+
                     db.commitar()
                 except Exception:
                     pass
         self.nf_selecionada["status"] = novo_status
+        self.notas = self.carregar_do_banco()
         self.render_rows()
 
     def filtrar(self):

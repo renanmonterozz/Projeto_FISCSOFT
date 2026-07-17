@@ -189,7 +189,7 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
             sql = """SELECT nf.nota_fiscal, nf.data, nf.valor_total, nf.status_nota,
                             COUNT(p.lote) as qtd_itens
                      FROM "nota fiscal" nf
-                     JOIN tccm t ON t."agente ibama_matricula" = nf."agente ibama_matricula"
+                     JOIN tccm t ON nf.processo = t.processo
                      LEFT JOIN produtos p ON p."nota fiscal_nota_fiscal" = nf.nota_fiscal
                         AND p."nota fiscal_agente ibama_matricula" = nf."agente ibama_matricula"
                      WHERE t."infrator_id_infrator" = ?
@@ -295,7 +295,7 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
                 return
 
             base = '''FROM "nota fiscal" nf
-                      JOIN tccm t ON t."agente ibama_matricula" = nf."agente ibama_matricula"
+                      JOIN tccm t ON nf.processo = t.processo
                       WHERE t."infrator_id_infrator" = ?'''
 
             try:
@@ -309,7 +309,7 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
 
             try:
                 r = db.executar(
-                    f'SELECT COUNT(DISTINCT nf.nota_fiscal) {base} AND nf.status_nota = 'Aprovada'',
+                    f"SELECT COUNT(DISTINCT nf.nota_fiscal) {base} AND nf.status_nota = 'Aprovada'",
                     (self.id_infrator,)
                 ).fetchone()
                 aprovadas = r[0] if r else 0
@@ -318,7 +318,7 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
 
             try:
                 r = db.executar(
-                    f'SELECT COUNT(DISTINCT nf.nota_fiscal) {base} AND nf.status_nota = 'Pendente'',
+                    f"SELECT COUNT(DISTINCT nf.nota_fiscal) {base} AND nf.status_nota = 'Pendente'",
                     (self.id_infrator,)
                 ).fetchone()
                 pendentes = r[0] if r else 0

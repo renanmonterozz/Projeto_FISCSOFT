@@ -241,7 +241,7 @@ class DashboardExterno(CrudBase, ctk.CTkFrame):
 
             sql = """SELECT nf.nota_fiscal, nf.data, nf.valor_total, nf.status_nota
                      FROM "nota fiscal" nf
-                     JOIN tccm t ON t."agente ibama_matricula" = nf."agente ibama_matricula"
+                     JOIN tccm t ON nf.processo = t.processo
                      WHERE t."infrator_id_infrator" = ?
                      GROUP BY nf.nota_fiscal, nf.data, nf.valor_total, nf.status_nota
                      ORDER BY nf.data DESC"""
@@ -335,7 +335,7 @@ class DashboardExterno(CrudBase, ctk.CTkFrame):
                 return
 
             base = '''FROM "nota fiscal" nf
-                      JOIN tccm t ON t."agente ibama_matricula" = nf."agente ibama_matricula"
+                      JOIN tccm t ON nf.processo = t.processo
                       WHERE t."infrator_id_infrator" = ?'''
 
             try:

@@ -103,10 +103,12 @@ def criar_schema():
         valor_total DECIMAL(8,2) NOT NULL,
         "agente ibama_matricula" INTEGER NOT NULL,
         status_nota VARCHAR(30) DEFAULT 'Pendente',
+        processo TEXT,
         PRIMARY KEY (nota_fiscal, "agente ibama_matricula"),
         UNIQUE (nota_fiscal),
         UNIQUE (chave_de_acesso),
-        FOREIGN KEY ("agente ibama_matricula") REFERENCES "agente ibama" (matricula)
+        FOREIGN KEY ("agente ibama_matricula") REFERENCES "agente ibama" (matricula),
+        FOREIGN KEY (processo) REFERENCES tccm (processo)
     );
 
     CREATE TABLE IF NOT EXISTS produtos (
@@ -117,10 +119,13 @@ def criar_schema():
         data_validade DATE,
         "nota fiscal_nota_fiscal" VARCHAR(50) NOT NULL,
         "nota fiscal_agente ibama_matricula" INTEGER NOT NULL,
+        itens_id INTEGER,
+        nome_item VARCHAR(200),
         PRIMARY KEY (lote, "nota fiscal_nota_fiscal", "nota fiscal_agente ibama_matricula"),
         UNIQUE (lote),
         FOREIGN KEY ("nota fiscal_nota_fiscal", "nota fiscal_agente ibama_matricula")
-            REFERENCES "nota fiscal" (nota_fiscal, "agente ibama_matricula")
+            REFERENCES "nota fiscal" (nota_fiscal, "agente ibama_matricula"),
+        FOREIGN KEY (itens_id) REFERENCES itens (id)
     );
 
     CREATE TABLE IF NOT EXISTS insumo (

@@ -1,8 +1,7 @@
 import sys
 import os
-import re
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, ttk
 from datetime import datetime
 
 import customtkinter as ctk
@@ -19,11 +18,16 @@ class NotasFiscaisExterno(ctk.CTkFrame):
         self.id_infrator = id_infrator
         self.on_voltar = on_voltar
         self.arquivo_selecionado = None
+        self.itens_lista = []
+        self.itens_catalogo = []
 
         self._build_header()
         self._build_form()
+        self._build_itens_section()
         self._build_upload_section()
         self._build_action_buttons()
+        self._carregar_processos()
+        self._carregar_itens_catalogo()
 
     def _build_header(self):
         header = ctk.CTkFrame(self, fg_color="transparent")
@@ -36,7 +40,7 @@ class NotasFiscaisExterno(ctk.CTkFrame):
         ).pack(anchor="w")
 
         ctk.CTkLabel(
-            header, text="Informe os dados da Nota Fiscal.",
+            header, text="Informe os dados da Nota Fiscal e adicione os itens.",
             font=ctk.CTkFont(size=FONTS["size_subtitle"]),
             text_color=COLORS["text_muted"],
         ).pack(anchor="w", pady=(4, 0))
@@ -77,38 +81,25 @@ class NotasFiscaisExterno(ctk.CTkFrame):
         )
         self.entry_data.pack(anchor="w")
 
-        col_produto = ctk.CTkFrame(row_meio, fg_color="transparent")
-        col_produto.pack(side="left", fill="x", expand=True)
+        col_processo = ctk.CTkFrame(row_meio, fg_color="transparent")
+        col_processo.pack(side="left", fill="x", expand=True)
 
         ctk.CTkLabel(
-            col_produto, text="Essa nota possui mais de um produto?",
+            col_processo, text="Processo (TCCM)*",
             font=ctk.CTkFont(size=FONTS["size_small"]),
             text_color=COLORS["text_muted"],
         ).pack(anchor="w", pady=(0, 4))
 
-        btn_frame = ctk.CTkFrame(col_produto, fg_color="transparent")
-        btn_frame.pack(anchor="w")
-
-        self.var_multi_produto = tk.StringVar(value="N")
-        self.btn_sim = ctk.CTkButton(
-            btn_frame, text="S", width=40, height=36, corner_radius=4,
-            fg_color=COLORS["white"], hover_color=COLORS["primary_light"],
-            text_color=COLORS["text"], border_width=1, border_color=COLORS["border"],
-            font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-            command=lambda: self._toggle_multi("S"),
+        self.combo_processo = ctk.CTkComboBox(
+            col_processo, values=["Carregando..."],
+            height=38, border_width=1, border_color=COLORS["border"],
+            corner_radius=4, fg_color=COLORS["white"], text_color=COLORS["text"],
+            button_color=COLORS["primary"], button_hover_color=COLORS["primary_hover"],
+            dropdown_fg_color=COLORS["white"], dropdown_hover_color=COLORS["primary_light"],
+            width=250,
         )
-        self.btn_sim.pack(side="left", padx=(0, 4))
-
-        self.btn_nao = ctk.CTkButton(
-            btn_frame, text="N", width=40, height=36, corner_radius=4,
-            fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
-            text_color="white", border_width=0,
-            font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-            command=lambda: self._toggle_multi("N"),
-        )
-        self.btn_nao.pack(side="left")
-
-        self.entry_valor = self._criar_campo(form_card, "Valor Total da Nota Fiscal(R$)*")
+        self.combo_processo.pack(anchor="w")
+        self.combo_processo.set("")
 
     def _criar_campo(self, parent, label_text):
         frame = ctk.CTkFrame(parent, fg_color="transparent")
@@ -128,14 +119,269 @@ class NotasFiscaisExterno(ctk.CTkFrame):
         entry.pack(fill="x")
         return entry
 
-    def _toggle_multi(self, valor):
-        self.var_multi_produto.set(valor)
-        if valor == "S":
-            self.btn_sim.configure(fg_color=COLORS["primary"], text_color="white", border_width=0)
-            self.btn_nao.configure(fg_color=COLORS["white"], text_color=COLORS["text"], border_width=1, border_color=COLORS["border"])
-        else:
-            self.btn_nao.configure(fg_color=COLORS["primary"], text_color="white", border_width=0)
-            self.btn_sim.configure(fg_color=COLORS["white"], text_color=COLORS["text"], border_width=1, border_color=COLORS["border"])
+    def _carregar_processos(self):
+        try:
+            with Database() as db:
+                if not db.conexao:
+                    return
+                sql = """SELECT processo FROM tccm
+                         WHERE "infrator_id_infrator" = ?
+                         ORDER BY processo"""
+                resultado = db.executar(sql, (self.id_infrator,))
+                if resultado:
+                    processos = [row[0] for row in resultado.fetchall()]
+                    if processos:
+                        self.combo_processo.configure(values=processos)
+                        self.combo_processo.set(processos[0])
+                    else:
+                        self.combo_processo.configure(values=["Nenhum TCCM encontrado"])
+        except Exception:
+            pass
+
+    def _carregar_itens_catalogo(self):
+        try:
+            with Database() as db:
+                if not db.conexao:
+                    return
+                sql = """SELECT id, nome, descricao, unidade_medida
+                         FROM itens WHERE status = 'Ativo'
+                         ORDER BY nome"""
+                resultado = db.executar(sql)
+                if resultado:
+                    self.itens_catalogo = [
+                        {"id": row[0], "nome": row[1], "descricao": row[2], "unidade": row[3]}
+                        for row in resultado.fetchall()
+                    ]
+        except Exception:
+            self.itens_catalogo = []
+
+    def _build_itens_section(self):
+        itens_card = ctk.CTkFrame(
+            self, fg_color=COLORS["white"], corner_radius=6,
+            border_width=1, border_color=COLORS["border"]
+        )
+        itens_card.pack(fill="x", padx=40, pady=(15, 0))
+
+        ctk.CTkLabel(
+            itens_card, text="Itens da Nota Fiscal",
+            font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
+            text_color=COLORS["text"],
+        ).pack(anchor="w", padx=25, pady=(20, 10))
+
+        add_frame = ctk.CTkFrame(itens_card, fg_color="transparent")
+        add_frame.pack(fill="x", padx=25, pady=(0, 10))
+
+        col_item = ctk.CTkFrame(add_frame, fg_color="transparent")
+        col_item.pack(side="left", fill="x", expand=True, padx=(0, 10))
+
+        ctk.CTkLabel(
+            col_item, text="Item",
+            font=ctk.CTkFont(size=FONTS["size_small"]),
+            text_color=COLORS["text_muted"],
+        ).pack(anchor="w", pady=(0, 4))
+
+        nomes_itens = [f"{i['nome']} ({i['descricao']})" for i in self.itens_catalogo] if self.itens_catalogo else ["Nenhum item ativo"]
+        self.combo_item = ctk.CTkComboBox(
+            col_item, values=nomes_itens,
+            height=36, border_width=1, border_color=COLORS["border"],
+            corner_radius=4, fg_color=COLORS["white"], text_color=COLORS["text"],
+            button_color=COLORS["primary"], button_hover_color=COLORS["primary_hover"],
+            dropdown_fg_color=COLORS["white"], dropdown_hover_color=COLORS["primary_light"],
+            width=300,
+        )
+        self.combo_item.pack(anchor="w")
+        if nomes_itens:
+            self.combo_item.set(nomes_itens[0])
+
+        col_qtd = ctk.CTkFrame(add_frame, fg_color="transparent")
+        col_qtd.pack(side="left", padx=(0, 10))
+
+        ctk.CTkLabel(
+            col_qtd, text="Qtd.",
+            font=ctk.CTkFont(size=FONTS["size_small"]),
+            text_color=COLORS["text_muted"],
+        ).pack(anchor="w", pady=(0, 4))
+
+        self.entry_qtd = ctk.CTkEntry(
+            col_qtd, height=36, width=70, border_width=1, border_color=COLORS["border"],
+            corner_radius=4, fg_color=COLORS["white"], text_color=COLORS["text"],
+            placeholder_text="0",
+        )
+        self.entry_qtd.pack(anchor="w")
+
+        col_preco = ctk.CTkFrame(add_frame, fg_color="transparent")
+        col_preco.pack(side="left", padx=(0, 10))
+
+        ctk.CTkLabel(
+            col_preco, text="Preco Unit. (R$)",
+            font=ctk.CTkFont(size=FONTS["size_small"]),
+            text_color=COLORS["text_muted"],
+        ).pack(anchor="w", pady=(0, 4))
+
+        self.entry_preco = ctk.CTkEntry(
+            col_preco, height=36, width=120, border_width=1, border_color=COLORS["border"],
+            corner_radius=4, fg_color=COLORS["white"], text_color=COLORS["text"],
+            placeholder_text="0,00",
+        )
+        self.entry_preco.pack(anchor="w")
+
+        btn_add = ctk.CTkButton(
+            add_frame, text="+ Adicionar", height=36, width=120, corner_radius=4,
+            fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
+            text_color="white", border_width=0,
+            font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
+            command=self._adicionar_item,
+        )
+        btn_add.pack(side="left", pady=(20, 0))
+
+        tree_frame = ctk.CTkFrame(itens_card, fg_color="transparent")
+        tree_frame.pack(fill="x", padx=25, pady=(10, 0))
+
+        style = ttk.Style()
+        style.theme_use("default")
+        style.configure("Itens.Treeview",
+                         background=COLORS["white"],
+                         foreground=COLORS["text"],
+                         rowheight=32,
+                         fieldbackground=COLORS["white"],
+                         borderwidth=0,
+                         font=(None, FONTS["size_small"]))
+        style.configure("Itens.Treeview.Heading",
+                         background=COLORS["table_header"],
+                         foreground=COLORS["text_muted"],
+                         borderwidth=0,
+                         font=(None, FONTS["size_small"], "bold"))
+        style.map("Itens.Treeview",
+                   background=[("selected", COLORS["primary_light"])],
+                   foreground=[("selected", COLORS["text"])])
+
+        tree_container = ctk.CTkFrame(tree_frame, fg_color=COLORS["border"], corner_radius=4)
+        tree_container.pack(fill="x")
+
+        colunas = ("item", "qtd", "preco", "subtotal")
+        self.tree_itens = ttk.Treeview(
+            tree_container, columns=colunas, show="headings",
+            style="Itens.Treeview", height=5, selectmode="browse"
+        )
+        self.tree_itens.heading("item", text="Item", anchor="w")
+        self.tree_itens.heading("qtd", text="Qtd.", anchor="w")
+        self.tree_itens.heading("preco", text="Preco Unit. (R$)", anchor="w")
+        self.tree_itens.heading("subtotal", text="Subtotal (R$)", anchor="w")
+
+        self.tree_itens.column("item", width=300, minwidth=200, anchor="w")
+        self.tree_itens.column("qtd", width=60, minwidth=50, anchor="w")
+        self.tree_itens.column("preco", width=140, minwidth=100, anchor="w")
+        self.tree_itens.column("subtotal", width=140, minwidth=100, anchor="w")
+
+        tree_scroll = ttk.Scrollbar(tree_container, orient="vertical",
+                                     command=self.tree_itens.yview)
+        self.tree_itens.configure(yscrollcommand=tree_scroll.set)
+
+        self.tree_itens.pack(side="left", fill="x", expand=True, padx=(4, 0), pady=4)
+        tree_scroll.pack(side="right", fill="y", pady=4, padx=(0, 4))
+
+        btn_row = ctk.CTkFrame(itens_card, fg_color="transparent")
+        btn_row.pack(fill="x", padx=25, pady=(8, 10))
+
+        self.btn_remover_item = ctk.CTkButton(
+            btn_row, text="Remover selecionado", height=32, width=160, corner_radius=4,
+            fg_color=COLORS["danger"], hover_color=COLORS["danger_hover"],
+            text_color="white", border_width=0,
+            font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
+            command=self._remover_item_selecionado,
+        )
+        self.btn_remover_item.pack(side="left")
+
+        self.lbl_total_geral = ctk.CTkLabel(
+            btn_row, text="Total Itens: R$ 0,00",
+            font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
+            text_color=COLORS["text"],
+        )
+        self.lbl_total_geral.pack(side="right")
+
+    def _adicionar_item(self):
+        idx = self.combo_item.get()
+        qtd_str = self.entry_qtd.get().strip()
+        preco_str = self.entry_preco.get().strip()
+
+        if not idx or "Nenhum item" in idx:
+            messagebox.showwarning("Atencao", "Selecione um item do catalogo.")
+            return
+        if not qtd_str or not preco_str:
+            messagebox.showwarning("Atencao", "Preencha quantidade e preco unitario.")
+            return
+
+        try:
+            qtd = int(qtd_str)
+            if qtd <= 0:
+                raise ValueError
+        except ValueError:
+            messagebox.showwarning("Atencao", "Quantidade invalida.")
+            return
+
+        try:
+            preco = float(preco_str.replace(".", "").replace(",", "."))
+            if preco <= 0:
+                raise ValueError
+        except ValueError:
+            messagebox.showwarning("Atencao", "Preco unitario invalido.")
+            return
+
+        item_idx = None
+        for i, item in enumerate(self.itens_catalogo):
+            display = f"{item['nome']} ({item['descricao']})"
+            if display == idx:
+                item_idx = i
+                break
+
+        if item_idx is None:
+            messagebox.showwarning("Atencao", "Item nao encontrado no catalogo.")
+            return
+
+        item_info = self.itens_catalogo[item_idx]
+        subtotal = qtd * preco
+
+        self.itens_lista.append({
+            "item_id": item_info["id"],
+            "nome": item_info["nome"],
+            "descricao": item_info["descricao"],
+            "quantidade": qtd,
+            "preco_unitario": preco,
+            "subtotal": subtotal,
+        })
+
+        self._render_itens()
+        self.entry_qtd.delete(0, "end")
+        self.entry_preco.delete(0, "end")
+
+    def _remover_item_selecionado(self):
+        sel = self.tree_itens.selection()
+        if not sel:
+            messagebox.showwarning("Atencao", "Selecione um item na tabela para remover.")
+            return
+        idx = self.tree_itens.index(sel[0])
+        if 0 <= idx < len(self.itens_lista):
+            self.itens_lista.pop(idx)
+            self._render_itens()
+
+    def _render_itens(self):
+        for item in self.tree_itens.get_children():
+            self.tree_itens.delete(item)
+
+        if not self.itens_lista:
+            self.lbl_total_geral.configure(text="Total Itens: R$ 0,00")
+            return
+
+        for item in self.itens_lista:
+            preco_fmt = f"R$ {item['preco_unitario']:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+            subtotal_fmt = f"R$ {item['subtotal']:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+            self.tree_itens.insert("", "end", values=(
+                item["nome"], item["quantidade"], preco_fmt, subtotal_fmt
+            ))
+
+        total_geral = sum(item["subtotal"] for item in self.itens_lista)
+        total_fmt = f"R$ {total_geral:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        self.lbl_total_geral.configure(text=f"Total Itens: {total_fmt}")
 
     def _build_upload_section(self):
         upload_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -150,24 +396,25 @@ class NotasFiscaisExterno(ctk.CTkFrame):
         btn_row = ctk.CTkFrame(upload_frame, fg_color="transparent")
         btn_row.pack(fill="x")
 
-        self.btn_ler_pdf = ctk.CTkButton(
-            btn_row, text="LER E ANEXAR PDF", height=70, corner_radius=8,
-            fg_color="#CC0000", hover_color="#AA0000",
-            text_color="white", border_width=0,
-            font=ctk.CTkFont(size=18, weight="bold"),
-            command=self._ler_e_anexar_pdf,
-        )
-        self.btn_ler_pdf.pack(side="left", fill="x", expand=True, padx=(0, 10))
-
         self.btn_anexar = ctk.CTkButton(
-            btn_row, text="ANEXAR\nSEM LER", height=70, corner_radius=8,
-            fg_color="#6B7280", hover_color="#4B5563",
+            btn_row, text="ANEXAR PDF", height=70, corner_radius=8,
+            fg_color="#CC0000", hover_color="#AA0000",
             text_color="white", border_width=0,
             font=ctk.CTkFont(size=13, weight="bold"),
             width=120,
             command=self._selecionar_arquivo,
         )
         self.btn_anexar.pack(side="right")
+
+        self.btn_limpar = ctk.CTkButton(
+            btn_row, text="LIMPAR", height=70, corner_radius=8,
+            fg_color="#6B7280", hover_color="#4B5563",
+            text_color="white", border_width=0,
+            font=ctk.CTkFont(size=13, weight="bold"),
+            width=120,
+            command=self._limpar_campos,
+        )
+        self.btn_limpar.pack(side="right", padx=(0, 10))
 
         self.lbl_arquivo = ctk.CTkFrame(
             upload_frame, fg_color=COLORS["white"], corner_radius=4,
@@ -197,110 +444,6 @@ class NotasFiscaisExterno(ctk.CTkFrame):
             tamanho_kb = f"{tamanho / 1024:.1f} KB"
             self.lbl_arquivo_text.configure(text=f"{nome}  ({tamanho_kb})")
 
-    def _ler_e_anexar_pdf(self):
-        caminho = filedialog.askopenfilename(
-            title="Selecionar Nota Fiscal para leitura automatica",
-            filetypes=[("PDF", "*.pdf"), ("Todos os arquivos", "*.*")],
-        )
-        if not caminho:
-            return
-
-        self.arquivo_selecionado = caminho
-        nome = os.path.basename(caminho)
-        tamanho = os.path.getsize(caminho)
-        tamanho_kb = f"{tamanho / 1024:.1f} KB"
-        self.lbl_arquivo_text.configure(text=f" Lendo {nome}...")
-
-        try:
-            dados = self._extrair_dados_pdf(caminho)
-        except Exception as e:
-            self.lbl_arquivo_text.configure(text=f"{nome}  ({tamanho_kb})")
-            messagebox.showwarning(
-                "Atencao",
-                f"Nao foi possivel ler o PDF automaticamente.\n{e}\n\n"
-                "Anexo salvo. Preencha os campos manualmente.",
-            )
-            return
-
-        campos_preenchidos = 0
-        if dados.get("numero"):
-            self.entry_numero.delete(0, "end")
-            self.entry_numero.insert(0, dados["numero"])
-            campos_preenchidos += 1
-        if dados.get("chave"):
-            self.entry_chave.delete(0, "end")
-            self.entry_chave.insert(0, dados["chave"])
-            campos_preenchidos += 1
-        if dados.get("data"):
-            self.entry_data.delete(0, "end")
-            self.entry_data.insert(0, dados["data"])
-            campos_preenchidos += 1
-        if dados.get("valor"):
-            self.entry_valor.delete(0, "end")
-            self.entry_valor.insert(0, dados["valor"])
-            campos_preenchidos += 1
-
-        self.lbl_arquivo_text.configure(text=f"{nome}  ({tamanho_kb})  -  {campos_preenchidos} campo(s) preenchido(s)")
-
-        if campos_preenchidos > 0:
-            messagebox.showinfo(
-                "Leitura concluida",
-                f"Campos preenchidos automaticamente: {campos_preenchidos}/4\n\n"
-                "Revise os dados e clique em Salvar.",
-            )
-        else:
-            messagebox.showwarning(
-                "Atencao",
-                "Nenhum campo foi reconhecido no PDF.\n"
-                "Preencha os campos manualmente.",
-            )
-
-    def _extrair_dados_pdf(self, caminho):
-        from pypdf import PdfReader
-
-        reader = PdfReader(caminho)
-        texto = "\n".join(page.extract_text() or "" for page in reader.pages)
-        texto_lower = texto.lower()
-
-        dados = {"numero": None, "chave": None, "data": None, "valor": None}
-
-        m = re.search(r'nfe\s*n\.\s*(\d+)', texto, re.IGNORECASE)
-        if not m:
-            m = re.search(r'numero[:\s]+(\d+)', texto, re.IGNORECASE)
-        if m:
-            dados["numero"] = m.group(1)
-
-        m = re.search(r'chave\s+de\s+acesso[:\s]+(\d{44})', texto, re.IGNORECASE)
-        if not m:
-            m = re.search(r'chave[:\s]+(\d{44})', texto, re.IGNORECASE)
-        if not m:
-            m = re.search(r'(\d{44})', texto)
-        if m:
-            dados["chave"] = m.group(1)
-
-        m = re.search(
-            r'data\s+de\s+(?:emiss[aã]o|emissao)[:\s]+(\d{2}/\d{2}/\d{4})',
-            texto, re.IGNORECASE,
-        )
-        if not m:
-            m = re.search(r'data[:\s]+(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
-        if m:
-            dados["data"] = m.group(1)
-
-        m = re.search(
-            r'valor\s+total\s+(?:da\s+nota|dos?\s+produtos?)[:\s]*r?\$?\s*([\d.,]+)',
-            texto, re.IGNORECASE,
-        )
-        if not m:
-            m = re.search(
-                r'(?:total|valor\s+total)[:\s]*r?\$?\s*([\d.,]+)',
-                texto, re.IGNORECASE,
-            )
-        if m:
-            dados["valor"] = m.group(1).strip()
-
-        return dados
-
     def _build_action_buttons(self):
         btn_container = ctk.CTkFrame(self, fg_color="transparent")
         btn_container.pack(fill="x", padx=40, pady=(30, 30))
@@ -327,10 +470,14 @@ class NotasFiscaisExterno(ctk.CTkFrame):
         numero = self.entry_numero.get().strip()
         chave = self.entry_chave.get().strip()
         data_str = self.entry_data.get().strip()
-        valor_str = self.entry_valor.get().strip()
+        processo = self.combo_processo.get().strip()
 
-        if not numero or not chave or not data_str or not valor_str:
+        if not numero or not chave or not data_str or not processo:
             messagebox.showwarning("Atencao", "Preencha todos os campos obrigatorios.")
+            return
+
+        if "Nenhum TCCM" in processo:
+            messagebox.showwarning("Atencao", "Nenhum TCCM encontrado para este infrator.")
             return
 
         try:
@@ -339,11 +486,11 @@ class NotasFiscaisExterno(ctk.CTkFrame):
             messagebox.showwarning("Atencao", "Data invalida. Use o formato dd/mm/aaaa.")
             return
 
-        try:
-            valor = float(valor_str.replace(".", "").replace(",", "."))
-        except ValueError:
-            messagebox.showwarning("Atencao", "Valor invalido.")
+        if not self.itens_lista:
+            messagebox.showwarning("Atencao", "Adicione pelo menos um item a nota fiscal.")
             return
+
+        valor_total = sum(item["subtotal"] for item in self.itens_lista)
 
         with Database() as db:
             if not db.conexao:
@@ -352,19 +499,36 @@ class NotasFiscaisExterno(ctk.CTkFrame):
 
             try:
                 sql_mat = '''SELECT "agente ibama_matricula"
-                             FROM tccm WHERE "infrator_id_infrator" = ?
+                             FROM tccm WHERE processo = ?
                              LIMIT 1'''
-                resultado = db.executar(sql_mat, (self.id_infrator,))
+                resultado = db.executar(sql_mat, (processo,))
                 row = resultado.fetchone() if resultado else None
                 matricula = row[0] if row else 0
 
                 sql = """INSERT INTO "nota fiscal"
                          (nota_fiscal, semestre, data, chave_de_acesso, valor_total,
-                          "agente ibama_matricula", status_nota)
-                         VALUES (?, ?, ?, ?, ?, ?, 'Pendente')"""
-                db.executar(sql, (numero, 1, data, chave, valor, matricula))
+                          "agente ibama_matricula", status_nota, processo)
+                         VALUES (?, ?, ?, ?, ?, ?, 'Pendente', ?)"""
+                db.executar(sql, (numero, 1, data, chave, valor_total, matricula, processo))
+
+                for idx, item in enumerate(self.itens_lista):
+                    lote = f"{numero}-ITEM-{idx+1}"
+                    sql_produto = """INSERT INTO produtos
+                                    (lote, quantidade, preco_unitario,
+                                     "nota fiscal_nota_fiscal",
+                                     "nota fiscal_agente ibama_matricula",
+                                     itens_id, nome_item)
+                                    VALUES (?, ?, ?, ?, ?, ?, ?)"""
+                    db.executar(sql_produto, (
+                        lote, item["quantidade"], item["preco_unitario"],
+                        numero, matricula, item["item_id"], item["nome"],
+                    ))
+
                 db.commitar()
-                messagebox.showinfo("Sucesso", "Nota fiscal cadastrada com sucesso!")
+                messagebox.showinfo("Sucesso",
+                    f"Nota fiscal cadastrada com sucesso!\n"
+                    f"Valor Total: R$ {valor_total:,.2f}\n"
+                    f"Itens: {len(self.itens_lista)}")
                 self._limpar_campos()
             except Exception as e:
                 messagebox.showerror("Erro", f"Erro ao salvar nota fiscal:\n{e}")
@@ -373,7 +537,13 @@ class NotasFiscaisExterno(ctk.CTkFrame):
         self.entry_numero.delete(0, "end")
         self.entry_chave.delete(0, "end")
         self.entry_data.delete(0, "end")
-        self.entry_valor.delete(0, "end")
+        self.entry_qtd.delete(0, "end")
+        self.entry_preco.delete(0, "end")
+        if self.itens_catalogo:
+            nomes = [f"{i['nome']} ({i['descricao']})" for i in self.itens_catalogo]
+            self.combo_item.set(nomes[0])
+        self.itens_lista = []
+        self._render_itens()
         self.arquivo_selecionado = None
         self.lbl_arquivo_text.configure(text="Nenhum arquivo anexado")
 
