@@ -1,22 +1,32 @@
 import _path  # noqa: F401
 
+import subprocess
+import os
+import tempfile
 from tkinter import messagebox
 
 import customtkinter as ctk
 
 from config.styles import COLORS, FONTS
+from database.conexaodb import Database
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
+from utils import registrar_log
 
 
 class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
-    def __init__(self, master, on_voltar=None, **kwargs):
+    def __init__(self, master, on_voltar=None, usuario_logado=None, **kwargs):
         super().__init__(master, **kwargs)
         self.configure(fg_color=COLORS["bg"])
         self.on_voltar = on_voltar
+        self.usuario_logado = usuario_logado
         self.itens_lista = []
         self.local_selecionado = None
+        self.locais_catalogo = []
+        self.itens_catalogo = []
 
+        self._carregar_locais()
+        self._carregar_itens_catalogo()
         self.build_ui()
 
     def build_ui(self):
@@ -30,7 +40,6 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
             "Relatorio de Entrega de Materiais",
             "Selecione um local de destino ou cadastre um novo local"
         )
-        self.build_gerar_btn(left_panel)
         self.build_local_destino_section(left_panel)
         self.build_adicionar_itens_section(left_panel)
         self.build_informacoes_adicionais_section(left_panel)
@@ -42,16 +51,50 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
 
         self.build_preview_panel(right_panel)
 
-    def build_gerar_btn(self, parent):
-        btn_frame = ctk.CTkFrame(parent, fg_color="transparent")
-        btn_frame.pack(fill="x", pady=(0, 15))
+    def _carregar_locais(self):
+        try:
+            with Database() as db:
+                if not db.conexao:
+                    return
+                sql = """SELECT id, cep, endereco, instituicao, responsavel, telefone
+                         FROM locais ORDER BY instituicao"""
+                resultado = db.executar(sql)
+                if resultado:
+                    self.locais_catalogo = [
+                        {"id": row[0], "cep": row[1], "endereco": row[2],
+                         "instituicao": row[3], "responsavel": row[4], "telefone": row[5]}
+                        for row in resultado.fetchall()
+                    ]
+        except Exception:
+            self.locais_catalogo = []
 
-        self.build_action_btn(
-            btn_frame, "  Gerar Relatorio", carregar_icone("relatorios.png"),
-            self.gerar_relatorio, fg_color=COLORS["white"],
-            hover_color=COLORS["hover"], text_color=COLORS["text"],
-            border=True, bold=True,
-        )
+    def _on_local_select(self, selection):
+        local = None
+        for l in self.locais_catalogo:
+            if f"{l['instituicao']} - {l['endereco']}" == selection:
+                local = l
+                break
+        if not local:
+            return
+        self.local_selecionado = local
+        self.local_info_labels["CEP:"].configure(text=local["cep"] or "--")
+        self.local_info_labels["Endereco:"].configure(text=local["endereco"] or "--")
+        self.local_info_labels["Instituicao:"].configure(text=local["instituicao"] or "--")
+        self.local_info_labels["Responsavel:"].configure(text=local["responsavel"] or "--")
+        self.local_info_labels["Telefone:"].configure(text=local["telefone"] or "--")
+
+    def _bind_scroll(self, combo):
+        combo.bind("<MouseWheel>", lambda e: combo._dropdown._parent.after(
+            1, lambda: combo._dropdown.yview_scroll(int(-1 * (e.delta / 120)), "units")
+        ))
+
+    def _atualizar_combo_locais(self):
+        self._carregar_locais()
+        nomes = [f"{l['instituicao']} - {l['endereco']}" for l in self.locais_catalogo] if self.locais_catalogo else ["Nenhum local cadastrado"]
+        self.combo_local.configure(values=nomes)
+        if nomes:
+            self.combo_local.set(nomes[0])
+            self._on_local_select(nomes[0])
 
     def build_local_destino_section(self, parent):
         section = ctk.CTkFrame(
@@ -83,44 +126,70 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
         )
         btn_cadastrar.pack(side="right")
 
-        search_frame = ctk.CTkFrame(section, fg_color="transparent")
-        search_frame.pack(fill="x", padx=20, pady=(0, 10))
-
-        self.entry_busca_local = ctk.CTkEntry(
-            search_frame,
-            placeholder_text="Buscar local...",
-            height=36, border_width=1,
-            border_color=COLORS["border"], corner_radius=4,
-            fg_color=COLORS["white"], text_color=COLORS["text"],
-            placeholder_text_color=COLORS["text_muted"],
-        )
-        self.entry_busca_local.pack(side="left", fill="x", expand=True)
-
-        table_frame = ctk.CTkFrame(section, fg_color="transparent")
-        table_frame.pack(fill="x", padx=20, pady=(0, 15))
-
-        columns = ["CEP", "Endereco", "Instituicao", "Responsavel"]
-        header = ctk.CTkFrame(table_frame, fg_color="#FAFAFA", height=36, corner_radius=4)
-        header.pack(fill="x")
-        header.pack_propagate(False)
-
-        for i, col in enumerate(columns):
-            header.grid_columnconfigure(i, weight=1)
-            ctk.CTkLabel(
-                header, text=col,
-                font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                text_color=COLORS["text_muted"],
-            ).grid(row=0, column=i, sticky="w", padx=10)
-
-        self.locais_body = ctk.CTkFrame(table_frame, fg_color="transparent", height=80)
-        self.locais_body.pack(fill="x")
-        self.locais_body.pack_propagate(False)
+        combo_frame = ctk.CTkFrame(section, fg_color="transparent")
+        combo_frame.pack(fill="x", padx=20, pady=(0, 10))
 
         ctk.CTkLabel(
-            self.locais_body, text="Nenhum local selecionado",
+            combo_frame, text="Selecionar Local",
             font=ctk.CTkFont(size=FONTS["size_small"]),
             text_color=COLORS["text_muted"],
-        ).pack(expand=True)
+        ).pack(anchor="w", pady=(0, 4))
+
+        nomes_locais = [f"{l['instituicao']} - {l['endereco']}" for l in self.locais_catalogo] if self.locais_catalogo else ["Nenhum local cadastrado"]
+        self.combo_local = ctk.CTkComboBox(
+            combo_frame, values=nomes_locais,
+            height=38, border_width=1, border_color=COLORS["border"],
+            corner_radius=4, fg_color=COLORS["white"], text_color=COLORS["text"],
+            button_color=COLORS["primary"], button_hover_color=COLORS["primary_hover"],
+            dropdown_fg_color=COLORS["white"], dropdown_hover_color=COLORS["primary_light"],
+            command=self._on_local_select,
+        )
+        self.combo_local.pack(fill="x")
+        if nomes_locais:
+            self.combo_local.set(nomes_locais[0])
+
+        self._bind_scroll(self.combo_local)
+
+        info_frame = ctk.CTkFrame(section, fg_color="transparent")
+        info_frame.pack(fill="x", padx=20, pady=(0, 15))
+
+        self.local_info_labels = {}
+        campos = ["CEP:", "Endereco:", "Instituicao:", "Responsavel:", "Telefone:"]
+        for campo in campos:
+            linha = ctk.CTkFrame(info_frame, fg_color="transparent")
+            linha.pack(fill="x", pady=1)
+            ctk.CTkLabel(
+                linha, text=campo,
+                font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
+                text_color=COLORS["text_muted"], width=90, anchor="w",
+            ).pack(side="left")
+            lbl = ctk.CTkLabel(
+                linha, text="--",
+                font=ctk.CTkFont(size=FONTS["size_small"]),
+                text_color=COLORS["text"], anchor="w",
+            )
+            lbl.pack(side="left")
+            self.local_info_labels[campo] = lbl
+
+        if self.locais_catalogo:
+            self._on_local_select(nomes_locais[0])
+
+    def _carregar_itens_catalogo(self):
+        try:
+            with Database() as db:
+                if not db.conexao:
+                    return
+                sql = """SELECT id, nome, descricao, unidade_medida
+                         FROM itens WHERE status = 'Ativo'
+                         ORDER BY nome"""
+                resultado = db.executar(sql)
+                if resultado:
+                    self.itens_catalogo = [
+                        {"id": row[0], "nome": row[1], "descricao": row[2], "unidade": row[3]}
+                        for row in resultado.fetchall()
+                    ]
+        except Exception:
+            self.itens_catalogo = []
 
     def build_adicionar_itens_section(self, parent):
         section = ctk.CTkFrame(
@@ -150,15 +219,19 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
             text_color=COLORS["text_muted"],
         ).pack(anchor="w")
 
-        self.entry_item = ctk.CTkEntry(
-            item_frame,
-            placeholder_text="Nome do item",
-            height=36, border_width=1,
-            border_color=COLORS["border"], corner_radius=4,
-            fg_color=COLORS["white"], text_color=COLORS["text"],
-            placeholder_text_color=COLORS["text_muted"],
+        nomes_itens = [f"{i['nome']} ({i['descricao']})" for i in self.itens_catalogo] if self.itens_catalogo else ["Nenhum item ativo"]
+        self.combo_item = ctk.CTkComboBox(
+            item_frame, values=nomes_itens,
+            height=36, border_width=1, border_color=COLORS["border"],
+            corner_radius=4, fg_color=COLORS["white"], text_color=COLORS["text"],
+            button_color=COLORS["primary"], button_hover_color=COLORS["primary_hover"],
+            dropdown_fg_color=COLORS["white"], dropdown_hover_color=COLORS["primary_light"],
         )
-        self.entry_item.pack(fill="x")
+        self.combo_item.pack(fill="x")
+        if nomes_itens:
+            self.combo_item.set(nomes_itens[0])
+
+        self._bind_scroll(self.combo_item)
 
         qtd_frame = ctk.CTkFrame(input_frame, fg_color="transparent")
         qtd_frame.pack(side="left", padx=(0, 10))
@@ -410,11 +483,14 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
         ).pack(side="right", expand=True, fill="x")
 
     def adicionar_item(self):
-        item = self.entry_item.get().strip()
+        display = self.combo_item.get().strip()
         qtd = self.entry_quantidade.get().strip()
 
-        if not item or not qtd:
-            messagebox.showwarning("Aviso", "Preencha o nome do item e a quantidade.")
+        if not display or "Nenhum item" in display:
+            messagebox.showwarning("Aviso", "Selecione um item do catalogo.")
+            return
+        if not qtd:
+            messagebox.showwarning("Aviso", "Preencha a quantidade.")
             return
 
         try:
@@ -425,10 +501,24 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
             messagebox.showwarning("Aviso", "Quantidade deve ser um numero inteiro positivo.")
             return
 
-        self.itens_lista.append({"item": item, "quantidade": qtd_int})
+        item_info = None
+        for item in self.itens_catalogo:
+            if f"{item['nome']} ({item['descricao']})" == display:
+                item_info = item
+                break
+
+        if item_info is None:
+            messagebox.showwarning("Aviso", "Item nao encontrado no catalogo.")
+            return
+
+        self.itens_lista.append({
+            "item_id": item_info["id"],
+            "item": item_info["nome"],
+            "descricao": item_info["descricao"],
+            "quantidade": qtd_int,
+        })
         self.render_itens()
 
-        self.entry_item.delete(0, "end")
         self.entry_quantidade.delete(0, "end")
 
     def render_itens(self):
@@ -487,8 +577,8 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
 
     def editar_item(self, idx):
         item = self.itens_lista[idx]
-        self.entry_item.delete(0, "end")
-        self.entry_item.insert(0, item["item"])
+        display = f"{item['item']} ({item['descricao']})"
+        self.combo_item.set(display)
         self.entry_quantidade.delete(0, "end")
         self.entry_quantidade.insert(0, str(item["quantidade"]))
         self.itens_lista.pop(idx)
@@ -500,27 +590,127 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
             self.render_itens()
 
     def cadastrar_local(self):
-        messagebox.showinfo("Info", "Funcionalidade de cadastro de local em desenvolvimento.")
+        form = ctk.CTkToplevel(self)
+        form.title("Novo Local de Destino")
+        form.geometry("500x620")
+        form.configure(fg_color=COLORS["bg"])
+        form.transient(self.winfo_toplevel())
+        form.grab_set()
 
-    def gerar_relatorio(self):
-        if not self.itens_lista:
-            messagebox.showwarning("Aviso", "Adicione pelo menos um item ao relatorio.")
-            return
-        preview_text = "Relatorio de Entrega\n"
-        preview_text += f"Processo: {self.entry_processo.get() or 'N/A'}\n"
-        preview_text += f"Documento SEI: {self.entry_documento_sei.get() or 'N/A'}\n"
-        preview_text += f"Responsavel: {self.entry_responsavel.get() or 'N/A'}\n"
-        preview_text += "---\n"
-        for item in self.itens_lista:
-            preview_text += f"  - {item['item']}: {item['quantidade']}\n"
+        container = ctk.CTkFrame(form, fg_color="transparent")
+        container.pack(fill="both", expand=True, padx=30, pady=30)
 
-        for w in self.preview_frame.winfo_children():
-            w.destroy()
         ctk.CTkLabel(
-            self.preview_frame, text=preview_text,
-            font=ctk.CTkFont(size=FONTS["size_small"]),
-            text_color=COLORS["text"], justify="left", anchor="nw",
-        ).pack(fill="both", expand=True, padx=10, pady=10)
+            container,
+            text="Cadastrar Local de Destino",
+            font=ctk.CTkFont(size=FONTS["size_title"], weight="bold"),
+            text_color=COLORS["text"],
+        ).pack(anchor="w", pady=(0, 20))
+
+        fields = [
+            ("CEP", "cep", "00000-000"),
+            ("Endereco Completo", "endereco", "Rua, numero, bairro, cidade-UF"),
+            ("Instituicao", "instituicao", "Nome da instituicao"),
+            ("Responsavel", "responsavel", "Nome do responsavel"),
+            ("Telefone", "telefone", "(00) 00000-0000"),
+        ]
+
+        entries = {}
+        for label_text, key, placeholder in fields:
+            ctk.CTkLabel(
+                container, text=label_text,
+                font=ctk.CTkFont(size=FONTS["size_small"]),
+                text_color=COLORS["text_muted"],
+            ).pack(anchor="w", pady=(10, 2))
+
+            entry = ctk.CTkEntry(
+                container,
+                placeholder_text=placeholder,
+                height=38, border_width=1,
+                border_color=COLORS["border"], corner_radius=4,
+                fg_color=COLORS["white"], text_color=COLORS["text"],
+            )
+            entry.pack(fill="x")
+            entries[key] = entry
+
+        btn_frame = ctk.CTkFrame(container, fg_color="transparent")
+        btn_frame.pack(fill="x", pady=(20, 0))
+
+        def salvar():
+            cep = entries["cep"].get().strip()
+            endereco = entries["endereco"].get().strip()
+            instituicao = entries["instituicao"].get().strip()
+            responsavel = entries["responsavel"].get().strip()
+            telefone = entries["telefone"].get().strip()
+
+            if not all([cep, endereco, instituicao, responsavel]):
+                messagebox.showwarning("Aviso", "Preencha CEP, Endereco, Instituicao e Responsavel.")
+                return
+
+            with Database() as db:
+                if not db.conexao:
+                    messagebox.showerror("Erro", "Nao foi possivel conectar ao banco de dados!")
+                    return
+
+                sql = """INSERT INTO locais (cep, endereco, instituicao, responsavel, telefone)
+                         VALUES (?, ?, ?, ?, ?)"""
+                params = (cep, endereco, instituicao, responsavel, telefone or None)
+
+                db.executar(sql, params)
+                db.commitar()
+
+            registrar_log(
+                self.usuario_logado or "Sistema",
+                "cadastro",
+                "locais",
+                f"Local '{instituicao}' cadastrado via Relatorio de Entrega"
+            )
+
+            messagebox.showinfo("Sucesso", "Local cadastrado com sucesso!")
+            form.destroy()
+            self._atualizar_combo_locais()
+
+        ctk.CTkButton(
+            btn_frame,
+            text="Salvar",
+            height=40, corner_radius=4,
+            fg_color=COLORS["primary"],
+            hover_color=COLORS["primary_hover"],
+            text_color="white",
+            font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
+            command=salvar,
+        ).pack(side="left", padx=(0, 10))
+
+        ctk.CTkButton(
+            btn_frame,
+            text="Cancelar",
+            height=40, corner_radius=4,
+            fg_color=COLORS["white"],
+            hover_color=COLORS["hover"],
+            text_color=COLORS["text"],
+            border_width=1,
+            border_color=COLORS["border"],
+            font=ctk.CTkFont(size=FONTS["size_body"]),
+            command=form.destroy,
+        ).pack(side="left")
+
+    def _gerar_texto_relatorio(self):
+        texto = "RELATORIO DE ENTREGA DE MATERIAIS\n"
+        texto += "=" * 40 + "\n\n"
+        texto += f"Processo: {self.entry_processo.get() or 'N/A'}\n"
+        texto += f"Documento SEI: {self.entry_documento_sei.get() or 'N/A'}\n"
+        texto += f"Responsavel: {self.entry_responsavel.get() or 'N/A'}\n"
+        obs = self.text_obs.get("1.0", "end").strip()
+        if obs:
+            texto += f"Observacoes: {obs}\n"
+        texto += "\nITENS:\n"
+        texto += "-" * 40 + "\n"
+        for item in self.itens_lista:
+            texto += f"  {item['item']}: {item['quantidade']}\n"
+        texto += "-" * 40 + "\n"
+        total = sum(item["quantidade"] for item in self.itens_lista)
+        texto += f"Total de Itens: {total}\n"
+        return texto
 
     def salvar_relatorio(self):
         if not self.itens_lista:
@@ -529,10 +719,43 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
         messagebox.showinfo("Sucesso", "Relatorio salvo com sucesso!")
 
     def baixar_pdf(self):
-        messagebox.showinfo("Info", "Funcionalidade de download em desenvolvimento.")
+        if not self.itens_lista:
+            messagebox.showwarning("Aviso", "Adicione pelo menos um item ao relatorio.")
+            return
+
+        from tkinter import filedialog
+
+        caminho = filedialog.asksaveasfilename(
+            title="Salvar Relatorio como PDF",
+            defaultextension=".txt",
+            filetypes=[("Arquivo de Texto", "*.txt"), ("Todos os arquivos", "*.*")],
+            initialfile="relatorio_entrega.txt",
+        )
+        if not caminho:
+            return
+
+        texto = self._gerar_texto_relatorio()
+        try:
+            with open(caminho, "w", encoding="utf-8") as f:
+                f.write(texto)
+            messagebox.showinfo("Sucesso", f"Relatorio salvo em:\n{caminho}")
+        except Exception as e:
+            messagebox.showerror("Erro", f"Nao foi possivel salvar o relatorio:\n{e}")
 
     def imprimir(self):
-        messagebox.showinfo("Info", "Funcionalidade de impressao em desenvolvimento.")
+        if not self.itens_lista:
+            messagebox.showwarning("Aviso", "Adicione pelo menos um item ao relatorio.")
+            return
+
+        preview_text = self._gerar_texto_relatorio()
+
+        try:
+            tmp = os.path.join(tempfile.gettempdir(), "relatorio_entrega.txt")
+            with open(tmp, "w", encoding="utf-8") as f:
+                f.write(preview_text)
+            subprocess.Popen(["notepad.exe", "/p", tmp])
+        except Exception as e:
+            messagebox.showerror("Erro", f"Nao foi possivel abrir a impressao:\n{e}")
 
     def voltar(self):
         if self.on_voltar:

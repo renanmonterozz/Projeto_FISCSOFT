@@ -219,7 +219,7 @@ class LoginApp(ctk.CTk):
             elif pagina == "Itens":
                 ItensPage(content_frame, on_voltar=lambda: navegar("Menu Principal")).pack(fill="both", expand=True)
             elif pagina == "Destinacao":
-                RelatorioEntregaPage(content_frame, on_voltar=lambda: navegar("Menu Principal")).pack(fill="both", expand=True)
+                RelatorioEntregaPage(content_frame, on_voltar=lambda: navegar("Menu Principal"), usuario_logado=usuario_logado).pack(fill="both", expand=True)
             elif pagina == "Agente":
                 UsuariosPage(content_frame, usuario_logado=usuario_logado).pack(fill="both", expand=True)
             elif pagina == "Usuario Externo":
