@@ -84,6 +84,7 @@ Mantenha esse contexto ao ajudar com alterações no projeto.
 3. Faça sua pergunta ou solicite a alteração
 
 **Exemplo:**
+
 ```
 [Prompt colado]
 
