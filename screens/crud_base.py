@@ -97,7 +97,7 @@ class CrudBase:
         self.table_frame.pack(fill="both", expand=True, padx=30, pady=pad_y)
         return self.table_frame
 
-    def build_table_header(self, parent, columns, weights, has_checkbox=True):
+    def build_table_header(self, parent, columns, weights, has_checkbox=True, alignments=None):
         header = ctk.CTkFrame(parent, fg_color=COLORS["table_header"], height=44, corner_radius=0)
         header.pack(fill="x")
         header.pack_propagate(False)
@@ -111,13 +111,17 @@ class CrudBase:
         for i, w in enumerate(weights):
             cols.grid_columnconfigure(i, weight=w)
 
+        if alignments is None:
+            alignments = ["w"] * len(columns)
+
         for i, col_text in enumerate(columns):
             padx = (10, 5) if i == 0 else (5, 5) if i < len(columns) - 1 else (5, 10)
             ctk.CTkLabel(
                 cols, text=col_text,
                 font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                text_color=COLORS["text_muted"]
-            ).grid(row=0, column=i, sticky="w", padx=padx)
+                text_color=COLORS["text_muted"],
+                anchor=alignments[i]
+            ).grid(row=0, column=i, sticky="ew", padx=padx)
 
         ctk.CTkLabel(
             header, text="Açoes",
@@ -132,25 +136,28 @@ class CrudBase:
         self.table_body.pack(fill="both", expand=True)
         return self.table_body
 
-    def add_data_row(self):
+    def add_data_row(self, has_checkbox=True):
         linha = ctk.CTkFrame(self.table_body, fg_color="transparent", height=52)
         linha.pack(fill="x")
         linha.pack_propagate(False)
 
         ctk.CTkFrame(self.table_body, fg_color="#E0E0E0", height=1).pack(fill="x")
 
-        cb = ctk.CTkCheckBox(linha, text="", width=20, height=20,
-                              border_width=2, corner_radius=4)
-        cb.pack(side="left", padx=(17, 0))
+        cb = None
+        if has_checkbox:
+            cb = ctk.CTkCheckBox(linha, text="", width=20, height=20,
+                                  border_width=2, corner_radius=4)
+            cb.pack(side="left", padx=(17, 0))
 
         data = ctk.CTkFrame(linha, fg_color="transparent")
         data.pack(side="left", fill="x", expand=True, padx=(10, 0))
 
         return linha, data, cb
 
-    def add_action_buttons(self, parent, actions):
-        frame = ctk.CTkFrame(parent, fg_color="transparent")
-        frame.pack(side="right", padx=(0, 10))
+    def add_action_buttons(self, parent, actions, width=120):
+        frame = ctk.CTkFrame(parent, fg_color="transparent", width=width)
+        frame.pack(side="right", padx=(0, 15))
+        frame.pack_propagate(False)
 
         for icon, cmd in actions:
             ctk.CTkButton(
