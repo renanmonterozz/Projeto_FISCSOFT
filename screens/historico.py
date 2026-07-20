@@ -34,12 +34,44 @@ class HistoricoPage(CrudBase, ctk.CTkFrame):
 
     def build_table(self):
         CrudBase.build_table(self, pad_y=(0, 30))
-        self.build_table_header(
-            self.table_frame,
-            ["Data/Hora", "Usuario", "Acao", "Tabela", "Descricao"],
-            [1, 1, 1, 1, 3],
-            has_checkbox=False
+
+        # Container interno com borda
+        self.table_container = ctk.CTkFrame(
+            self.table_frame, fg_color="transparent",
+            border_width=1, border_color="#999999", corner_radius=4
         )
+        self.table_container.pack(fill="both", expand=True, padx=10, pady=10)
+
+        # --- cabeçalho com PLACE ---
+        header = ctk.CTkFrame(self.table_container, fg_color=COLORS["table_header"],
+                              height=44, corner_radius=0)
+        header.pack(fill="x")
+        header.pack_propagate(False)
+
+        cols = ctk.CTkFrame(header, fg_color="transparent")
+        cols.pack(side="left", fill="x", expand=True, padx=(10, 0))
+
+        colunas = ["Data/Hora", "Usuario", "Acao", "Tabela", "Descricao"]
+        col_cfg = [
+            (0.0, 0.20, "w"),    # Data/Hora
+            (0.20, 0.15, "w"),   # Usuario
+            (0.35, 0.15, "w"),   # Acao
+            (0.50, 0.15, "w"),   # Tabela
+            (0.65, 0.35, "w"),   # Descricao
+        ]
+
+        for texto, (rx, rw, anchor) in zip(colunas, col_cfg):
+            ctk.CTkLabel(
+                cols, text=texto,
+                font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
+                text_color=COLORS["text_muted"],
+                anchor=anchor,
+            ).place(relx=rx, relwidth=rw, rely=0, relheight=1)
+
+        self.table_body = ctk.CTkScrollableFrame(
+            self.table_container, fg_color=COLORS["white"], corner_radius=0
+        )
+        self.table_body.pack(fill="both", expand=True)
 
         self.logs = self.carregar_do_banco()
         self.render_rows()
@@ -97,25 +129,16 @@ class HistoricoPage(CrudBase, ctk.CTkFrame):
         data = ctk.CTkFrame(linha, fg_color="transparent")
         data.pack(side="left", fill="x", expand=True, padx=(10, 0))
 
-        data.grid_columnconfigure(0, weight=1)
-        data.grid_columnconfigure(1, weight=1)
-        data.grid_columnconfigure(2, weight=1)
-        data.grid_columnconfigure(3, weight=1)
-        data.grid_columnconfigure(4, weight=3)
+        # pesos → relx / relwidth (idêntico ao cabeçalho)
+        col_cfg = [
+            (0.0,  0.20, "w"),      # Data/Hora
+            (0.20, 0.15, "w"),      # Usuario
+            (0.35, 0.15, "w"),      # Acao
+            (0.50, 0.15, "w"),      # Tabela
+            (0.65, 0.35, "w"),      # Descricao
+        ]
 
         data_hora_str = log["data_hora"].strftime("%d/%m/%Y %H:%M") if log["data_hora"] else "--"
-
-        ctk.CTkLabel(
-            data, text=data_hora_str,
-            font=ctk.CTkFont(size=FONTS["size_small"]),
-            text_color=COLORS["text"], anchor="w",
-        ).grid(row=0, column=0, sticky="w", padx=(10, 5))
-
-        ctk.CTkLabel(
-            data, text=log["usuario"],
-            font=ctk.CTkFont(size=FONTS["size_small"]),
-            text_color=COLORS["text_muted"], anchor="w",
-        ).grid(row=0, column=1, sticky="w", padx=5)
 
         acao_cor = COLORS.get("primary", "#1D4D21")
         if log["acao"] == "exclusao":
@@ -123,23 +146,22 @@ class HistoricoPage(CrudBase, ctk.CTkFrame):
         elif log["acao"] == "edicao":
             acao_cor = COLORS.get("warning", "#F57C00")
 
-        ctk.CTkLabel(
-            data, text=log["acao"].capitalize(),
-            font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-            text_color=acao_cor, anchor="w",
-        ).grid(row=0, column=2, sticky="w", padx=5)
+        descricao = log["descricao"][:80] + ("..." if len(log["descricao"]) > 80 else "")
 
-        ctk.CTkLabel(
-            data, text=log["tabela"],
-            font=ctk.CTkFont(size=FONTS["size_small"]),
-            text_color=COLORS["text_muted"], anchor="w",
-        ).grid(row=0, column=3, sticky="w", padx=5)
+        dados = [
+            (data_hora_str, COLORS["text"]),
+            (log["usuario"], COLORS["text_muted"]),
+            (log["acao"].capitalize(), acao_cor),
+            (log["tabela"], COLORS["text_muted"]),
+            (descricao, COLORS["text_muted"]),
+        ]
 
-        ctk.CTkLabel(
-            data, text=log["descricao"][:80] + ("..." if len(log["descricao"]) > 80 else ""),
-            font=ctk.CTkFont(size=FONTS["size_small"]),
-            text_color=COLORS["text_muted"], anchor="w",
-        ).grid(row=0, column=4, sticky="w", padx=(5, 10))
+        for (rx, rw, anchor), (texto, cor) in zip(col_cfg, dados):
+            ctk.CTkLabel(
+                data, text=texto,
+                font=ctk.CTkFont(size=FONTS["size_small"]),
+                text_color=cor, anchor=anchor,
+            ).place(relx=rx, relwidth=rw, rely=0, relheight=1)
 
     def pesquisar(self):
         termo = self.entry_busca.get().strip().lower()
