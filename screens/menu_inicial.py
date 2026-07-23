@@ -21,14 +21,19 @@ def _fmt_date(val):
 
 
 class MenuInicialPage(CrudBase, ctk.CTkFrame):
-    def __init__(self, master, usuario_logado=None, perfil="admin", **kwargs):
+    def __init__(self, master, usuario_logado=None, perfil="admin", processo_tccm=None, **kwargs):
         super().__init__(master, **kwargs)
         self.configure(fg_color=COLORS["bg"])
         self.usuario_logado = usuario_logado
         self.perfil = perfil
+        self.processo_tccm = processo_tccm
 
-        titulo = "Menu do Administrador" if perfil == "admin" else "Menu do Agente"
-        subtitulo = "Gerencie usuarios, relatorios e informacoes do sistema"
+        if processo_tccm:
+            titulo = f"TCCM - {processo_tccm}"
+            subtitulo = "Notas fiscais e itens deste processo"
+        else:
+            titulo = "Menu do Administrador" if perfil == "admin" else "Menu do Agente"
+            subtitulo = "Gerencie usuarios, relatorios e informacoes do sistema"
         self.build_header(titulo, subtitulo)
         self.build_stats_cards()
         self.build_notas_table()
@@ -172,19 +177,36 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
             if not db.conexao:
                 return []
 
-            sql = """SELECT nf.nota_fiscal, nf.chave_de_acesso, nf.data,
-                            nf.valor_total, nf.status_nota,
-                            a.nome_agente,
-                            COUNT(p.lote) as qtd_itens
-                     FROM "nota fiscal" nf
-                     LEFT JOIN "agente ibama" a ON a.matricula = nf."agente ibama_matricula"
-                     LEFT JOIN produtos p ON p."nota fiscal_nota_fiscal" = nf.nota_fiscal
-                        AND p."nota fiscal_agente ibama_matricula" = nf."agente ibama_matricula"
-                     GROUP BY nf.nota_fiscal, nf.chave_de_acesso, nf.data,
-                            nf.valor_total, nf.status_nota, a.nome_agente
-                     ORDER BY nf.data DESC"""
+            if self.processo_tccm:
+                sql = """SELECT nf.nota_fiscal, nf.chave_de_acesso, nf.data,
+                                nf.valor_total, nf.status_nota,
+                                a.nome_agente,
+                                COUNT(p.lote) as qtd_itens
+                         FROM "nota fiscal" nf
+                         LEFT JOIN "agente ibama" a ON a.matricula = nf."agente ibama_matricula"
+                         LEFT JOIN produtos p ON p."nota fiscal_nota_fiscal" = nf.nota_fiscal
+                            AND p."nota fiscal_agente ibama_matricula" = nf."agente ibama_matricula"
+                         WHERE nf.processo = ?
+                         GROUP BY nf.nota_fiscal, nf.chave_de_acesso, nf.data,
+                                nf.valor_total, nf.status_nota, a.nome_agente
+                         ORDER BY nf.data DESC"""
+                params = (self.processo_tccm,)
+            else:
+                sql = """SELECT nf.nota_fiscal, nf.chave_de_acesso, nf.data,
+                                nf.valor_total, nf.status_nota,
+                                a.nome_agente,
+                                COUNT(p.lote) as qtd_itens
+                         FROM "nota fiscal" nf
+                         LEFT JOIN "agente ibama" a ON a.matricula = nf."agente ibama_matricula"
+                         LEFT JOIN produtos p ON p."nota fiscal_nota_fiscal" = nf.nota_fiscal
+                            AND p."nota fiscal_agente ibama_matricula" = nf."agente ibama_matricula"
+                         GROUP BY nf.nota_fiscal, nf.chave_de_acesso, nf.data,
+                                nf.valor_total, nf.status_nota, a.nome_agente
+                         ORDER BY nf.data DESC"""
+                params = ()
+
             try:
-                resultados = db.executar(sql)
+                resultados = db.executar(sql, params)
                 notas = []
                 if resultados:
                     for row in resultados.fetchall():
@@ -273,29 +295,58 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
             if not db.conexao:
                 return
 
-            try:
-                r = db.executar('SELECT COUNT(DISTINCT nota_fiscal) FROM "nota fiscal"').fetchone()
-                total_nf = r[0] if r else 0
-            except Exception:
-                total_nf = 0
+            if self.processo_tccm:
+                try:
+                    r = db.executar('SELECT COUNT(DISTINCT nota_fiscal) FROM "nota fiscal" WHERE processo = ?',
+                                    (self.processo_tccm,)).fetchone()
+                    total_nf = r[0] if r else 0
+                except Exception:
+                    total_nf = 0
 
-            try:
-                r = db.executar('SELECT COUNT(DISTINCT id) FROM itens').fetchone()
-                total_itens = r[0] if r else 0
-            except Exception:
-                total_itens = 0
+                try:
+                    r = db.executar(
+                        'SELECT COUNT(DISTINCT i.id) FROM itens i '
+                        'WHERE i.notas_fiscais IN ('
+                        '  SELECT nf.nota_fiscal FROM "nota fiscal" nf WHERE nf.processo = ?'
+                        ')',
+                        (self.processo_tccm,)
+                    ).fetchone()
+                    total_itens = r[0] if r else 0
+                except Exception:
+                    total_itens = 0
 
-            try:
-                r = db.executar('SELECT COALESCE(SUM(valor_total), 0) FROM "nota fiscal"').fetchone()
-                valor_total = float(r[0]) if r else 0
-            except Exception:
-                valor_total = 0
+                try:
+                    r = db.executar('SELECT COALESCE(SUM(valor_total), 0) FROM "nota fiscal" WHERE processo = ?',
+                                    (self.processo_tccm,)).fetchone()
+                    valor_total = float(r[0]) if r else 0
+                except Exception:
+                    valor_total = 0
 
-            try:
-                r = db.executar("SELECT COUNT(DISTINCT processo) FROM tccm").fetchone()
-                total_tccm = r[0] if r else 0
-            except Exception:
-                total_tccm = 0
+                total_tccm = 1
+            else:
+                try:
+                    r = db.executar('SELECT COUNT(DISTINCT nota_fiscal) FROM "nota fiscal"').fetchone()
+                    total_nf = r[0] if r else 0
+                except Exception:
+                    total_nf = 0
+
+                try:
+                    r = db.executar('SELECT COUNT(DISTINCT id) FROM itens').fetchone()
+                    total_itens = r[0] if r else 0
+                except Exception:
+                    total_itens = 0
+
+                try:
+                    r = db.executar('SELECT COALESCE(SUM(valor_total), 0) FROM "nota fiscal"').fetchone()
+                    valor_total = float(r[0]) if r else 0
+                except Exception:
+                    valor_total = 0
+
+                try:
+                    r = db.executar("SELECT COUNT(DISTINCT processo) FROM tccm").fetchone()
+                    total_tccm = r[0] if r else 0
+                except Exception:
+                    total_tccm = 0
 
         self.stat_labels["Notas Fiscais"].configure(text=str(total_nf))
         self.stat_labels["Itens Recebidos"].configure(text=str(total_itens))

@@ -81,11 +81,14 @@ def criar_schema():
 
     CREATE TABLE IF NOT EXISTS tccm (
         processo TEXT NOT NULL,
+        documento_sei TEXT,
+        data_inicio DATE,
+        semestres INTEGER NOT NULL DEFAULT 1,
         total_pago DECIMAL(12,2) NOT NULL DEFAULT 0.00,
-        total_validado DECIMAL(12,2) NOT NULL,
+        total_validado DECIMAL(12,2) NOT NULL DEFAULT 0.00,
         data_validade DATE,
-        intervalo INTEGER NOT NULL,
-        total_devido DECIMAL(12,2) NOT NULL,
+        intervalo INTEGER NOT NULL DEFAULT 1,
+        total_devido DECIMAL(12,2) NOT NULL DEFAULT 0.00,
         status TEXT NOT NULL DEFAULT 'pendente',
         "agente ibama_matricula" INTEGER NOT NULL,
         "infrator_id_infrator" INTEGER NOT NULL,
@@ -209,12 +212,12 @@ def criar_schema():
         ('34567890123', 'pedro@email.com', 'b578dc5fcbfabbc7e96400601d0858c951f04929faef033bbbc117ab935c6ae9', 3, 'Pedro Santos', '11965432109'),
         ('45678901234', 'ana@email.com', '2288821c6b799cf47a8c9aa231f361ffb906bbee0d5fb5e1767509e27442cc62', 4, 'Ana Costa', '11954321098');
 
-    INSERT OR IGNORE INTO tccm (processo, total_pago, total_validado, data_validade, intervalo, total_devido, status, "agente ibama_matricula", "infrator_id_infrator")
+    INSERT OR IGNORE INTO tccm (processo, documento_sei, data_inicio, semestres, total_pago, total_validado, data_validade, intervalo, total_devido, status, "agente ibama_matricula", "infrator_id_infrator")
     VALUES
-        ('PROC-2026-001', 1500.00, 2000.00, '2026-12-31', 6, 5000.00, 'pendente', 0, 1),
-        ('PROC-2026-002', 3000.00, 4000.00, '2026-12-31', 6, 8000.00, 'pendente', 0, 2),
-        ('PROC-2026-003', 800.00, 1000.00, '2026-12-31', 6, 2500.00, 'pendente', 0, 3),
-        ('PROC-2026-004', 2200.00, 3000.00, '2026-12-31', 6, 6500.00, 'pendente', 0, 4);
+        ('PROC-2026-001', 'SEI-001/2026', '2026-01-15', 4, 1500.00, 2000.00, '2026-12-31', 6, 5000.00, 'pendente', 0, 1),
+        ('PROC-2026-002', 'SEI-002/2026', '2026-02-01', 4, 3000.00, 4000.00, '2026-12-31', 6, 8000.00, 'pendente', 0, 2),
+        ('PROC-2026-003', 'SEI-003/2026', '2026-03-10', 2, 800.00, 1000.00, '2026-12-31', 6, 2500.00, 'pendente', 0, 3),
+        ('PROC-2026-004', 'SEI-004/2026', '2026-01-20', 4, 2200.00, 3000.00, '2026-12-31', 6, 6500.00, 'pendente', 0, 4);
 
     INSERT OR IGNORE INTO itens (id, nome, descricao, codigo_interno, categoria, tipo, justificativa, unidade_medida, semestre, quantidade_prevista, status, notas_fiscais, criado_em)
     VALUES

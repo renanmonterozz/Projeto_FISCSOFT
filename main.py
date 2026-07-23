@@ -9,7 +9,7 @@ import os
 
 import customtkinter as ctk
 
-from config.styles import ASSETS_DIR, COLORS
+from config.styles import ASSETS_DIR, COLORS, FONTS
 from database.conexaodb import Database
 from screens.sidebar import Sidebar
 from screens.menu_inicial import MenuInicialPage
@@ -20,6 +20,8 @@ from screens.relatorios import RelatoriosPage
 from screens.relatorio_entrega import RelatorioEntregaPage
 from screens.locais import LocaisPage
 from screens.historico import HistoricoPage
+from screens.tccm_dashboard import TccmDashboardPage, TccmDetalhesPage
+from screens.cadastro_tccm_completo import CadastroTCCMCompleto
 from utils import verify_password
 
 logging.basicConfig(
@@ -31,8 +33,8 @@ logging.basicConfig(
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
-PERMISSOES_ADMIN = {"Menu Principal", "Itens", "Destinacao", "Agente", "Usuario Externo", "Locais Cadastrados", "Relatorio", "Historico"}
-PERMISSOES_AGENTE = {"Menu Principal", "Itens", "Destinacao", "Agente", "Usuario Externo", "Locais Cadastrados", "Relatorio", "Historico"}
+PERMISSOES_ADMIN = {"Menu Principal", "Itens", "Destinacao", "Agente", "Usuario Externo", "Locais Cadastrados", "Relatorio", "Historico", "Dashboard TCCM"}
+PERMISSOES_AGENTE = {"Menu Principal", "Itens", "Destinacao", "Agente", "Usuario Externo", "Locais Cadastrados", "Relatorio", "Historico", "Dashboard TCCM"}
 
 
 class LoginApp(ctk.CTk):
@@ -191,9 +193,69 @@ class LoginApp(ctk.CTk):
         else:
             self._abrir_tela_principal(perfil="agente")
 
-    def _abrir_tela_principal(self, perfil: str = "admin"):
+    def _abrir_tela_principal(self, perfil: str = "admin", processo_tccm: str = None):
         self.quit()
         self.destroy()
+
+        welcome_app = ctk.CTk()
+        welcome_app.title("FISCSOFT - Bem-vindo")
+        welcome_app.geometry("1200x700")
+        welcome_app.configure(fg_color=COLORS["bg"])
+        welcome_app.usuario_logado = self.usuario_logado
+        welcome_app.perfil = perfil
+        welcome_app.processo_tccm = processo_tccm
+
+        header = ctk.CTkFrame(welcome_app, fg_color="transparent")
+        header.pack(fill="x", padx=30, pady=(20, 0))
+
+        ctk.CTkLabel(
+            header,
+            text=f"Bem-vindo, {self.usuario_logado}",
+            font=ctk.CTkFont(size=FONTS["size_title"], weight="bold"),
+            text_color=COLORS["text"],
+        ).pack(side="left")
+
+        content = ctk.CTkFrame(welcome_app, fg_color="transparent")
+        content.pack(fill="both", expand=True, padx=30, pady=(15, 20))
+
+        def _logout_welcome():
+            welcome_app.quit()
+            welcome_app.destroy()
+            app = LoginApp()
+            app.mainloop()
+
+        def _abrir_cadastro_tccm():
+            win = ctk.CTkToplevel(welcome_app)
+            win.title("Cadastro de TCCM")
+            win.geometry("900x650")
+            win.configure(fg_color=COLORS["bg"])
+            win.transient(welcome_app)
+            win.grab_set()
+            CadastroTCCMCompleto(
+                win,
+                on_voltar=win.destroy,
+                usuario_logado=self.usuario_logado, perfil=perfil,
+            ).pack(fill="both", expand=True)
+
+        dashboard = TccmDashboardPage(
+            content, usuario_logado=self.usuario_logado, perfil=perfil,
+            on_selecionar=lambda proc: self._abrir_menu_principal(welcome_app, perfil, processo_tccm=proc),
+            on_sair=_logout_welcome,
+            on_cadastrar=_abrir_cadastro_tccm,
+        )
+        dashboard.pack(fill="both", expand=True)
+        dashboard._welcome_app = welcome_app
+        dashboard._perfil = perfil
+        dashboard._abrir_menu_principal_cb = lambda proc: self._abrir_menu_principal(welcome_app, perfil, processo_tccm=proc)
+
+        if processo_tccm:
+            welcome_app.after(100, lambda: self._abrir_menu_principal(welcome_app, perfil, processo_tccm=processo_tccm))
+
+        welcome_app.mainloop()
+
+    def _abrir_menu_principal(self, welcome_app, perfil: str, processo_tccm: str = None):
+        welcome_app.quit()
+        welcome_app.destroy()
 
         main_app = ctk.CTk()
         main_app.title("FISCSOFT" if perfil == "admin" else "FISCSOFT - Usuario")
@@ -204,7 +266,12 @@ class LoginApp(ctk.CTk):
 
         permissoes = PERMISSOES_ADMIN if perfil == "admin" else PERMISSOES_AGENTE
 
-        def navegar(pagina: str):
+        _processo_tccm = processo_tccm
+
+        def navegar(pagina: str, processo_tccm: str = None):
+            if processo_tccm is None:
+                processo_tccm = _processo_tccm
+
             if pagina not in permissoes:
                 messagebox.showwarning("Acesso Negado", "Voce nao tem permissao para acessar esta pagina.")
                 return
@@ -215,9 +282,11 @@ class LoginApp(ctk.CTk):
             usuario_logado = main_app.usuario_logado if perfil == "agente" else None
 
             if pagina == "Menu Principal":
-                MenuInicialPage(content_frame, usuario_logado=usuario_logado, perfil=perfil).pack(fill="both", expand=True)
+                MenuInicialPage(content_frame, usuario_logado=usuario_logado, perfil=perfil,
+                                processo_tccm=processo_tccm).pack(fill="both", expand=True)
             elif pagina == "Itens":
-                ItensPage(content_frame, on_voltar=lambda: navegar("Menu Principal")).pack(fill="both", expand=True)
+                ItensPage(content_frame, on_voltar=lambda: navegar("Menu Principal"),
+                          processo_tccm=processo_tccm).pack(fill="both", expand=True)
             elif pagina == "Destinacao":
                 RelatorioEntregaPage(content_frame, on_voltar=lambda: navegar("Menu Principal"), usuario_logado=usuario_logado).pack(fill="both", expand=True)
             elif pagina == "Agente":
@@ -230,6 +299,24 @@ class LoginApp(ctk.CTk):
                 RelatoriosPage(content_frame, usuario_logado=usuario_logado).pack(fill="both", expand=True)
             elif pagina == "Historico":
                 HistoricoPage(content_frame, usuario_logado=usuario_logado).pack(fill="both", expand=True)
+            elif pagina == "Dashboard TCCM":
+                if processo_tccm:
+                    TccmDetalhesPage(
+                        content_frame, processo=processo_tccm,
+                        on_voltar=lambda: navegar("Dashboard TCCM"),
+                        usuario_logado=usuario_logado, perfil=perfil,
+                    ).pack(fill="both", expand=True)
+                else:
+                    TccmDashboardPage(
+                        content_frame, usuario_logado=usuario_logado, perfil=perfil,
+                        on_cadastrar=lambda: navegar("Cadastro TCCM"),
+                    ).pack(fill="both", expand=True)
+            elif pagina == "Cadastro TCCM":
+                CadastroTCCMCompleto(
+                    content_frame,
+                    on_voltar=lambda: navegar("Dashboard TCCM"),
+                    usuario_logado=usuario_logado, perfil=perfil,
+                ).pack(fill="both", expand=True)
             else:
                 ctk.CTkLabel(
                     content_frame,
@@ -250,8 +337,7 @@ class LoginApp(ctk.CTk):
         content_frame = ctk.CTkFrame(main_app, fg_color=COLORS["bg"])
         content_frame.pack(side="right", fill="both", expand=True)
 
-        pagina_inicial = "Menu Principal"
-        navegar(pagina_inicial)
+        navegar("Menu Principal")
         main_app.mainloop()
 
     def login_certificado(self):
