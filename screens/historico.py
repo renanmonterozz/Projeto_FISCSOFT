@@ -3,7 +3,7 @@ import _path  # noqa: F401
 import customtkinter as ctk
 from datetime import datetime
 
-from config.styles import COLORS, FONTS
+from config.styles import get_colors, FONTS
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
@@ -12,7 +12,7 @@ from screens.sidebar import carregar_icone
 class HistoricoPage(CrudBase, ctk.CTkFrame):
     def __init__(self, master, usuario_logado=None, **kwargs):
         super().__init__(master, **kwargs)
-        self.configure(fg_color=COLORS["bg"])
+        self.configure(fg_color=get_colors()["bg"])
         self.usuario_logado = usuario_logado
         self.logs = []
 
@@ -33,17 +33,18 @@ class HistoricoPage(CrudBase, ctk.CTkFrame):
         self.build_action_btn(btn_frame, "  Limpar", carregar_icone("apagar.png"), self.limpar_filtros)
 
     def build_table(self):
+        colors = get_colors()
         CrudBase.build_table(self, pad_y=(0, 30))
 
         # Container interno com borda
         self.table_container = ctk.CTkFrame(
             self.table_frame, fg_color="transparent",
-            border_width=1, border_color="#999999", corner_radius=4
+            border_width=1, border_color=colors["border"], corner_radius=4
         )
         self.table_container.pack(fill="both", expand=True, padx=10, pady=10)
 
         # --- cabeçalho com PLACE ---
-        header = ctk.CTkFrame(self.table_container, fg_color=COLORS["table_header"],
+        header = ctk.CTkFrame(self.table_container, fg_color=colors["table_header"],
                               height=44, corner_radius=0)
         header.pack(fill="x")
         header.pack_propagate(False)
@@ -64,12 +65,12 @@ class HistoricoPage(CrudBase, ctk.CTkFrame):
             ctk.CTkLabel(
                 cols, text=texto,
                 font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                text_color=COLORS["text_muted"],
+                text_color=colors["text_muted"],
                 anchor=anchor,
             ).place(relx=rx, relwidth=rw, rely=0, relheight=1)
 
         self.table_body = ctk.CTkScrollableFrame(
-            self.table_container, fg_color=COLORS["white"], corner_radius=0
+            self.table_container, fg_color=colors["white"], corner_radius=0
         )
         self.table_body.pack(fill="both", expand=True)
 
@@ -104,6 +105,7 @@ class HistoricoPage(CrudBase, ctk.CTkFrame):
             return logs
 
     def render_rows(self):
+        colors = get_colors()
         for widget in self.table_body.winfo_children():
             widget.destroy()
 
@@ -112,7 +114,7 @@ class HistoricoPage(CrudBase, ctk.CTkFrame):
                 self.table_body,
                 text="Nenhum registro encontrado",
                 font=ctk.CTkFont(size=FONTS["size_body"]),
-                text_color=COLORS["text_muted"],
+                text_color=colors["text_muted"],
             ).pack(pady=40)
             return
 
@@ -120,11 +122,12 @@ class HistoricoPage(CrudBase, ctk.CTkFrame):
             self._add_row(log)
 
     def _add_row(self, log):
+        colors = get_colors()
         linha = ctk.CTkFrame(self.table_body, fg_color="transparent", height=52)
         linha.pack(fill="x")
         linha.pack_propagate(False)
 
-        ctk.CTkFrame(self.table_body, fg_color="#E0E0E0", height=1).pack(fill="x")
+        ctk.CTkFrame(self.table_body, fg_color=colors["border"], height=1).pack(fill="x")
 
         data = ctk.CTkFrame(linha, fg_color="transparent")
         data.pack(side="left", fill="x", expand=True, padx=(10, 0))
@@ -140,20 +143,20 @@ class HistoricoPage(CrudBase, ctk.CTkFrame):
 
         data_hora_str = log["data_hora"].strftime("%d/%m/%Y %H:%M") if log["data_hora"] else "--"
 
-        acao_cor = COLORS.get("primary", "#1D4D21")
+        acao_cor = colors.get("primary", "#1D4D21")
         if log["acao"] == "exclusao":
-            acao_cor = COLORS.get("danger", "#D32F2F")
+            acao_cor = colors.get("danger", "#D32F2F")
         elif log["acao"] == "edicao":
-            acao_cor = COLORS.get("warning", "#F57C00")
+            acao_cor = colors.get("warning", "#F57C00")
 
         descricao = log["descricao"][:80] + ("..." if len(log["descricao"]) > 80 else "")
 
         dados = [
-            (data_hora_str, COLORS["text"]),
-            (log["usuario"], COLORS["text_muted"]),
+            (data_hora_str, colors["text"]),
+            (log["usuario"], colors["text_muted"]),
             (log["acao"].capitalize(), acao_cor),
-            (log["tabela"], COLORS["text_muted"]),
-            (descricao, COLORS["text_muted"]),
+            (log["tabela"], colors["text_muted"]),
+            (descricao, colors["text_muted"]),
         ]
 
         for (rx, rw, anchor), (texto, cor) in zip(col_cfg, dados):
@@ -190,7 +193,7 @@ if __name__ == "__main__":
     app = ctk.CTk()
     app.title("FISCSOFT - Historico")
     app.geometry("1200x700")
-    app.configure(fg_color=COLORS["bg"])
+    app.configure(fg_color=get_colors()["bg"])
 
     HistoricoPage(app).pack(fill="both", expand=True)
     app.mainloop()
