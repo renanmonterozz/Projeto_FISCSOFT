@@ -16,10 +16,11 @@ Estrutura do projeto:
 
 Fluxo de navegacao (3 janelas):
 1. LoginApp (janela 1000x600) - Tela de login
-2. Welcome Screen (janela 1200x700) - Painel Geral (Dashboard TCCM) + botao "Acessar Sistema"
+2. Welcome Screen (janela 1200x700) - Painel Geral (Dashboard TCCM) + botao "+ Novo TCCM" + botao "Sair"
 3. Main App (janela 1200x700) - Menu Principal com Sidebar + todas as telas
 
 Ao clicar no botao ">" de um TCCM no Painel Geral, fecha a Welcome Screen e abre a Main App ja na tela de detalhes daquele TCCM.
+Ao clicar em "+ Novo TCCM", abre a tela CadastroTCCMCompleto (popup na Welcome Screen ou navegacao no Main App).
 
 Arquivos principais (sistema interno - main.py):
 - main.py: Login (LoginApp), Welcome Screen (_abrir_tela_principal), Menu Principal (_abrir_menu_principal), navegacao (navegar)
@@ -28,8 +29,9 @@ Arquivos principais (sistema interno - main.py):
 - screens/crud_base.py: Classe base para telas com tabela (CrudBase mixin)
 - screens/sidebar.py: Menu lateral com 9 itens (inclui Dashboard TCCM)
 - screens/menu_inicial.py: Dashboard principal (cards + tabela de notas)
-- screens/tccm_dashboard.py: Painel Geral + Detalhes TCCM + Modal Cadastro TCCM + CircularProgressBar
-- screens/infratores.py: CRUD Infratores (antes agenteibama.py)
+- screens/tccm_dashboard.py: Painel Geral + Detalhes TCCM + Modal Cadastro TCCM + ModalCadastrarAgente + ModalCadastrarInfrator
+- screens/cadastro_tccm_completo.py: Tela completa de cadastro TCCM com sidebar propria (4 abas)
+- screens/infratores.py: CRUD Infratores
 - screens/usuarios.py: CRUD Agentes IBAMA
 - screens/itens.py: CRUD Itens
 - screens/locais.py: CRUD Locais Cadastrados
@@ -54,7 +56,7 @@ Credenciais de teste:
 Banco de dados - Tabelas principais:
 - "agente ibama": matricula (PK), login, senha, email, nome_agente, cpf, perfil, status
 - infrator: id_infrator (PK auto), cpf, email, senha, nome_infrator, telefone_infrator
-- tccm: processo (PK), "agente ibama_matricula" (FK), infrator_id_infrator (FK), total_devido, total_pago, total_validado, data_validade, intervalo, status
+- tccm: processo (PK), documento_sei, data_inicio, semestres, "agente ibama_matricula" (FK), infrator_id_infrator (FK), total_devido, total_pago, total_validado, data_validade, intervalo, status
 - "nota fiscal": nota_fiscal (PK), "agente ibama_matricula" (FK), processo (FK -> tccm.processo), semestre, data, chave_de_acesso, valor_total, status_nota (Pendente/Aprovada/Rejeitada/Correcao Solicitada)
 - produtos: lote (PK auto), "nota fiscal_nota_fiscal" (FK), "nota fiscal_agente ibama_matricula" (FK), itens_id (FK -> itens.id), nome_item, quantidade, preco_unitario, data_validade, status_entrega
 - itens: id (PK auto), nome, descricao, codigo_interno, categoria, tipo, justificativa, unidade_medida, semestre, quantidade_prevista, status (Ativo/Inativo), notas_fiscais, criado_em
@@ -78,14 +80,13 @@ Fluxo TCCM -> Nota Fiscal -> Conciliacao:
 - Admin aprova NF -> soma produtos (quantidade x preco_unitario) -> atualiza valor_total da NF -> soma ao total_pago do TCCM -> verifica se total_pago >= total_devido -> atualiza status do TCCM
 - Tabela produtos usa itens_id (FK) e nome_item para vincular ao catalogo de itens
 
-Fluxo Painel Geral (tccm_dashboard.py):
+Fluxo Painel Geral (screens/tccm_dashboard.py):
 - TccmDashboardPage: Dashboard panoramico com scroll
-  - 5 cards no topo: TCCMs, Notas Fiscais, Itens, Infratores, Agentes
-  - Barra circular de progresso (% geral arrecadado)
-  - Totais: Devido, Pago, Pendente, Valor em NFs
-  - Cards de status: Pendentes, Pagos Parcial, Concluidos
-  - Tabela esquerda: Todos os TCCMs com botao ">" para detalhes
-  - Tabela direita: Notas Fiscais Recentes
+  - Header com titulo "Painel Geral", botoes "+ Novo TCCM" e "Sair"
+  - 2 cards de status: Pendentes, Concluidos
+  - Campo de filtro por processo/infrator/status
+  - Tabela "Todos os TCCMs" com botao ">" para detalhes
+  - Botao "+ Novo TCCM" abre CadastroTCCMCompleto (popup ou navegacao)
 - TccmDetalhesPage: Tela de detalhes do TCCM selecionado
   - Barra de progresso individual
   - Informacoes do TCCM (8 campos em grid)
@@ -93,23 +94,34 @@ Fluxo Painel Geral (tccm_dashboard.py):
   - Tabela Notas Fiscais Vinculadas
   - Tabela Itens vinculados (via produtos das NFs)
   - Botao "Voltar" retorna ao Painel Geral
-- ModalCadastrarTCCM: Modal para criar novo TCCM
-  - Campos: Processo, Total Devido, Total Validado, Data Validade, Intervalo
-  - ComboBox: Agente (ativo), Infrator
-  - Busca dados do banco para popular ComboBoxes
-- CircularProgressBar: Widget de barra circular com Canvas
+
+Fluxo CadastroTCCMCompleto (screens/cadastro_tccm_completo.py):
+- Tela com sidebar propria (nao usa a sidebar do main_app)
+- 4 abas navegaveis pela sidebar:
+  1. Dados do TCCM: Processo, Documento SEI, Data de Inicio, Semestres, Total a Ser Pago
+  2. Agente Responsavel: ComboBox de agentes ativos + botao "+ Novo Agente"
+  3. Infrator: ComboBox de infratores + botao "+ Novo Infrator"
+  4. Itens: Formulario inline + tabela de itens adicionados
+- Botoes na sidebar: "Salvar TCCM" (verde) e "Voltar" (vermelho)
+- Submodais: ModalCadastrarAgente, ModalCadastrarInfrator (reutilizados do tccm_dashboard.py)
+- Validacao: campos obrigatorios, formato data DD/MM/AAAA, numeros
+- Insercao: INSERT INTO tccm + INSERT INTO itens para cada item
 
 Fluxo de Navegacao (main.py):
 - Login -> Welcome Screen (Painel Geral) -> "Acessar Sistema" -> Main App (Menu Principal)
 - Botao ">" no Painel Geral fecha Welcome Screen e abre Main App com TccmDetalhesPage
+- Botao "+ Novo TCCM" abre CadastroTCCMCompleto (popup na Welcome, navegacao no Main App)
 - Dentro do Main App, sidebar permite navegar entre todas as telas
 - Logout retorna ao Login
+
+Sidebar (screens/sidebar.py) - 9 itens:
+- Menu Principal, Dashboard TCCM, Itens, Destinacao, Agente, Usuario Externo, Locais Cadastrados, Relatorio, Historico
+- "Cadastro TCCM" NAO esta na sidebar (acesso apenas via botao "+ Novo TCCM")
 
 Fluxo Relatorio de Entrega:
 - ComboBox de local de destino (carrega do banco) com exibicao de detalhes
 - ComboBox de itens do catalogo (itens ativos) com selecao de quantidade
 - Botoes: Imprimir (abre notepad /p), Baixar PDF (gera .txt), + Cadastrar Novo Local
-- Botao Gerar Relatorio foi removido (redundante)
 
 Padroes de codigo:
 - Queries SQLite usam ? como placeholder
@@ -119,13 +131,16 @@ Padroes de codigo:
 - Botoes de acao: icones via add_action_buttons()
 - row_factory = sqlite3.Row para acesso dict-like
 - Senhas SHA-256 legadas, verificadas via verify_password()
-- Datas do sao strings ('YYYY-MM-DD'), tratar com _fmt_date() ao formatar
+- Datas do banco sao strings ('YYYY-MM-DD'), tratar com _fmt_date() ao formatar
 - _fmt_brl() formata valores em R$ (1.234,56)
 - Enter binding nos logins: self.bind("<Return>", ...) + unbind no voltar_menu()
 - CTkComboBox com bind de scroll (mousewheel) para navegacao por opcoes
 - CTkCanvas nao aceita bg="transparent", usar cor solida (ex: COLORS["white"])
 - Botoes ">" usam unicode \u25b6 para indicar selecao/abrir detalhes
+- Botoes remover usam unicode \u2715
 - Widgets CTkScrollableFrame para listas grandes
+- pack_forget() ao inves de destroy() para alternar entre abas (destruir widgets impede reutilizacao)
+- Tela CadastroTCCMCompleto usa sidebar propria com pack_forget() para troca de paginas
 
 Mantenha esse contexto ao ajudar com alteracoes no projeto.
 ```

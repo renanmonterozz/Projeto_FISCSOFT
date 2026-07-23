@@ -14,12 +14,15 @@ from utils import registrar_log
 
 
 class ItensPage(CrudBase, ctk.CTkFrame):
-    def __init__(self, master, on_voltar=None, **kwargs):
+    def __init__(self, master, on_voltar=None, processo_tccm=None, **kwargs):
         super().__init__(master, **kwargs)
         self.configure(fg_color=COLORS["bg"])
         self.on_voltar = on_voltar
+        self.processo_tccm = processo_tccm
 
-        self.build_header("Itens", "Cadastre, visualize, edite e exclua itens do sistema")
+        titulo = "Itens do TCCM" if processo_tccm else "Itens"
+        subtitulo = f"Itens vinculados ao processo {processo_tccm}" if processo_tccm else "Cadastre, visualize, edite e exclua itens do sistema"
+        self.build_header(titulo, subtitulo)
         self._build_filter_bar()
         self._build_table()
 
@@ -126,16 +129,38 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         with Database() as db:
             if not db.conexao:
                 return []
-            try:
-                r = db.executar(
-                    "SELECT id, nome, descricao, tipo, justificativa, unidade_medida "
-                    "FROM itens ORDER BY id"
-                )
-            except Exception:
-                r = db.executar(
-                    "SELECT id, nome, descricao, categoria, NULL, '' "
-                    "FROM itens ORDER BY id"
-                )
+
+            if self.processo_tccm:
+                try:
+                    r = db.executar(
+                        "SELECT DISTINCT i.id, i.nome, i.descricao, i.tipo, i.justificativa, i.unidade_medida "
+                        "FROM itens i "
+                        "WHERE i.notas_fiscais IN ("
+                        "  SELECT nf.nota_fiscal FROM \"nota fiscal\" nf WHERE nf.processo = ?"
+                        ") ORDER BY i.id",
+                        (self.processo_tccm,)
+                    )
+                except Exception:
+                    r = db.executar(
+                        "SELECT DISTINCT i.id, i.nome, i.descricao, i.categoria, NULL, '' "
+                        "FROM itens i "
+                        "WHERE i.notas_fiscais IN ("
+                        "  SELECT nf.nota_fiscal FROM \"nota fiscal\" nf WHERE nf.processo = ?"
+                        ") ORDER BY i.id",
+                        (self.processo_tccm,)
+                    )
+            else:
+                try:
+                    r = db.executar(
+                        "SELECT id, nome, descricao, tipo, justificativa, unidade_medida "
+                        "FROM itens ORDER BY id"
+                    )
+                except Exception:
+                    r = db.executar(
+                        "SELECT id, nome, descricao, categoria, NULL, '' "
+                        "FROM itens ORDER BY id"
+                    )
+
             itens = []
             if r:
                 for row in r.fetchall():

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": ["AGENTS.md"],
+  "references": {
+    "screens": {
+      "path": "screens",
+      "description": "Todas as telas do sistema FISCSOFT"
+    },
+    "database": {
+      "path": "database",
+      "description": "Schema SQL, conexao e queries do banco SQLite"
+    },
+    "config": {
+      "path": "config",
+      "description": "Estilos, cores e fontes do sistema"
+    }
+  }
+}
