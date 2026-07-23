@@ -9,7 +9,7 @@ import os
 
 import customtkinter as ctk
 
-from config.styles import ASSETS_DIR, COLORS
+from config.styles import ASSETS_DIR, get_colors
 from database.conexaodb import Database
 from screens.sidebar import Sidebar
 from screens.menu_inicial import MenuInicialPage
@@ -42,7 +42,7 @@ class LoginApp(ctk.CTk):
         self.title("FISCSOFT - Login")
         self.geometry("1000x600")
         self.resizable(False, False)
-        self.configure(fg_color=COLORS["white"])
+        self.configure(fg_color=get_colors()["white"])
         self.mostrando_form = False
 
         try:
@@ -80,12 +80,12 @@ class LoginApp(ctk.CTk):
         self.form_frame = ctk.CTkFrame(self.bg_label, fg_color="transparent", width=300, height=270)
         self.form_frame.place(x=660, y=240)
 
-        frame_user = ctk.CTkFrame(self.form_frame, fg_color="white", corner_radius=8, border_width=1, border_color=COLORS["border"])
+        frame_user = ctk.CTkFrame(self.form_frame, fg_color="white", corner_radius=8, border_width=1, border_color=get_colors()["border"])
         frame_user.pack(pady=(10, 8), padx=25, fill="x")
         frame_user.pack_propagate(False)
         frame_user.configure(height=40)
 
-        ctk.CTkLabel(frame_user, text="\U0001f464", font=ctk.CTkFont(size=16), text_color=COLORS["text_muted"]).pack(side="left", padx=(12, 5))
+        ctk.CTkLabel(frame_user, text="\U0001f464", font=ctk.CTkFont(size=16), text_color=get_colors()["text_muted"]).pack(side="left", padx=(12, 5))
         self.entry_usuario = ctk.CTkEntry(
             frame_user,
             placeholder_text="Usuario",
@@ -93,16 +93,16 @@ class LoginApp(ctk.CTk):
             border_width=0,
             fg_color="white",
             text_color="black",
-            placeholder_text_color=COLORS["text_muted"],
+            placeholder_text_color=get_colors()["text_muted"],
         )
         self.entry_usuario.pack(side="left", fill="x", expand=True, padx=(0, 10), pady=2)
 
-        frame_senha = ctk.CTkFrame(self.form_frame, fg_color="white", corner_radius=8, border_width=1, border_color=COLORS["border"])
+        frame_senha = ctk.CTkFrame(self.form_frame, fg_color="white", corner_radius=8, border_width=1, border_color=get_colors()["border"])
         frame_senha.pack(pady=8, padx=25, fill="x")
         frame_senha.pack_propagate(False)
         frame_senha.configure(height=40)
 
-        ctk.CTkLabel(frame_senha, text="\U0001f512", font=ctk.CTkFont(size=16), text_color=COLORS["text_muted"]).pack(side="left", padx=(12, 5))
+        ctk.CTkLabel(frame_senha, text="\U0001f512", font=ctk.CTkFont(size=16), text_color=get_colors()["text_muted"]).pack(side="left", padx=(12, 5))
         self.entry_senha = ctk.CTkEntry(
             frame_senha,
             placeholder_text="Senha",
@@ -111,7 +111,7 @@ class LoginApp(ctk.CTk):
             border_width=0,
             fg_color="white",
             text_color="black",
-            placeholder_text_color=COLORS["text_muted"],
+            placeholder_text_color=get_colors()["text_muted"],
         )
         self.entry_senha.pack(side="left", fill="x", expand=True, padx=(0, 10), pady=2)
 
@@ -124,8 +124,8 @@ class LoginApp(ctk.CTk):
             text="Entrar",
             height=38,
             corner_radius=8,
-            fg_color=COLORS["primary"],
-            hover_color=COLORS["primary_hover"],
+            fg_color=get_colors()["primary"],
+            hover_color=get_colors()["primary_hover"],
             text_color="white",
             border_width=0,
             font=ctk.CTkFont(size=14, weight="bold"),
@@ -137,8 +137,8 @@ class LoginApp(ctk.CTk):
             text="Sair",
             height=28,
             corner_radius=6,
-            fg_color=COLORS["dark"],
-            hover_color=COLORS["dark_hover"],
+            fg_color=get_colors()["dark"],
+            hover_color=get_colors()["dark_hover"],
             text_color="white",
             border_width=0,
             font=ctk.CTkFont(size=12),
@@ -198,7 +198,7 @@ class LoginApp(ctk.CTk):
         main_app = ctk.CTk()
         main_app.title("FISCSOFT" if perfil == "admin" else "FISCSOFT - Usuario")
         main_app.geometry("1200x700")
-        main_app.configure(fg_color=COLORS["white"])
+        main_app.configure(fg_color=get_colors()["white"])
         main_app.usuario_logado = self.usuario_logado
         main_app.perfil = perfil
 
@@ -208,6 +208,8 @@ class LoginApp(ctk.CTk):
             if pagina not in permissoes:
                 messagebox.showwarning("Acesso Negado", "Voce nao tem permissao para acessar esta pagina.")
                 return
+
+            main_app._pagina_atual = pagina
 
             for w in content_frame.winfo_children():
                 w.destroy()
@@ -235,8 +237,14 @@ class LoginApp(ctk.CTk):
                     content_frame,
                     text=pagina,
                     font=ctk.CTkFont(size=24, weight="bold"),
-                    text_color=COLORS["text"],
+                    text_color=get_colors()["text"],
                 ).pack(expand=True)
+
+        def toggle_theme_callback():
+            sidebar.rebuild()
+            for w in content_frame.winfo_children():
+                w.destroy()
+            navegar(main_app._pagina_atual)
 
         def logout():
             main_app.quit()
@@ -244,11 +252,16 @@ class LoginApp(ctk.CTk):
             app = LoginApp()
             app.mainloop()
 
-        sidebar = Sidebar(main_app, width=210, on_navigate=navegar, on_sair=logout)
+        sidebar = Sidebar(main_app, width=210, on_navigate=navegar, on_sair=logout, on_toggle_theme=toggle_theme_callback)
         sidebar.pack(side="left", fill="y")
 
-        content_frame = ctk.CTkFrame(main_app, fg_color=COLORS["bg"])
+        content_frame = ctk.CTkFrame(main_app, fg_color=get_colors()["bg"])
         content_frame.pack(side="right", fill="both", expand=True)
+
+        main_app._sidebar = sidebar
+        main_app._content_frame = content_frame
+        main_app._navegar = navegar
+        main_app._pagina_atual = "Menu Principal"
 
         pagina_inicial = "Menu Principal"
         navegar(pagina_inicial)
@@ -273,7 +286,7 @@ class LoginApp(ctk.CTk):
             self.form_frame,
             text="Funcionalidade em\ndesenvolvimento",
             font=ctk.CTkFont(size=14),
-            text_color=COLORS["text_muted"],
+            text_color=get_colors()["text_muted"],
         ).pack(pady=10)
 
         ctk.CTkButton(
@@ -281,8 +294,8 @@ class LoginApp(ctk.CTk):
             text="Voltar",
             height=30,
             corner_radius=6,
-            fg_color=COLORS["dark"],
-            hover_color=COLORS["dark_hover"],
+            fg_color=get_colors()["dark"],
+            hover_color=get_colors()["dark_hover"],
             text_color="white",
             border_width=0,
             font=ctk.CTkFont(size=12),

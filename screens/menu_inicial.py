@@ -4,7 +4,7 @@ from datetime import datetime as _dt
 
 import customtkinter as ctk
 
-from config.styles import COLORS, FONTS
+from config.styles import get_colors, FONTS
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
 
@@ -23,7 +23,7 @@ def _fmt_date(val):
 class MenuInicialPage(CrudBase, ctk.CTkFrame):
     def __init__(self, master, usuario_logado=None, perfil="admin", **kwargs):
         super().__init__(master, **kwargs)
-        self.configure(fg_color=COLORS["bg"])
+        self.configure(fg_color=get_colors()["bg"])
         self.usuario_logado = usuario_logado
         self.perfil = perfil
 
@@ -34,6 +34,7 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
         self.build_notas_table()
 
     def build_stats_cards(self):
+        colors = get_colors()
         cards_frame = ctk.CTkFrame(self, fg_color="transparent")
         cards_frame.pack(fill="x", padx=30, pady=(0, 20))
 
@@ -49,8 +50,8 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
 
         for i, (titulo, subtitulo, valor) in enumerate(card_data):
             card = ctk.CTkFrame(
-                cards_frame, fg_color=COLORS["white"], corner_radius=4,
-                border_width=1, border_color=COLORS["border"]
+                cards_frame, fg_color=colors["white"], corner_radius=4,
+                border_width=1, border_color=colors["border"]
             )
             card.grid(row=0, column=i, padx=5, sticky="nsew")
             cards_frame.columnconfigure(i, weight=1)
@@ -59,7 +60,7 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
             inner.pack(fill="x", padx=15, pady=15)
 
             icon_circle = ctk.CTkFrame(
-                inner, fg_color=COLORS["primary_light"],
+                inner, fg_color=colors["primary_light"],
                 width=48, height=48, corner_radius=24
             )
             icon_circle.pack(side="left", padx=(0, 12))
@@ -68,7 +69,7 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
             ctk.CTkLabel(
                 icon_circle, text=icons[i],
                 font=ctk.CTkFont(size=18),
-                text_color=COLORS["primary"]
+                text_color=colors["primary"]
             ).pack(expand=True)
 
             text_frame = ctk.CTkFrame(inner, fg_color="transparent")
@@ -77,19 +78,19 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
             ctk.CTkLabel(
                 text_frame, text=titulo,
                 font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
-                text_color=COLORS["text"], anchor="w"
+                text_color=colors["text"], anchor="w"
             ).pack(anchor="w")
 
             ctk.CTkLabel(
                 text_frame, text=subtitulo,
                 font=ctk.CTkFont(size=FONTS["size_small"]),
-                text_color=COLORS["text_muted"], anchor="w"
+                text_color=colors["text_muted"], anchor="w"
             ).pack(anchor="w")
 
             lbl_valor = ctk.CTkLabel(
                 card, text=valor,
                 font=ctk.CTkFont(size=22, weight="bold"),
-                text_color=COLORS["text"]
+                text_color=colors["text"]
             )
             lbl_valor.pack(pady=(0, 15))
             self.stat_labels[titulo] = lbl_valor
@@ -97,9 +98,10 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
         self.atualizar_cards()
 
     def build_notas_table(self):
+        colors = get_colors()
         section = ctk.CTkFrame(
-            self, fg_color=COLORS["white"], corner_radius=4,
-            border_width=1, border_color=COLORS["border"]
+            self, fg_color=colors["white"], corner_radius=4,
+            border_width=1, border_color=colors["border"]
         )
         section.pack(fill="both", expand=True, padx=30, pady=(0, 30))
 
@@ -107,7 +109,7 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
         header_frame.pack(fill="x", padx=20, pady=(15, 10))
 
         dot = ctk.CTkFrame(
-            header_frame, fg_color=COLORS["primary"],
+            header_frame, fg_color=colors["primary"],
             width=12, height=12, corner_radius=6
         )
         dot.pack(side="left", padx=(0, 8))
@@ -116,7 +118,7 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
         ctk.CTkLabel(
             header_frame, text="Notas Fiscais Recebidas",
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
-            text_color=COLORS["text"]
+            text_color=colors["text"]
         ).pack(side="left")
 
         columns = [
@@ -125,7 +127,7 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
         ]
         weights = [2, 3, 2, 1, 2, 2, 1]
 
-        header = ctk.CTkFrame(section, fg_color=COLORS["table_header"], height=40, corner_radius=0)
+        header = ctk.CTkFrame(section, fg_color=colors["table_header"], height=40, corner_radius=0)
         header.pack(fill="x", padx=15, pady=(5, 0))
         header.pack_propagate(False)
 
@@ -139,11 +141,11 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
             ctk.CTkLabel(
                 cols_frame, text=col,
                 font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                text_color=COLORS["text_muted"]
+                text_color=colors["text_muted"]
             ).grid(row=0, column=i, sticky="w", padx=5)
 
         self.table_body = ctk.CTkScrollableFrame(
-            section, fg_color=COLORS["white"], corner_radius=0
+            section, fg_color=colors["white"], corner_radius=0
         )
         self.table_body.pack(fill="both", expand=True, padx=15, pady=(0, 5))
 
@@ -153,14 +155,14 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
         self.lbl_total_registros = ctk.CTkLabel(
             footer, text="Total de Registros: 0",
             font=ctk.CTkFont(size=FONTS["size_small"]),
-            text_color=COLORS["text_muted"]
+            text_color=colors["text_muted"]
         )
         self.lbl_total_registros.pack(side="left")
 
         self.lbl_valor_total = ctk.CTkLabel(
             footer, text="Valor Total: R$ 0,00",
             font=ctk.CTkFont(size=FONTS["size_small"]),
-            text_color=COLORS["text_muted"]
+            text_color=colors["text_muted"]
         )
         self.lbl_valor_total.pack(side="right")
 
@@ -202,6 +204,7 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
                 return []
 
     def _render_rows(self):
+        colors = get_colors()
         for widget in self.table_body.winfo_children():
             widget.destroy()
 
@@ -209,7 +212,7 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
             ctk.CTkLabel(
                 self.table_body, text="Nenhuma nota fiscal cadastrada",
                 font=ctk.CTkFont(size=FONTS["size_body"]),
-                text_color=COLORS["text_muted"]
+                text_color=colors["text_muted"]
             ).pack(pady=30)
             return
 
@@ -234,7 +237,7 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
             ]
 
             for i, valor in enumerate(dados):
-                cor = COLORS["text"] if i == 0 else COLORS["text_muted"]
+                cor = colors["text"] if i == 0 else colors["text_muted"]
                 ctk.CTkLabel(
                     cols, text=valor,
                     font=ctk.CTkFont(size=FONTS["size_small"]),
@@ -246,13 +249,13 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
             status_frame.pack_propagate(False)
 
             if nota["status"] == "Aprovada":
-                status_color = COLORS["success_dark"]
+                status_color = colors["success_dark"]
                 status_text = "\u2714"
             elif nota["status"] == "Rejeitada":
-                status_color = COLORS["danger"]
+                status_color = colors["danger"]
                 status_text = "\u2718"
             else:
-                status_color = COLORS["warning"]
+                status_color = colors["warning"]
                 status_text = "\u26A0"
 
             status_icon = ctk.CTkLabel(
@@ -302,3 +305,16 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
         valor_formatado = f"R$ {valor_total:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
         self.stat_labels["Valor Total(R$)"].configure(text=valor_formatado)
         self.stat_labels["Tccms Ativos"].configure(text=str(total_tccm))
+
+
+if __name__ == "__main__":
+    ctk.set_appearance_mode("light")
+    ctk.set_default_color_theme("blue")
+
+    app = ctk.CTk()
+    app.title("FISCSOFT - Menu Inicial")
+    app.geometry("1200x700")
+    app.configure(fg_color=get_colors()["bg"])
+
+    MenuInicialPage(app).pack(fill="both", expand=True)
+    app.mainloop()

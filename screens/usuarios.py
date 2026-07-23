@@ -3,7 +3,7 @@ import _path  # noqa: F401
 import customtkinter as ctk
 from tkinter import messagebox
 
-from config.styles import COLORS, FONTS
+from config.styles import get_colors, FONTS
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
@@ -13,14 +13,18 @@ from utils import registrar_log
 class UsuariosPage(CrudBase, ctk.CTkFrame):
     def __init__(self, master, usuario_logado=None, **kwargs):
         super().__init__(master, **kwargs)
-        self.configure(fg_color=COLORS["bg"])
+        self.configure(fg_color=get_colors()["bg"])
         self.usuario_logado = usuario_logado
 
-        self.build_header("Agentes IBAMA", "Gerencie os agentes cadastrados no sistema")
+        self.build_header(
+            "Agentes IBAMA",
+            "Gerencie os agentes cadastrados no sistema",
+        )
         self.build_filter_bar()
         self.build_table()
 
     def build_filter_bar(self):
+        colors = get_colors()
         inner = self.build_filter_container()
         row = ctk.CTkFrame(inner, fg_color="transparent")
         row.pack(fill="x")
@@ -34,22 +38,23 @@ class UsuariosPage(CrudBase, ctk.CTkFrame):
         self.build_action_btn(btn_frame, "  Pesquisar", carregar_icone("lupa.png"), self.pesquisar)
         self.build_action_btn(btn_frame, "  Limpar", carregar_icone("apagar.png"), self.limpar_filtros)
         self.build_action_btn(btn_frame, "  Novo Usuario", carregar_icone("mais.png"),
-                              self.novo_usuario, fg_color=COLORS["primary"],
-                              hover_color=COLORS["primary_hover"], text_color="white",
+                              self.novo_usuario, fg_color=colors["primary"],
+                              hover_color=colors["primary_hover"], text_color="white",
                               border=False, bold=True)
 
     def build_table(self):
+        colors = get_colors()
         CrudBase.build_table(self, pad_y=(0, 30))
 
         # Container interno com borda
         self.table_container = ctk.CTkFrame(
             self.table_frame, fg_color="transparent",
-            border_width=1, border_color="#999999", corner_radius=4
+            border_width=1, border_color=colors["border"], corner_radius=4
         )
         self.table_container.pack(fill="both", expand=True, padx=10, pady=10)
 
         # --- cabeçalho com PLACE ---
-        header = ctk.CTkFrame(self.table_container, fg_color=COLORS["table_header"],
+        header = ctk.CTkFrame(self.table_container, fg_color=colors["table_header"],
                               height=44, corner_radius=0)
         header.pack(fill="x")
         header.pack_propagate(False)
@@ -69,18 +74,18 @@ class UsuariosPage(CrudBase, ctk.CTkFrame):
             ctk.CTkLabel(
                 cols, text=texto,
                 font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                text_color=COLORS["text_muted"],
+                text_color=colors["text_muted"],
                 anchor=anchor,
             ).place(relx=rx, relwidth=rw, rely=0, relheight=1)
 
         ctk.CTkLabel(
             header, text="Ações",
             font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-            text_color=COLORS["text_muted"], width=120,
+            text_color=colors["text_muted"], width=120,
         ).pack(side="right", padx=(0, 15))
 
         self.table_body = ctk.CTkScrollableFrame(
-            self.table_container, fg_color=COLORS["white"], corner_radius=0
+            self.table_container, fg_color=colors["white"], corner_radius=0
         )
         self.table_body.pack(fill="both", expand=True)
 
@@ -117,6 +122,7 @@ class UsuariosPage(CrudBase, ctk.CTkFrame):
             self.adicionar_linha(usuario)
 
     def adicionar_linha(self, usuario):
+        colors = get_colors()
         linha, data, _ = self.add_data_row(has_checkbox=False)
 
         # pesos → relx / relwidth (idêntico ao cabeçalho)
@@ -138,7 +144,7 @@ class UsuariosPage(CrudBase, ctk.CTkFrame):
             ctk.CTkLabel(
                 data, text=texto,
                 font=ctk.CTkFont(size=FONTS["size_body"]),
-                text_color=COLORS["text"] if anchor == "w" else COLORS["text_muted"],
+                text_color=colors["text"] if anchor == "w" else colors["text_muted"],
                 anchor=anchor,
             ).place(relx=rx, relwidth=rw, rely=0, relheight=1)
 
@@ -215,7 +221,7 @@ if __name__ == "__main__":
     app = ctk.CTk()
     app.title("FISCSOFT - Usuarios")
     app.geometry("1200x700")
-    app.configure(fg_color=COLORS["bg"])
+    app.configure(fg_color=get_colors()["bg"])
 
     UsuariosPage(app).pack(fill="both", expand=True)
     app.mainloop()
