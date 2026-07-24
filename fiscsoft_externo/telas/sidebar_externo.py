@@ -28,7 +28,6 @@ class SidebarExterno(ctk.CTkFrame):
         self.configure(fg_color="#FAFAFA", corner_radius=0)
         self.on_navigate = on_navigate
         self.on_sair = on_sair
-        self.pack_propagate(False)
 
         logo_frame = ctk.CTkFrame(self, fg_color="transparent")
         logo_frame.pack(pady=(35, 45))
@@ -74,14 +73,11 @@ class SidebarExterno(ctk.CTkFrame):
             )
             btn.pack(fill="x", pady=4)
 
-        spacer = ctk.CTkFrame(self, fg_color="transparent")
-        spacer.pack(fill="both", expand=True)
-
         separador = ctk.CTkFrame(self, fg_color=COLORS["border"], height=1, corner_radius=0)
-        separador.pack(fill="x", padx=18, pady=(0, 12))
+        separador.pack(side="bottom", fill="x", padx=18, pady=(0, 12))
 
         bottom_frame = ctk.CTkFrame(self, fg_color="transparent")
-        bottom_frame.pack(fill="x", padx=18, pady=(0, 22))
+        bottom_frame.pack(side="bottom", fill="x", padx=18, pady=(0, 22))
 
         sair_icon = None
         try:
