@@ -20,6 +20,15 @@ def gerar_numero_nf():
 
 
 class NotaFiscalPDF(FPDF):
+    def cell(self, w=0, h=0, txt='', border=0, ln=0, align='', fill=False, link='', new_x=None, new_y=None):
+        if new_x == 'LMARGIN':
+            self.set_x(self.l_margin)
+        if new_y == 'NEXT':
+            super().cell(w, h, txt, border, ln=0, align=align, fill=fill, link=link)
+            self.ln(h)
+            return
+        return super().cell(w, h, txt, border, ln=ln, align=align, fill=fill, link=link)
+
     def header(self):
         self.set_fill_color(0, 100, 0)
         self.rect(10, 10, 190, 25, 'F')

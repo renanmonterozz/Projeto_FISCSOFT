@@ -1,6 +1,7 @@
 bcrypt==4.3.0
 customtkinter==5.2.2
 darkdetect==0.8.0
+fpdf==1.7.5
 mysql-connector-python==9.7.0
 odfpy==1.4.1
 openpyxl==3.1.5

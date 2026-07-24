@@ -174,6 +174,7 @@ def criar_schema():
         quantidade_prevista INTEGER DEFAULT 0,
         status VARCHAR(30) DEFAULT 'Ativo',
         notas_fiscais VARCHAR(100),
+        processo VARCHAR(100),
         criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE (codigo_interno)
     );
@@ -240,6 +241,12 @@ def criar_schema():
     conexao = sqlite3.connect(DB_PATH)
     conexao.execute("PRAGMA foreign_keys = ON")
     conexao.executescript(schema_sql)
+
+    try:
+        conexao.execute("ALTER TABLE itens ADD COLUMN processo VARCHAR(100)")
+    except sqlite3.OperationalError:
+        pass
+
     conexao.executescript(dados_sql)
     conexao.commit()
     conexao.close()
