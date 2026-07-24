@@ -133,11 +133,16 @@ class TestLoginApp(ctk.CTk):
             placeholder_text_color="#2D8A4E",
             placeholder_text="Digite seu usuário"
         )
-        self.entry_usuario.pack(pady=(10, 15))
+        self.entry_usuario.pack(pady=(10, 10))
 
-        # Entry - Senha
+        # Frame wrapper para senha (mesma largura do entry de usuário)
+        frame_senha = ctk.CTkFrame(self.frame_login, fg_color="#000001", width=520, height=45)
+        frame_senha.pack(pady=(0, 10))
+        frame_senha.pack_propagate(False)
+
+        # Entry - Senha (preenche todo o frame)
         self.entry_senha = ctk.CTkEntry(
-            self.frame_login,
+            frame_senha,
             width=480,
             height=45,
             corner_radius=8,
@@ -150,7 +155,26 @@ class TestLoginApp(ctk.CTk):
             placeholder_text="Digite sua senha",
             show="*"
         )
-        self.entry_senha.pack(pady=(0, 20))
+        self.entry_senha.place(x=20, y=0)
+
+        # Botão do olho (dentro do campo, borda direita)
+        self.btn_eye = ctk.CTkButton(
+            frame_senha,
+            text="👁",
+            width=40,
+            height=41,
+            corner_radius=8,
+            fg_color="#000001",
+            hover_color="#b0e8c0",
+            text_color="#2D8A4E",
+            font=("Segoe UI", 18),
+            border_width=0,
+            command=self._toggle_senha
+        )
+        self.btn_eye.place(x=490, y=2)
+
+        # Estado da visibilidade da senha
+        self._senha_visivel = False
 
         # Botões em uma linha
         frame_botoes = ctk.CTkFrame(self.frame_login, fg_color="#000001")
@@ -196,6 +220,17 @@ class TestLoginApp(ctk.CTk):
         # Mostra novamente os botões iniciais
         self.btn_usuario.place(relx=0.5, rely=0.86, anchor="center")
         self.btn_certificado.place(relx=0.5, rely=0.93, anchor="center")
+
+    def _toggle_senha(self):
+        # Alterna a visibilidade da senha
+        if self._senha_visivel:
+            self.entry_senha.configure(show="*")
+            self.btn_eye.configure(text="👁")
+            self._senha_visivel = False
+        else:
+            self.entry_senha.configure(show="")
+            self.btn_eye.configure(text="👁")
+            self._senha_visivel = True
 
     def _on_usuario_click(self):
         # Esconde os botões iniciais
