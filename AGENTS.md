@@ -44,7 +44,7 @@ Dois modos de uso:
 
 ## Comando para rodar
 ```bash
-cd C:\Users\62504556\Documents\GitHub\Projeto_FISCSOFT
+cd C:\Users\60291566\Documents\GitHub\Projeto_FISCSOFT
 python main.py
 ```
 

@@ -10,7 +10,7 @@ Copie e cole o prompt abaixo ao iniciar uma nova conversa para dar contexto ao a
 Sou desenvolvedor do projeto FISCSOFT, um sistema desktop de fiscalização do IBAMA construído com Python, CustomTkinter e SQLite.
 
 Estrutura do projeto:
-- Caminho: C:\Users\62504556\Documents\GitHub\Projeto_FISCSOFT
+- Caminho: C:\Users\60291566\Documents\GitHub\Projeto_FISCSOFT
 - Banco: SQLite local (fiscsoft.db), com opção de migração para MySQL
 - Tela de login com 3 perfis: admin/123456, agente/123456, usuario/123456
 

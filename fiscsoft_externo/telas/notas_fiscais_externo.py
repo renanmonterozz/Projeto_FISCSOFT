@@ -26,6 +26,7 @@ class NotasFiscaisExterno(ctk.CTkFrame):
         self.on_voltar = on_voltar
         self.arquivo_selecionado = None
         self.itens_lista = []
+        self._processo_map = {}
 
         self.scroll = ctk.CTkScrollableFrame(self, fg_color=COLORS["bg"])
         self.scroll.pack(fill="both", expand=True)
@@ -134,22 +135,42 @@ class NotasFiscaisExterno(ctk.CTkFrame):
             with Database() as db:
                 if not db.conexao:
                     return
-                sql = """SELECT processo FROM tccm
-                         WHERE "infrator_id_infrator" = ?
-                         ORDER BY processo"""
+                sql = """SELECT t.processo, i.nome_infrator
+                         FROM tccm t
+                         JOIN infrator i ON t."infrator_id_infrator" = i.id_infrator
+                         WHERE t."infrator_id_infrator" = ?
+                         ORDER BY t.processo"""
                 resultado = db.executar(sql, (self.id_infrator,))
                 if resultado:
-                    processos = [row[0] for row in resultado.fetchall()]
-                    if processos:
-                        self.combo_processo.configure(values=processos)
-                        self.combo_processo.set(processos[0])
+                    rows = resultado.fetchall()
+                    if rows:
+                        self._processo_map = {}
+                        opcoes = []
+                        for row in rows:
+                            processo = row[0]
+                            nome_infrator = row[1]
+                            display = f"{processo} - {nome_infrator}"
+                            self._processo_map[display] = processo
+                            opcoes.append(display)
+                        self.combo_processo.configure(values=opcoes)
+                        self.combo_processo.set(opcoes[0])
                     else:
                         self.combo_processo.configure(values=["Nenhum TCCM encontrado"])
         except Exception:
             pass
 
+    def _get_processo_real(self):
+        display = self.combo_processo.get().strip()
+        if not display or "Nenhum TCCM" in display:
+            return ""
+        if hasattr(self, '_processo_map') and display in self._processo_map:
+            return self._processo_map[display]
+        if " - " in display:
+            return display.split(" - ")[0].strip()
+        return display
+
     def _carregar_itens_tccm(self):
-        processo = self.combo_processo.get().strip()
+        processo = self._get_processo_real()
         if not processo or "Nenhum TCCM" in processo:
             self.itens_tccm = []
             self.combo_item.configure(values=["Selecione um processo primeiro"])
@@ -614,7 +635,7 @@ class NotasFiscaisExterno(ctk.CTkFrame):
                         break
 
                 self.itens_lista.append({
-                    "item_id": item_match["id"] if item_match else 0,
+                    "item_id": item_match["id"] if item_match else None,
                     "nome": item_match["nome"] if item_match else item_pdf['nome'],
                     "descricao": item_match["descricao"] if item_match else "Extraido do PDF",
                     "quantidade": item_pdf['quantidade'],
@@ -656,7 +677,7 @@ class NotasFiscaisExterno(ctk.CTkFrame):
         numero = self.entry_numero.get().strip()
         chave = self.entry_chave.get().strip()
         data_str = self.entry_data.get().strip()
-        processo = self.combo_processo.get().strip()
+        processo = self._get_processo_real()
 
         if not numero or not chave or not data_str or not processo:
             messagebox.showwarning("Atencao", "Preencha todos os campos obrigatorios.")
