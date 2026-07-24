@@ -188,7 +188,11 @@ class Sidebar(ctk.CTkFrame):
         sair_icon = None
         try:
             sair_img = Image.open(os.path.join(ASSETS_DIR, "sair.png"))
-            sair_icon = ctk.CTkImage(light_image=sair_img, dark_image=sair_img, size=(20, 20))
+            sair_icon = ctk.CTkImage(
+                light_image=sair_img,
+                dark_image=sair_img,
+                size=(20, 20),
+            )
         except Exception:
             pass
 
