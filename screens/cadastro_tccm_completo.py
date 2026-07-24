@@ -549,11 +549,11 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
 
                 for item in self.itens_lista:
                     sql_item = """INSERT INTO itens (nome, descricao, codigo_interno, unidade_medida,
-                                                    quantidade_prevista, status)
-                                  VALUES (?, ?, ?, ?, ?, 'Ativo')"""
+                                                    quantidade_prevista, status, processo)
+                                  VALUES (?, ?, ?, ?, ?, 'Ativo', ?)"""
                     db.executar(sql_item, (item["nome"], item["descricao"],
                                            f"{processo}-{item['nome'][:10].upper()}",
-                                           item["unidade"], item["quantidade"]))
+                                           item["unidade"], item["quantidade"], processo))
 
                 db.commitar()
             except Exception as e:

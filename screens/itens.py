@@ -135,19 +135,21 @@ class ItensPage(CrudBase, ctk.CTkFrame):
                     r = db.executar(
                         "SELECT DISTINCT i.id, i.nome, i.descricao, i.tipo, i.justificativa, i.unidade_medida "
                         "FROM itens i "
-                        "WHERE i.notas_fiscais IN ("
+                        "WHERE i.processo = ? "
+                        "   OR i.notas_fiscais IN ("
                         "  SELECT nf.nota_fiscal FROM \"nota fiscal\" nf WHERE nf.processo = ?"
                         ") ORDER BY i.id",
-                        (self.processo_tccm,)
+                        (self.processo_tccm, self.processo_tccm)
                     )
                 except Exception:
                     r = db.executar(
                         "SELECT DISTINCT i.id, i.nome, i.descricao, i.categoria, NULL, '' "
                         "FROM itens i "
-                        "WHERE i.notas_fiscais IN ("
+                        "WHERE i.processo = ? "
+                        "   OR i.notas_fiscais IN ("
                         "  SELECT nf.nota_fiscal FROM \"nota fiscal\" nf WHERE nf.processo = ?"
                         ") ORDER BY i.id",
-                        (self.processo_tccm,)
+                        (self.processo_tccm, self.processo_tccm)
                     )
             else:
                 try:
