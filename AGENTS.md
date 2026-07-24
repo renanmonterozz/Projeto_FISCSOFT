@@ -26,7 +26,7 @@ Dois modos de uso:
 - **tccm**: processo (PK), total_pago, total_devido, status, data_validade, intervalo
 - **nota fiscal**: nota_fiscal (PK), processo, data, valor_total, status_nota, chave_de_acesso
 - **produtos**: lote, quantidade, preco_unitario, nota fiscal_nota_fiscal (FK)
-- **itens**: id, nome, descricao, tipo, notas_fiscais (FK para NF)
+- **itens**: id, nome, descricao, tipo, notas_fiscais (FK para NF), processo (FK para TCCM)
 - **infrator**: id_infrator, nome_infrator, cpf, email
 - **agente ibama**: matricula, nome_agente, login, senha, perfil, status
 
@@ -44,18 +44,18 @@ Dois modos de uso:
 
 ## Comando para rodar
 ```bash
-cd C:\Users\60291566\Documents\GitHub\Projeto_FISCSOFT
+cd C:\Users\62504556\Documents\GitHub\Projeto_FISCSOFT
 python main.py
 ```
 
 ## Telas principais
 - `TccmDashboardPage`: Lista selecionavel de TCCMs (tela de boas-vindas)
-- `TccmDetalhesPage`: Detalhes de um TCCM (info, pessoas, NFs, itens)
+- `TccmDetalhesPage`: Detalhes de um TCCM (info, pessoas, NFs e itens)
 - `MenuInicialPage`: Dashboard do TCCM com NFs e stats
-- `ItensPage`: Lista de itens (filtrados por TCCM quando aplicavel)
 - `RelatorioEntregaPage`: Relatorio de entrega de materiais
 - `UsuariosPage`: Gestao de agentes
 - `InfratoresPage`: Gestao de infratores
 - `LocaisPage`: Locais cadastrados
 - `RelatoriosPage`: Relatorios gerais
 - `HistoricoPage`: Historico de acoes
+- `RelatorioExterno`: Relatorio do infrator com CalendarioPopup e geracao de .txt

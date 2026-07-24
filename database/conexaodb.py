@@ -26,10 +26,17 @@ class Database:
             self.conexao = sqlite3.connect(self.db_path)
             self.conexao.execute("PRAGMA foreign_keys = ON")
             self.conexao.row_factory = sqlite3.Row
+            self._migrar()
             return True
         except sqlite3.Error as e:
             logger.error("Erro ao conectar ao banco: %s", e)
             return False
+
+    def _migrar(self):
+        try:
+            self.conexao.execute("ALTER TABLE itens ADD COLUMN processo VARCHAR(100)")
+        except sqlite3.OperationalError:
+            pass
 
     def desconectar(self):
         if self.conexao:
