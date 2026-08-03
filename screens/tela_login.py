@@ -1,4 +1,7 @@
-import _path  # noqa: F401
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))  # noqa: F401 — garante o root do projeto no sys.path
 import pywinstyles
 
 import os
@@ -117,6 +120,7 @@ class TestLoginApp(ctk.CTk):
         # Frame para o formulário
         self.frame_login = ctk.CTkFrame(self, fg_color="#000001", bg_color="#000001", corner_radius=0)
         self.frame_login.place(relx=0.5, rely=0.90, anchor="center")
+        self.frame_login.lift()
         pywinstyles.set_opacity(self.frame_login, color="#000001")
 
         # Entry - Usuário
@@ -135,12 +139,12 @@ class TestLoginApp(ctk.CTk):
         )
         self.entry_usuario.pack(pady=(10, 10))
 
-        # Frame wrapper para senha (mesma largura do entry de usuário)
-        frame_senha = ctk.CTkFrame(self.frame_login, fg_color="#000001", width=520, height=45)
+        # Frame wrapper para senha (campo + olho lado a lado)
+        frame_senha = ctk.CTkFrame(self.frame_login, fg_color="transparent", width=586, height=45)
         frame_senha.pack(pady=(0, 10))
         frame_senha.pack_propagate(False)
 
-        # Entry - Senha (preenche todo o frame)
+        # Entry - Senha (centralizado, mesma posição do campo de usuário)
         self.entry_senha = ctk.CTkEntry(
             frame_senha,
             width=480,
@@ -155,23 +159,24 @@ class TestLoginApp(ctk.CTk):
             placeholder_text="Digite sua senha",
             show="*"
         )
-        self.entry_senha.place(x=20, y=0)
+        self.entry_senha.place(x=53, y=0)
 
-        # Botão do olho (dentro do campo, borda direita)
+        # Botão do olho (place: ao lado do campo, dentro do frame)
         self.btn_eye = ctk.CTkButton(
             frame_senha,
             text="👁",
-            width=40,
-            height=41,
+            width=45,
+            height=45,
             corner_radius=8,
-            fg_color="#000001",
+            fg_color="#CFFFE3",
             hover_color="#b0e8c0",
             text_color="#2D8A4E",
             font=("Segoe UI", 18),
-            border_width=0,
+            border_width=2,
+            border_color="#16A34A",
             command=self._toggle_senha
         )
-        self.btn_eye.place(x=490, y=2)
+        self.btn_eye.place(x=541, y=0)
 
         # Estado da visibilidade da senha
         self._senha_visivel = False
