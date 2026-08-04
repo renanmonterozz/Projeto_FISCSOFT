@@ -1,11 +1,13 @@
 import _path  # noqa: F401 — garante que o root do projeto está no sys.path
 
+import pywinstyles
+
 import logging
+import os
 import sys
 from tkinter import messagebox
+
 from PIL import Image
-import os 
-import os
 
 import customtkinter as ctk
 
@@ -36,125 +38,208 @@ ctk.set_default_color_theme("blue")
 PERMISSOES_ADMIN = {"Menu Principal", "Itens", "Destinacao", "Agente", "Usuario Externo", "Locais Cadastrados", "Relatorio", "Historico", "Dashboard TCCM"}
 PERMISSOES_AGENTE = {"Menu Principal", "Itens", "Destinacao", "Agente", "Usuario Externo", "Locais Cadastrados", "Relatorio", "Historico", "Dashboard TCCM"}
 
+# Cores da tela de login
+DOURADO = "#c8b464"
+AMARELO_BOTAO = "#FFF48C"
+VERDE_POLIGONO = "#302F2F"
+
 
 class LoginApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
         self.title("FISCSOFT - Login")
-        self.geometry("1000x600")
-        self.resizable(False, False)
         self.configure(fg_color=COLORS["white"])
-        self.mostrando_form = False
+        self.after(0, self.state, "zoomed")
 
+        # --- Imagem de fundo ---
+        img_path = os.path.join(ASSETS_DIR, "Tela_Loginn.png")
+        self._img_pil = None
         try:
-            self.img_bg = ctk.CTkImage(
-                light_image=Image.open(os.path.join(ASSETS_DIR, "tela_de_login_adm.png")),
-                dark_image=Image.open(os.path.join(ASSETS_DIR, "tela_de_login_adm.png")),
-                size=(1000, 600),
-            )
+            self._img_pil = Image.open(img_path)
         except Exception:
-            self.img_bg = None
+            self._img_pil = None
 
-        self.bg_label = ctk.CTkLabel(self, text="", image=self.img_bg)
+        self.bg_label = ctk.CTkLabel(self, text="")
         self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
-        self.bg_label.image = self.img_bg
+        self.after(100, self._ajustar_imagem_fundo)
 
-        self.form_frame = None
-
-        self.bg_label.bind("<Button-1>", self.clique_bg)
-
-    def clique_bg(self, event):
-        if self.mostrando_form:
-            return
-        x, y = event.x, event.y
-        if 650 <= x <= 970 and 240 <= y <= 360:
-            self.mostrar_formulario()
-        elif 650 <= x <= 970 and 370 <= y <= 490:
-            self.login_certificado()
-
-    def mostrar_formulario(self):
-        if self.mostrando_form:
-            self.voltar_menu()
-            return
-        self.mostrando_form = True
-
-        self.form_frame = ctk.CTkFrame(self.bg_label, fg_color="transparent", width=300, height=270)
-        self.form_frame.place(x=660, y=240)
-
-        frame_user = ctk.CTkFrame(self.form_frame, fg_color="white", corner_radius=8, border_width=1, border_color=COLORS["border"])
-        frame_user.pack(pady=(10, 8), padx=25, fill="x")
-        frame_user.pack_propagate(False)
-        frame_user.configure(height=40)
-
-        ctk.CTkLabel(frame_user, text="\U0001f464", font=ctk.CTkFont(size=16), text_color=COLORS["text_muted"]).pack(side="left", padx=(12, 5))
-        self.entry_usuario = ctk.CTkEntry(
-            frame_user,
-            placeholder_text="Usuario",
-            height=36,
-            border_width=0,
-            fg_color="white",
-            text_color="black",
-            placeholder_text_color=COLORS["text_muted"],
+        # --- Texto "ACESSE O SISTEMA!" ---
+        self.label_titulo = ctk.CTkLabel(
+            self,
+            text="ACESSE O SISTEMA!",
+            font=("Libre Baskerville", 36),
+            text_color="#FFF9BE",
+            fg_color="#000001",
+            bg_color="#000001"
         )
-        self.entry_usuario.pack(side="left", fill="x", expand=True, padx=(0, 10), pady=2)
+        self.label_titulo.place(relx=0.5, rely=0.78, anchor="center")
+        pywinstyles.set_opacity(self.label_titulo, color="#000001")
 
-        frame_senha = ctk.CTkFrame(self.form_frame, fg_color="white", corner_radius=8, border_width=1, border_color=COLORS["border"])
-        frame_senha.pack(pady=8, padx=25, fill="x")
+        # --- Botão 1: Entrar com Usuário e Senha ---
+        self.btn_usuario = ctk.CTkButton(
+            self,
+            text="Entrar com Usuário e Senha",
+            width=480,
+            height=50,
+            corner_radius=16,
+            fg_color=VERDE_POLIGONO,
+            bg_color="#000001",
+            hover_color="#211E1E",
+            text_color=AMARELO_BOTAO,
+            font=ctk.CTkFont(family="Segoe UI", size=19),
+            border_width=2,
+            border_color="#000001",
+            command=self._on_usuario_click
+        )
+        self.btn_usuario.place(relx=0.5, rely=0.86, anchor="center")
+        pywinstyles.set_opacity(self.btn_usuario, color="#000001")
+
+        # --- Botão 2: Entrar com Certificado Digital ---
+        self.btn_certificado = ctk.CTkButton(
+            self,
+            text="Entrar com Certificado Digital",
+            width=480,
+            height=50,
+            corner_radius=16,
+            fg_color=VERDE_POLIGONO,
+            bg_color="#000001",
+            hover_color="#211E1E",
+            text_color=AMARELO_BOTAO,
+            font=ctk.CTkFont(family="Segoe UI", size=19),
+            border_width=2,
+            border_color="#000001",
+            command=self._on_certificado_click
+        )
+        self.btn_certificado.place(relx=0.5, rely=0.93, anchor="center")
+        pywinstyles.set_opacity(self.btn_certificado, color="#000001")
+
+    def _ajustar_imagem_fundo(self):
+        if self._img_pil is None:
+            return
+        w = self.winfo_width()
+        h = self.winfo_height()
+        if w <= 1 or h <= 1:
+            self.after(100, self._ajustar_imagem_fundo)
+            return
+
+        img_w, img_h = self._img_pil.size
+        scale = max(w / img_w, h / img_h)
+        new_w = int(img_w * scale)
+        new_h = int(img_h * scale)
+
+        resized = self._img_pil.resize((new_w, new_h), Image.LANCZOS)
+        left = (new_w - w) // 2
+        top = (new_h - h) // 2
+        cropped = resized.crop((left, top, left + w, top + h))
+
+        img = ctk.CTkImage(light_image=cropped, dark_image=cropped, size=(w, h))
+        self.bg_label.configure(image=img)
+        self.bg_label.image = img
+
+    def _mostrar_formulario_login(self):
+        # Frame para o formulário
+        self.frame_login = ctk.CTkFrame(self, fg_color="#000001", bg_color="#000001", corner_radius=0)
+        self.frame_login.place(relx=0.5, rely=0.90, anchor="center")
+        self.frame_login.lift()
+        pywinstyles.set_opacity(self.frame_login, color="#000001")
+
+        # Entry - Usuário
+        self.entry_usuario = ctk.CTkEntry(
+            self.frame_login,
+            width=480,
+            height=45,
+            corner_radius=8,
+            font=("Segoe UI", 16),
+            fg_color="#CFFFE3",
+            border_color="#16A34A",
+            border_width=2,
+            text_color="#2D8A4E",
+            placeholder_text_color="#2D8A4E",
+            placeholder_text="Digite seu usuário"
+        )
+        self.entry_usuario.pack(pady=(10, 10))
+
+        # Frame wrapper para senha (campo + olho lado a lado)
+        frame_senha = ctk.CTkFrame(self.frame_login, fg_color="transparent", width=586, height=45)
+        frame_senha.pack(pady=(0, 10))
         frame_senha.pack_propagate(False)
-        frame_senha.configure(height=40)
 
-        ctk.CTkLabel(frame_senha, text="\U0001f512", font=ctk.CTkFont(size=16), text_color=COLORS["text_muted"]).pack(side="left", padx=(12, 5))
+        # Entry - Senha (centralizado, mesma posição do campo de usuário)
         self.entry_senha = ctk.CTkEntry(
             frame_senha,
-            placeholder_text="Senha",
-            show="*",
-            height=36,
-            border_width=0,
-            fg_color="white",
-            text_color="black",
-            placeholder_text_color=COLORS["text_muted"],
-        )
-        self.entry_senha.pack(side="left", fill="x", expand=True, padx=(0, 10), pady=2)
-
-        self.entry_usuario.bind("<Return>", lambda e: self.fazer_login())
-        self.entry_senha.bind("<Return>", lambda e: self.fazer_login())
-        self.bind("<Return>", lambda e: self.fazer_login())
-
-        ctk.CTkButton(
-            self.form_frame,
-            text="Entrar",
-            height=38,
+            width=480,
+            height=45,
             corner_radius=8,
-            fg_color=COLORS["primary"],
-            hover_color=COLORS["primary_hover"],
-            text_color="white",
-            border_width=0,
-            font=ctk.CTkFont(size=14, weight="bold"),
-            command=self.fazer_login,
-        ).pack(pady=(18, 6), padx=25, fill="x")
+            font=("Segoe UI", 16),
+            fg_color="#CFFFE3",
+            border_color="#16A34A",
+            border_width=2,
+            text_color="#2D8A4E",
+            placeholder_text_color="#2D8A4E",
+            placeholder_text="Digite sua senha",
+            show="*"
+        )
+        self.entry_senha.place(x=53, y=0)
 
-        ctk.CTkButton(
-            self.form_frame,
+        # Botão do olho (place: ao lado do campo, dentro do frame)
+        self.btn_eye = ctk.CTkButton(
+            frame_senha,
+            text="👁",
+            width=45,
+            height=45,
+            corner_radius=8,
+            fg_color="#CFFFE3",
+            hover_color="#b0e8c0",
+            text_color="#2D8A4E",
+            font=("Segoe UI", 18),
+            border_width=2,
+            border_color="#16A34A",
+            command=self._toggle_senha
+        )
+        self.btn_eye.place(x=541, y=0)
+
+        # Estado da visibilidade da senha
+        self._senha_visivel = False
+
+        # Botões em uma linha
+        frame_botoes = ctk.CTkFrame(self.frame_login, fg_color="#000001")
+        frame_botoes.pack()
+        # Botão Entrar
+        btn_entrar = ctk.CTkButton(
+            frame_botoes,
+            text="Entrar",
+            width=100,
+            height=40,
+            corner_radius=12,
+            fg_color=VERDE_POLIGONO,
+            hover_color="#211E1E",
+            text_color=AMARELO_BOTAO,
+            font=("Segoe UI", 16),
+            command=self._on_entrar_click
+        )
+        btn_entrar.pack(side="left", padx=5)
+
+        # Botão Sair
+        btn_sair = ctk.CTkButton(
+            frame_botoes,
             text="Sair",
-            height=28,
-            corner_radius=6,
-            fg_color=COLORS["dark"],
-            hover_color=COLORS["dark_hover"],
+            width=100,
+            height=40,
+            corner_radius=12,
+            fg_color="#8B0000",
+            hover_color="#850202",
             text_color="white",
-            border_width=0,
-            font=ctk.CTkFont(size=12),
-            command=self.voltar_menu,
-        ).pack(pady=4, padx=25, fill="x")
+            font=("Segoe UI", 16),
+            command=self._on_sair_click
+        )
+        btn_sair.pack(side="left", padx=5)
 
-    def voltar_menu(self):
-        self.mostrando_form = False
-        self.unbind("<Return>")
-        if self.form_frame:
-            self.form_frame.destroy()
-            self.form_frame = None
+        # Enter no campo de usuário/senha dispara o login
+        self.entry_usuario.bind("<Return>", lambda e: self._on_entrar_click())
+        self.entry_senha.bind("<Return>", lambda e: self._on_entrar_click())
 
-    def fazer_login(self):
+    def _on_entrar_click(self):
         usuario = self.entry_usuario.get()
         senha = self.entry_senha.get()
 
@@ -186,12 +271,42 @@ class LoginApp(ctk.CTk):
             return
 
         self.usuario_logado = nome
-        self.perfil = (perfil or "agente").capitalize()
+        perfil_db = (perfil or "agente").lower()
+        self.perfil = "admin" if perfil_db == "administrador" else "agente"
 
-        if self.perfil == "Admin":
+        if self.perfil == "admin":
             self._abrir_tela_principal(perfil="admin")
         else:
             self._abrir_tela_principal(perfil="agente")
+
+    def _on_sair_click(self):
+        # Oculta o frame de login
+        self.frame_login.place_forget()
+        # Mostra novamente os botões iniciais
+        self.btn_usuario.place(relx=0.5, rely=0.86, anchor="center")
+        self.btn_certificado.place(relx=0.5, rely=0.93, anchor="center")
+
+    def _toggle_senha(self):
+        # Alterna a visibilidade da senha
+        if self._senha_visivel:
+            self.entry_senha.configure(show="*")
+            self.btn_eye.configure(text="👁")
+            self._senha_visivel = False
+        else:
+            self.entry_senha.configure(show="")
+            self.btn_eye.configure(text="👁")
+            self._senha_visivel = True
+
+    def _on_usuario_click(self):
+        # Esconde os botões iniciais
+        self.btn_usuario.place_forget()
+        self.btn_certificado.place_forget()
+
+        # Mostra o formulário de login
+        self._mostrar_formulario_login()
+
+    def _on_certificado_click(self):
+        messagebox.showinfo("Certificado Digital", "Funcionalidade em desenvolvimento.")
 
     def _abrir_tela_principal(self, perfil: str = "admin", processo_tccm: str = None):
         self.quit()
@@ -342,41 +457,6 @@ class LoginApp(ctk.CTk):
 
         navegar("Menu Principal")
         main_app.mainloop()
-
-    def login_certificado(self):
-        if self.mostrando_form:
-            self.voltar_menu()
-            return
-        self.mostrando_form = True
-
-        self.form_frame = ctk.CTkFrame(self.bg_label, fg_color="transparent", width=300, height=270)
-        self.form_frame.place(x=660, y=240)
-
-        ctk.CTkLabel(
-            self.form_frame,
-            text="\U0001f510",
-            font=ctk.CTkFont(size=40),
-        ).pack(pady=(50, 10))
-
-        ctk.CTkLabel(
-            self.form_frame,
-            text="Funcionalidade em\ndesenvolvimento",
-            font=ctk.CTkFont(size=14),
-            text_color=COLORS["text_muted"],
-        ).pack(pady=10)
-
-        ctk.CTkButton(
-            self.form_frame,
-            text="Voltar",
-            height=30,
-            corner_radius=6,
-            fg_color=COLORS["dark"],
-            hover_color=COLORS["dark_hover"],
-            text_color="white",
-            border_width=0,
-            font=ctk.CTkFont(size=12),
-            command=self.voltar_menu,
-        ).pack(pady=(20, 10))
 
 
 if __name__ == "__main__":
