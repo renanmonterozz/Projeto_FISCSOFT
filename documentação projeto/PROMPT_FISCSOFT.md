@@ -44,8 +44,13 @@ Arquivos principais (sistema externo - fiscsoft_externo/):
 - fiscsoft_externo/main_externo.py: Login e navegacao (infrator via CPF)
 - fiscsoft_externo/telas/sidebar_externo.py: Menu lateral (3 itens)
 - fiscsoft_externo/telas/dashboard_externo.py: Painel com cards + TCCM + ultimas notas
-- fiscsoft_externo/telas/notas_fiscais_externo.py: Cadastro de notas com Treeview de itens, ComboBox de processo/itens, upload de PDF
+- fiscsoft_externo/telas/notas_fiscais_externo.py: Cadastro de NF pelo infrator com ComboBox de processo (TCCM), itens do catalogo filtrados pelo processo do TCCM (WHERE itens.processo = ? AND status = 'Ativo'), Treeview de itens, upload de PDF com extracao automatica de dados (numero, chave, data, itens), botoes "Enviar para Agente", "Limpar Tudo" e "Voltar"
 - fiscsoft_externo/telas/relatorio_externo.py: Relatorio detalhado por nota fiscal com CalendarioPopup para selecao de periodo e geracao de relatorio em .txt
+
+Fluxo Nota Fiscal Externa:
+- Infrator seleciona o processo (TCCM) e adiciona apenas itens vinculados ao TCCM (coluna itens.processo, cadastrados no cadastro TCCM do sistema interno)
+- Botao "Enviar para Agente" grava a NF com status 'Pendente' vinculada a matricula do agente do TCCM e os itens na tabela produtos (lote = numero-ITEM-n)
+- Admin aprova/rejeita a NF em screens/relatorios.py (conciliacao automatica)
 
 Credenciais de teste:
 - Sistema interno: admin/123456, agente/123456, usuario/123456
