@@ -1,10 +1,8 @@
 import _path  # noqa: F401
 
 from tkinter import messagebox
-from pathlib import Path
 
 import customtkinter as ctk
-import pandas as pd
 
 from config.styles import COLORS, FONTS
 from database.conexaodb import Database
@@ -36,8 +34,6 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         btn_frame = self.build_btn_frame(row)
         self.build_action_btn(btn_frame, "  Pesquisar", carregar_icone("lupa.png"), self.pesquisar)
         self.build_action_btn(btn_frame, "  Limpar", carregar_icone("apagar.png"), self.limpar_filtros)
-        self.build_action_btn(btn_frame, "  Importar Excel", carregar_icone("mais.png"),
-                              self.importar_excel)
         self.build_action_btn(btn_frame, "  Novo Item", carregar_icone("mais.png"),
                               self.abrir_formulario, fg_color=COLORS["primary"],
                               hover_color=COLORS["primary_hover"], text_color="white",
@@ -92,38 +88,6 @@ class ItensPage(CrudBase, ctk.CTkFrame):
 
         self.itens = self.carregar_do_banco()
         self.render_rows()
-
-    def carregar_do_excel(self, caminho: str):
-        try:
-            ext = Path(caminho).suffix.lower()
-            engine = "odf" if ext == ".ods" else "openpyxl" if ext == ".xlsx" else None
-            if not engine:
-                raise ValueError(f"Formato nao suportado: {ext}")
-            df = pd.read_excel(caminho, engine=engine, sheet_name=0)
-        except Exception as e:
-            messagebox.showerror("Erro", f"Erro ao ler o arquivo:\n{e}")
-            return []
-
-        col_map = {c.replace('\xa0', ' ').strip(): c for c in df.columns}
-        itens = []
-
-        for _, row in df.iterrows():
-            def get(col, d=None):
-                c = col_map.get(col)
-                if c is None:
-                    return d
-                v = row.get(c)
-                return d if pd.isna(v) else v
-
-            nome = get("ITEM") or get("DESCRICAO") or "-"
-            itens.append(dict(
-                nome=str(nome)[:200],
-                descricao=str(get("DESCRICAO") or nome)[:200],
-                tipo=str(get("TIPO DE MATERIAL") or ""),
-                justificativa=str(get("JUSTIFICATIVA") or ""),
-                unidade_medida=str(get("Unidade de Medida") or ""),
-            ))
-        return itens
 
     def carregar_do_banco(self):
         with Database() as db:
@@ -238,44 +202,6 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         self.entry_busca.delete(0, "end")
         self.itens = self._todos_os_itens[:]
         self.render_rows()
-
-    def importar_excel(self):
-        caminho = Path(__file__).resolve().parent.parent / "assets" / "planilhas" / "telaitens.xlsx"
-        if not caminho.exists():
-            messagebox.showerror("Erro", f"Arquivo nao encontrado:\n{caminho}")
-            return
-
-        itens_excel = self.carregar_do_excel(str(caminho))
-        if not itens_excel:
-            return
-
-        confirmacao = messagebox.askyesnocancel(
-            "Importar Excel",
-            f"Encontrados {len(itens_excel)} itens na planilha.\n\n"
-            "SIM = Substituir todos os itens existentes\n"
-            "NAO = Adicionar aos itens existentes\n"
-            "CANCELAR = Abortar importacao"
-        )
-        if confirmacao is None:
-            return
-
-        with Database() as db:
-            if not db.conexao:
-                return
-
-            if confirmacao:
-                db.executar("DELETE FROM itens")
-                db.commitar()
-
-            for i, item in enumerate(itens_excel):
-                self._inserir_item_db(db, item, codigo_interno=f"IT-{i+1:03d}")
-
-        self.itens = self.carregar_do_banco()
-        self.render_rows()
-        messagebox.showinfo(
-            "Sucesso",
-            f"'{caminho.name}' carregado com {len(self.itens)} itens."
-        )
 
     def _inserir_item_db(self, db, data, codigo_interno=None):
         if codigo_interno is None:

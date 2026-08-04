@@ -33,10 +33,21 @@ class Database:
             return False
 
     def _migrar(self):
-        try:
-            self.conexao.execute("ALTER TABLE itens ADD COLUMN processo VARCHAR(100)")
-        except sqlite3.OperationalError:
-            pass
+        migracoes = [
+            ("ALTER TABLE itens ADD COLUMN processo VARCHAR(100)", "itens.processo"),
+            ('ALTER TABLE tccm ADD COLUMN documento_sei TEXT', "tccm.documento_sei"),
+            ('ALTER TABLE tccm ADD COLUMN data_inicio DATE', "tccm.data_inicio"),
+            ('ALTER TABLE tccm ADD COLUMN semestres INTEGER NOT NULL DEFAULT 1', "tccm.semestres"),
+        ]
+        for sql, nome in migracoes:
+            try:
+                self.conexao.execute(sql)
+                self.conexao.commit()
+                logger.info("Migracao aplicada: %s", nome)
+            except sqlite3.OperationalError as e:
+                if "duplicate column name" in str(e).lower():
+                    continue
+                logger.debug("Migracao ignorada para %s: %s", nome, e)
 
     def desconectar(self):
         if self.conexao:

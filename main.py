@@ -236,6 +236,8 @@ class LoginApp(ctk.CTk):
                 on_voltar=win.destroy,
                 usuario_logado=self.usuario_logado, perfil=perfil,
             ).pack(fill="both", expand=True)
+            win.wait_window()
+            dashboard._recarregar()
 
         dashboard = TccmDashboardPage(
             content, usuario_logado=self.usuario_logado, perfil=perfil,
@@ -288,7 +290,8 @@ class LoginApp(ctk.CTk):
                 ItensPage(content_frame, on_voltar=lambda: navegar("Menu Principal"),
                           processo_tccm=processo_tccm).pack(fill="both", expand=True)
             elif pagina == "Destinacao":
-                RelatorioEntregaPage(content_frame, on_voltar=lambda: navegar("Menu Principal"), usuario_logado=usuario_logado).pack(fill="both", expand=True)
+                RelatorioEntregaPage(content_frame, on_voltar=lambda: navegar("Menu Principal"),
+                                     usuario_logado=usuario_logado, processo_tccm=processo_tccm).pack(fill="both", expand=True)
             elif pagina == "Agente":
                 UsuariosPage(content_frame, usuario_logado=usuario_logado).pack(fill="both", expand=True)
             elif pagina == "Usuario Externo":
