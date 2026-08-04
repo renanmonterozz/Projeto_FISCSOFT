@@ -5,6 +5,18 @@ from config.styles import COLORS, FONTS
 
 
 class CrudBase:
+    CARD_BORDER_RADIUS = 4
+
+    def build_card(self, parent, **kwargs):
+        return ctk.CTkFrame(
+            parent,
+            fg_color=COLORS["white"],
+            corner_radius=self.CARD_BORDER_RADIUS,
+            border_width=1,
+            border_color=COLORS["border"],
+            **kwargs,
+        )
+
     def build_header(self, title, subtitle):
         header = ctk.CTkFrame(self, fg_color="transparent")
         header.pack(fill="x", padx=30, pady=(30, 20))
