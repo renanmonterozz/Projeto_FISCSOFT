@@ -24,7 +24,7 @@ Ao clicar no botao ">" de um TCCM no Painel Geral, fecha a Welcome Screen e abre
 Arquivos principais (sistema interno - main.py):
 - main.py: Login (LoginApp), Welcome Screen (_abrir_tela_principal), Menu Principal (_abrir_menu_principal), navegacao (navegar)
 - config/styles.py: Cores e fontes (COLORS, FONTS)
-- database/conexaodb.py: Conexao com SQLite/MySQL + schema + seed data
+- database/conexaodb.py: Conexao com SQLite/MySQL + schema + seed data + migracao automatica (_migrar)
 - screens/crud_base.py: Classe base para telas com tabela (CrudBase mixin)
 - screens/sidebar.py: Menu lateral com 9 itens (inclui Dashboard TCCM)
 - screens/menu_inicial.py: Dashboard principal (cards + tabela de notas)
@@ -44,8 +44,13 @@ Arquivos principais (sistema externo - fiscsoft_externo/):
 - fiscsoft_externo/main_externo.py: Login e navegacao (infrator via CPF)
 - fiscsoft_externo/telas/sidebar_externo.py: Menu lateral (3 itens)
 - fiscsoft_externo/telas/dashboard_externo.py: Painel com cards + TCCM + ultimas notas
-- fiscsoft_externo/telas/notas_fiscais_externo.py: Cadastro de notas com Treeview de itens, ComboBox de processo/itens, upload de PDF
-- fiscsoft_externo/telas/relatorio_externo.py: Relatorio detalhado por nota fiscal
+- fiscsoft_externo/telas/notas_fiscais_externo.py: Cadastro de NF pelo infrator com ComboBox de processo (TCCM), itens do catalogo filtrados pelo processo do TCCM (WHERE itens.processo = ? AND status = 'Ativo'), Treeview de itens, upload de PDF com extracao automatica de dados (numero, chave, data, itens), botoes "Enviar para Agente", "Limpar Tudo" e "Voltar"
+- fiscsoft_externo/telas/relatorio_externo.py: Relatorio detalhado por nota fiscal com CalendarioPopup para selecao de periodo e geracao de relatorio em .txt
+
+Fluxo Nota Fiscal Externa:
+- Infrator seleciona o processo (TCCM) e adiciona apenas itens vinculados ao TCCM (coluna itens.processo, cadastrados no cadastro TCCM do sistema interno)
+- Botao "Enviar para Agente" grava a NF com status 'Pendente' vinculada a matricula do agente do TCCM e os itens na tabela produtos (lote = numero-ITEM-n)
+- Admin aprova/rejeita a NF em screens/relatorios.py (conciliacao automatica)
 
 Credenciais de teste:
 - Sistema interno: admin/123456, agente/123456, usuario/123456
@@ -57,7 +62,7 @@ Banco de dados - Tabelas principais:
 - tccm: processo (PK), "agente ibama_matricula" (FK), infrator_id_infrator (FK), total_devido, total_pago, total_validado, data_validade, intervalo, status
 - "nota fiscal": nota_fiscal (PK), "agente ibama_matricula" (FK), processo (FK -> tccm.processo), semestre, data, chave_de_acesso, valor_total, status_nota (Pendente/Aprovada/Rejeitada/Correcao Solicitada)
 - produtos: lote (PK auto), "nota fiscal_nota_fiscal" (FK), "nota fiscal_agente ibama_matricula" (FK), itens_id (FK -> itens.id), nome_item, quantidade, preco_unitario, data_validade, status_entrega
-- itens: id (PK auto), nome, descricao, codigo_interno, categoria, tipo, justificativa, unidade_medida, semestre, quantidade_prevista, status (Ativo/Inativo), notas_fiscais, criado_em
+- itens: id (PK auto), nome, descricao, codigo_interno, categoria, tipo, justificativa, unidade_medida, semestre, quantidade_prevista, status (Ativo/Inativo), notas_fiscais, **processo** (FK -> tccm.processo), criado_em
 - locais: id (PK auto), cep, endereco, instituicao, responsavel, telefone, criado_em
 - logs: id (PK auto), usuario, acao, tabela, descricao, criado_em
 - insumo: id_insumo (PK auto), nome, tipo, descricao, justificativa, link, preco_orcado, "infrator_id_infrator" (FK), "produtos_lote" (FK)
@@ -99,6 +104,14 @@ Fluxo Painel Geral (tccm_dashboard.py):
   - Busca dados do banco para popular ComboBoxes
 - CircularProgressBar: Widget de barra circular com Canvas
 
+Fluxo Relatorio Externo (fiscsoft_externo/telas/relatorio_externo.py):
+- CalendarioPopup: CTkToplevel com grade de dias, navegacao mes/anterior, selecao data inicio/fim
+- Filtro de periodo aplicado automaticamente apos selecao
+- Tabela de NFs com colunas usando `place` + `col_cfg` (relx, relwidth, anchor)
+- Popup de detalhes (900x680, redimensionavel) com `place` em todos os elementos
+- Botao "Gerar Relatorio" gera arquivo .txt com NFs e itens do periodo selecionado
+- Database._migrar(): migra schema automaticamente a cada conexao (ex: ALTER TABLE itens ADD COLUMN processo)
+
 Fluxo de Navegacao (main.py):
 - Login -> Welcome Screen (Painel Geral) -> "Acessar Sistema" -> Main App (Menu Principal)
 - Botao ">" no Painel Geral fecha Welcome Screen e abre Main App com TccmDetalhesPage
@@ -126,6 +139,10 @@ Padroes de codigo:
 - CTkCanvas nao aceita bg="transparent", usar cor solida (ex: COLORS["white"])
 - Botoes ">" usam unicode \u25b6 para indicar selecao/abrir detalhes
 - Widgets CTkScrollableFrame para listas grandes
+- Layout com `place` usando `col_cfg = [(relx, relwidth, anchor), ...]` para alinhar colunas em tabelas
+- Database._migrar() para migracoes automaticas (ALTER TABLE com try/except OperationalError)
+- CalendarioPopup: selecao de periodo com data_inicio e fim como date objects
+- Filtro de periodo em queries SQL: `WHERE nf.data >= ? AND nf.data <= ?` com strftime('%Y-%m-%d')
 
 Mantenha esse contexto ao ajudar com alteracoes no projeto.
 ```

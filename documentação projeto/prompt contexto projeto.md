@@ -17,7 +17,7 @@ Estrutura do projeto:
 Arquivos principais (sistema interno - main.py):
 - main.py: Login e navegação (admin/agente)
 - config/styles.py: Cores e fontes (COLORS, FONTS)
-- database/conexaodb.py: Conexão com SQLite/MySQL + schema + seed data
+- database/conexaodb.py: Conexão com SQLite/MySQL + schema + seed data + migração automática (_migrar)
 - screens/crud_base.py: Classe base para telas com tabela
 - screens/sidebar.py: Menu lateral com 8 itens
 - screens/menu_inicial.py: Dashboard principal (cards + tabela de notas)
@@ -37,7 +37,7 @@ Arquivos principais (sistema externo - fiscsoft_externo/):
 - fiscsoft_externo/telas/sidebar_externo.py: Menu lateral (3 itens)
 - fiscsoft_externo/telas/dashboard_externo.py: Painel com cards + TCCM + últimas notas
 - fiscsoft_externo/telas/notas_fiscais_externo.py: Cadastro de notas com Treeview de itens, ComboBox de processo/itens, upload de PDF
-- fiscsoft_externo/telas/relatorio_externo.py: Relatório detalhado por nota fiscal
+- fiscsoft_externo/telas/relatorio_externo.py: Relatório detalhado por nota fiscal com CalendarioPopup para seleção de período e geração de relatório em .txt
 
 Credenciais de teste:
 - Sistema interno: admin/123456, agente/123456, usuario/123456
@@ -49,7 +49,7 @@ Banco de dados - Tabelas principais:
 - tccm: processo (PK), "agente ibama_matricula" (FK), infrator_id_infrator (FK), total_devido, total_pago, status
 - "nota fiscal": nota_fiscal (PK), "agente ibama_matricula" (FK), processo (FK → tccm.processo), data, chave_de_acesso, valor_total, status_nota (Pendente/Aprovada/Rejeitada/Correcao Solicitada)
 - produtos: lote (PK auto), "nota fiscal_nota_fiscal" (FK), itens_id (FK → itens.id), nome_item, quantidade, preco_unitario
-- itens: id (PK auto), nome, descricao, codigo_interno, categoria, unidade_medida, status (Ativo/Inativo)
+- itens: id (PK auto), nome, descricao, codigo_interno, categoria, unidade_medida, status (Ativo/Inativo), notas_fiscais, processo (FK → tccm.processo)
 - locais: id (PK auto), cep, endereco, instituicao, responsavel, telefone
 - logs: id (PK auto), usuario, acao, tabela, descricao
 
@@ -65,6 +65,14 @@ Fluxo Relatório de Entrega:
 - Botões: Imprimir (abre notepad /p), Baixar PDF (gera .txt), + Cadastrar Novo Local
 - Botão Gerar Relatório foi removido (redundante)
 
+Fluxo Relatório Externo (fiscsoft_externo/telas/relatorio_externo.py):
+- CalendarioPopup: CTkToplevel com grade de dias, navegação mês/anterior, seleção data início/fim
+- Filtro de período aplicado automaticamente após seleção
+- Tabela de NFs com colunas usando `place` + `col_cfg` (relx, relwidth, anchor)
+- Popup de detalhes (900x680, redimensionável) com `place` em todos os elementos
+- Botão "Gerar Relatório" gera arquivo .txt com NFs e itens do período selecionado
+- Database._migrar(): migra schema automaticamente a cada conexão (ex: ALTER TABLE itens ADD COLUMN processo)
+
 Padrões de código:
 - Queries SQLite usam ? como placeholder
 - Tabelas com espaços usam aspas duplas: "agente ibama", "nota fiscal"
@@ -76,6 +84,10 @@ Padrões de código:
 - Datas do SQLite são strings ('YYYY-MM-DD'), tratar com _fmt_date() ao formatar
 - Enter binding nos logins: self.bind("<Return>", ...) + unbind no voltar_menu()
 - CTkComboBox com bind de scroll (mousewheel) para navegação por opções
+- Layout com `place` usando `col_cfg = [(relx, relwidth, anchor), ...]` para alinhar colunas em tabelas
+- Database._migrar() para migrações automáticas (ALTER TABLE com try/except OperationalError)
+- CalendarioPopup: seleção de período com data_inicio e fim como date objects
+- Filtro de período em queries SQL: `WHERE nf.data >= ? AND nf.data <= ?` com strftime('%Y-%m-%d')
 
 Mantenha esse contexto ao ajudar com alterações no projeto.
 ```
