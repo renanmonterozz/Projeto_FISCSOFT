@@ -25,6 +25,16 @@ def _fmt_brl(valor):
     return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
+COL_TCCM_CFG = [
+    (0.0, 0.14, "w"),
+    (0.14, 0.26, "w"),
+    (0.40, 0.14, "center"),
+    (0.54, 0.14, "center"),
+    (0.68, 0.14, "center"),
+    (0.82, 0.12, "center"),
+]
+
+
 class CircularProgressBar(ctk.CTkFrame):
     def __init__(self, master, size=160, thickness=14, **kwargs):
         super().__init__(master, width=size, height=size, fg_color="transparent", **kwargs)
@@ -1152,7 +1162,7 @@ class TccmDashboardPage(CrudBase, ctk.CTkFrame):
         self._card_concluidos = self._criar_card_status(self._cards_frame, "Concluidos", "0", COLORS["success_dark"], 1)
 
     def _criar_card_status(self, parent, titulo, valor, cor, col):
-        card = ctk.CTkFrame(parent, fg_color=COLORS["white"], corner_radius=6,
+        card = ctk.CTkFrame(parent, fg_color=COLORS["white"], corner_radius=4,
                             border_width=1, border_color=COLORS["border"])
         card.grid(row=0, column=col, padx=5, sticky="nsew")
 
@@ -1175,7 +1185,7 @@ class TccmDashboardPage(CrudBase, ctk.CTkFrame):
         return card, lbl
 
     def _build_progress_section(self):
-        section = ctk.CTkFrame(self, fg_color=COLORS["white"], corner_radius=6,
+        section = ctk.CTkFrame(self, fg_color=COLORS["white"], corner_radius=4,
                                border_width=1, border_color=COLORS["border"])
         section.pack(fill="x", padx=30, pady=(0, 15))
 
@@ -1248,7 +1258,7 @@ class TccmDashboardPage(CrudBase, ctk.CTkFrame):
         self.lbl_count.pack(side="right", padx=(0, 12))
 
         filter_frame = ctk.CTkFrame(header_row, fg_color="transparent")
-        filter_frame.pack(side="right")
+        filter_frame.pack(side="right", padx=(0, 24))
 
         ctk.CTkLabel(filter_frame, text="Filtrar:",
                       font=ctk.CTkFont(size=FONTS["size_small"]),
@@ -1269,14 +1279,16 @@ class TccmDashboardPage(CrudBase, ctk.CTkFrame):
 
         cols = ctk.CTkFrame(col_header, fg_color="transparent")
         cols.pack(side="left", fill="x", expand=True, padx=(15, 0))
-        weights = [2, 3, 2, 2, 2, 2, 1]
-        for w in weights:
-            cols.grid_columnconfigure(cols.grid_size()[1], weight=w)
 
-        for i, col in enumerate(["Processo", "Infrator", "Total Devido", "Total Pago", "Validade", "Status", ""]):
-            ctk.CTkLabel(cols, text=col,
-                          font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                          text_color=COLORS["text_muted"]).grid(row=0, column=i, sticky="w", padx=8)
+        colunas = ["Processo", "Infrator", "Total Devido", "Total Pago", "Validade", "Status"]
+
+        for texto, (rx, rw, anchor) in zip(colunas, COL_TCCM_CFG):
+            ctk.CTkLabel(
+                cols, text=texto,
+                font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
+                text_color=COLORS["text_muted"],
+                anchor=anchor,
+            ).place(relx=rx, relwidth=rw, rely=0, relheight=1)
 
         self.table_body = ctk.CTkScrollableFrame(container, fg_color="transparent")
         self.table_body.pack(fill="both", expand=True)
@@ -1366,9 +1378,6 @@ class TccmDashboardPage(CrudBase, ctk.CTkFrame):
 
             cols = ctk.CTkFrame(row, fg_color="transparent")
             cols.pack(side="left", fill="x", expand=True, padx=(15, 0))
-            weights = [2, 3, 2, 2, 2, 2, 1]
-            for w in weights:
-                cols.grid_columnconfigure(cols.grid_size()[1], weight=w)
 
             if t["status"] == "concluido":
                 st_text = "Concluido"
@@ -1386,11 +1395,14 @@ class TccmDashboardPage(CrudBase, ctk.CTkFrame):
                 t["data_validade"], st_text,
             ]
             for i, valor in enumerate(dados):
+                relx, relwidth, anchor = COL_TCCM_CFG[i]
                 cor = COLORS["text"] if i == 0 else (st_cor if i == 5 else COLORS["text_muted"])
                 weight = "bold" if i == 0 or i == 5 else "normal"
-                ctk.CTkLabel(cols, text=valor,
-                              font=ctk.CTkFont(size=FONTS["size_small"], weight=weight),
-                              text_color=cor, anchor="w").grid(row=0, column=i, sticky="w", padx=8)
+                ctk.CTkLabel(
+                    cols, text=valor,
+                    font=ctk.CTkFont(size=FONTS["size_small"], weight=weight),
+                    text_color=cor, anchor=anchor,
+                ).place(relx=relx, relwidth=relwidth, rely=0, relheight=1)
 
             ctk.CTkButton(
                 row, text="\u25b6", width=32, height=28,
@@ -1398,7 +1410,7 @@ class TccmDashboardPage(CrudBase, ctk.CTkFrame):
                 hover_color=COLORS["primary_hover"], text_color="white",
                 font=ctk.CTkFont(size=12),
                 command=lambda proc=t["processo"]: self._selecionar(proc),
-            ).pack(side="right", padx=(0, 15))
+            ).place(relx=1.0, rely=0.5, anchor="e", x=-15)
 
     def _selecionar(self, processo):
         if self.on_selecionar:
