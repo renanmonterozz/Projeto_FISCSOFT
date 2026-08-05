@@ -22,6 +22,16 @@ def _fmt_date(val):
         return str(val)
 
 
+COL_NF_CFG = [
+    (0.0, 0.06, "w"),
+    (0.06, 0.20, "w"),
+    (0.26, 0.14, "w"),
+    (0.40, 0.16, "w"),
+    (0.56, 0.16, "center"),
+    (0.72, 0.12, "w"),
+]
+
+
 class RelatoriosPage(CrudBase, ctk.CTkFrame):
     def __init__(self, master, usuario_logado=None, **kwargs):
         super().__init__(master, **kwargs)
@@ -42,8 +52,6 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
 
         self.entry_periodo = self.build_filter_entry(row, "Periodo (mm/aaaa)", 160)
         self.entry_status = self.build_filter_entry(row, "Status", 160)
-        self.entry_cpf = self.build_filter_entry(row, "CPF/CNPJ do interessado", 200)
-        self.entry_processo = self.build_filter_entry(row, "No. do processo (TCCM)", 200)
 
         btn_frame = self.build_btn_frame(row)
         self.build_action_btn(btn_frame, "  Filtrar", carregar_icone("lupa.png"), self.filtrar,
@@ -96,29 +104,28 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
                      font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
                      text_color=COLORS["text"]).pack(anchor="w", padx=15, pady=(12, 5))
 
-        columns = ("ID", "No. Processo (TCCM)", "Interessado", "CPF/CNPJ",
-                   "No. Nota Fiscal", "Data Envio", "Valor Total (R$)",
-                   "Itens Declarados", "Status", "Acoes")
-
         header = ctk.CTkFrame(table_container, fg_color=COLORS["table_header"], height=40, corner_radius=0)
-        header.pack(fill="x", padx=3, pady=(1, 0))
+        header.pack(fill="x", padx=(10, 26), pady=(1, 0))
         header.pack_propagate(False)
 
         cols_frame = ctk.CTkFrame(header, fg_color="transparent")
         cols_frame.pack(side="left", fill="x", expand=True, padx=(15, 0))
 
-        weights = [1, 2, 2, 2, 2, 1, 2, 1, 1, 1]
-        for i in range(len(columns) - 1):
-            cols_frame.grid_columnconfigure(i, weight=weights[i])
+        columns = ("ID", "No. Nota Fiscal", "Data Envio", "Valor Total (R$)",
+                   "Itens Declarados", "Status")
 
-        for i, col in enumerate(columns[:-1]):
-            ctk.CTkLabel(cols_frame, text=col,
-                         font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                         text_color=COLORS["text_muted"]).grid(row=0, column=i, sticky="w", padx=5)
+        for col, (rx, rw, anchor) in zip(columns, COL_NF_CFG):
+            ctk.CTkLabel(
+                cols_frame, text=col,
+                font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
+                text_color=COLORS["text_muted"],
+                anchor=anchor,
+            ).place(relx=rx, relwidth=rw, rely=0, relheight=1)
 
         ctk.CTkLabel(header, text="Acoes",
                      font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                     text_color=COLORS["text_muted"], width=100).pack(side="right", padx=(0, 15))
+                     text_color=COLORS["text_muted"],
+                     anchor="w").place(relx=0.84, relwidth=0.16, rely=0, relheight=1)
 
         self.table_body = ctk.CTkScrollableFrame(table_container, fg_color=COLORS["white"],
                                                  corner_radius=0)
@@ -287,28 +294,25 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
         cols = ctk.CTkFrame(linha, fg_color="transparent")
         cols.pack(side="left", fill="x", expand=True, padx=(15, 0))
 
-        weights = [1, 2, 2, 2, 2, 1, 2, 1, 1, 1]
-        for i in range(9):
-            cols.grid_columnconfigure(i, weight=weights[i])
-
-        dados = [str(idx), nota["processo"], nota["interessado"], nota["cpf"],
-                 nota["nota_fiscal"], nota["data"], f"R$ {nota['valor_total']:,.2f}",
+        dados = [str(idx), nota["nota_fiscal"], nota["data"],
+                 f"R$ {nota['valor_total']:,.2f}",
                  str(nota["itens"]), nota["status"]]
 
-        for i, valor in enumerate(dados):
+        for i, (valor, (rx, rw, anchor)) in enumerate(zip(dados, COL_NF_CFG)):
             cor = COLORS["text"] if i == 0 else COLORS["text_muted"]
-            ctk.CTkLabel(cols, text=valor,
-                         font=ctk.CTkFont(size=FONTS["size_small"]),
-                         text_color=cor, anchor="w").grid(row=0, column=i, sticky="w", padx=5)
+            ctk.CTkLabel(
+                cols, text=valor,
+                font=ctk.CTkFont(size=FONTS["size_small"]),
+                text_color=cor, anchor=anchor,
+            ).place(relx=rx, relwidth=rw, rely=0, relheight=1)
 
-        btn_frame = ctk.CTkFrame(linha, fg_color="transparent")
-        btn_frame.pack(side="right", padx=(0, 10))
-
-        ctk.CTkButton(btn_frame, text="Ver", width=50, height=28, corner_radius=4,
-                      fg_color=COLORS["white"], hover_color="#F0F0F0",
-                      text_color=COLORS["text"], border_width=1, border_color=COLORS["border"],
-                      font=ctk.CTkFont(size=11),
-                      command=lambda n=nota: self.selecionar_nota(n)).pack(side="left", padx=2)
+        ctk.CTkButton(
+            linha, text="Ver", width=50, height=28, corner_radius=4,
+            fg_color=COLORS["white"], hover_color="#F0F0F0",
+            text_color=COLORS["text"], border_width=1, border_color=COLORS["border"],
+            font=ctk.CTkFont(size=11), cursor="hand2",
+            command=lambda n=nota: self.selecionar_nota(n),
+        ).place(relx=0.84, rely=0.5, anchor="w")
 
         linha.bind("<Button-1>", lambda e, n=nota: self.selecionar_nota(n))
 
@@ -390,21 +394,17 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
     def filtrar(self):
         periodo = self.entry_periodo.get().strip().lower()
         status = self.entry_status.get().strip().lower()
-        cpf = self.entry_cpf.get().strip().lower()
-        processo = self.entry_processo.get().strip().lower()
 
         todos = self.carregar_do_banco()
         self.notas = [
             n for n in todos
-            if (not processo or processo in n["processo"].lower())
-            and (not cpf or cpf in n["cpf"].lower())
-            and (not status or status in n["status"].lower())
+            if (not status or status in n["status"].lower())
             and (not periodo or periodo in n["data"])
         ]
         self.render_rows()
 
     def limpar_filtros(self):
-        self.clear_entries(self.entry_periodo, self.entry_status, self.entry_cpf, self.entry_processo)
+        self.clear_entries(self.entry_periodo, self.entry_status)
         self.notas = self.carregar_do_banco()
         self.render_rows()
 
