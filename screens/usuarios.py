@@ -214,8 +214,8 @@ if __name__ == "__main__":
 
     app = ctk.CTk()
     app.title("FISCSOFT - Usuarios")
-    app.geometry("1200x700")
     app.configure(fg_color=COLORS["bg"])
+    app.after(0, app.state, "zoomed")
 
     UsuariosPage(app).pack(fill="both", expand=True)
     app.mainloop()

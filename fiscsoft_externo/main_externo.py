@@ -45,9 +45,8 @@ class LoginExterno(ctk.CTk):
         super().__init__()
 
         self.title("FISCSOFT - Acesso Externo")
-        self.geometry("1000x600")
-        self.resizable(False, False)
         self.configure(fg_color=COLORS["white"])
+        self.after(0, self.state, "zoomed")
         self.mostrando_form = False
 
         try:
@@ -179,8 +178,8 @@ class LoginExterno(ctk.CTk):
 
         main_app = ctk.CTk()
         main_app.title("FISCSOFT - Acesso Externo")
-        main_app.geometry("1200x700")
         main_app.configure(fg_color=COLORS["white"])
+        main_app.after(0, main_app.state, "zoomed")
         main_app.usuario_logado = self.usuario_logado
         main_app.id_infrator = self.id_infrator
 

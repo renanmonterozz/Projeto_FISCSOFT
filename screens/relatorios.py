@@ -438,8 +438,8 @@ if __name__ == "__main__":
 
     app = ctk.CTk()
     app.title("FISCSOFT - Monitoramento de Notas Fiscais")
-    app.geometry("1400x800")
     app.configure(fg_color=COLORS["bg"])
+    app.after(0, app.state, "zoomed")
 
     RelatoriosPage(app).pack(fill="both", expand=True)
     app.mainloop()

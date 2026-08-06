@@ -327,8 +327,8 @@ class LoginApp(ctk.CTk):
 
         welcome_app = ctk.CTk()
         welcome_app.title("FISCSOFT - Bem-vindo")
-        welcome_app.geometry("1200x700")
         welcome_app.configure(fg_color=COLORS["bg"])
+        welcome_app.after(0, welcome_app.state, "zoomed")
         welcome_app.usuario_logado = self.usuario_logado
         welcome_app.perfil = perfil
         welcome_app.processo_tccm = processo_tccm
@@ -397,8 +397,8 @@ class LoginApp(ctk.CTk):
 
         main_app = ctk.CTk()
         main_app.title("FISCSOFT" if perfil == "admin" else "FISCSOFT - Usuario")
-        main_app.geometry("1200x700")
         main_app.configure(fg_color=COLORS["white"])
+        main_app.after(0, main_app.state, "zoomed")
         main_app.usuario_logado = self.usuario_logado
         main_app.perfil = perfil
 

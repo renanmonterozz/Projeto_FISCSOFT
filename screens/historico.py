@@ -189,8 +189,8 @@ if __name__ == "__main__":
 
     app = ctk.CTk()
     app.title("FISCSOFT - Historico")
-    app.geometry("1200x700")
     app.configure(fg_color=COLORS["bg"])
+    app.after(0, app.state, "zoomed")
 
     HistoricoPage(app).pack(fill="both", expand=True)
     app.mainloop()

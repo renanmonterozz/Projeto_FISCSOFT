@@ -808,8 +808,8 @@ if __name__ == "__main__":
 
     app = ctk.CTk()
     app.title("FISCSOFT - Relatorio de Entrega de Materiais")
-    app.geometry("1400x800")
     app.configure(fg_color=COLORS["bg"])
+    app.after(0, app.state, "zoomed")
 
     RelatorioEntregaPage(app).pack(fill="both", expand=True)
     app.mainloop()
