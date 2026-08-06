@@ -5,7 +5,7 @@ import pywinstyles
 import logging
 import os
 import sys
-from tkinter import messagebox
+from tkinter import TclError, messagebox
 
 from PIL import Image
 
@@ -309,8 +309,11 @@ class LoginApp(ctk.CTk):
         messagebox.showinfo("Certificado Digital", "Funcionalidade em desenvolvimento.")
 
     def _abrir_tela_principal(self, perfil: str = "admin", processo_tccm: str = None):
-        self.quit()
-        self.destroy()
+        try:
+            self.quit()
+            self.destroy()
+        except TclError:
+            pass
 
         welcome_app = ctk.CTk()
         welcome_app.title("FISCSOFT - Bem-vindo")
@@ -334,8 +337,11 @@ class LoginApp(ctk.CTk):
         content.pack(fill="both", expand=True, padx=30, pady=(15, 20))
 
         def _logout_welcome():
-            welcome_app.quit()
-            welcome_app.destroy()
+            try:
+                welcome_app.quit()
+                welcome_app.destroy()
+            except TclError:
+                pass
             app = LoginApp()
             app.mainloop()
 
@@ -371,8 +377,11 @@ class LoginApp(ctk.CTk):
         welcome_app.mainloop()
 
     def _abrir_menu_principal(self, welcome_app, perfil: str, processo_tccm: str = None):
-        welcome_app.quit()
-        welcome_app.destroy()
+        try:
+            welcome_app.quit()
+            welcome_app.destroy()
+        except TclError:
+            pass
 
         main_app = ctk.CTk()
         main_app.title("FISCSOFT" if perfil == "admin" else "FISCSOFT - Usuario")
@@ -444,8 +453,11 @@ class LoginApp(ctk.CTk):
                 ).pack(expand=True)
 
         def logout():
-            main_app.quit()
-            main_app.destroy()
+            try:
+                main_app.quit()
+                main_app.destroy()
+            except TclError:
+                pass
             app = LoginApp()
             app.mainloop()
 

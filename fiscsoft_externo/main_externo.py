@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import logging
-from tkinter import messagebox
+from tkinter import TclError, messagebox
 from PIL import Image
 
 import customtkinter as ctk
@@ -161,8 +161,11 @@ class LoginExterno(ctk.CTk):
         self._abrir_tela_principal()
 
     def _abrir_tela_principal(self):
-        self.quit()
-        self.destroy()
+        try:
+            self.quit()
+            self.destroy()
+        except TclError:
+            pass
 
         main_app = ctk.CTk()
         main_app.title("FISCSOFT - Acesso Externo")
@@ -203,8 +206,11 @@ class LoginExterno(ctk.CTk):
                 ).pack(fill="both", expand=True)
 
         def logout():
-            main_app.quit()
-            main_app.destroy()
+            try:
+                main_app.quit()
+                main_app.destroy()
+            except TclError:
+                pass
             app = LoginExterno()
             app.mainloop()
 
