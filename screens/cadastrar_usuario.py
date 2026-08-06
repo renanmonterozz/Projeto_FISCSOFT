@@ -130,13 +130,13 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
 
     def preencher_campos(self):
         u = self.usuario_edicao
-        self.entry_nome.insert(0, u["nome"])
-        self.entry_cpf.insert(0, u["cpf"])
-        self.entry_email.insert(0, u["email"])
-        self.entry_telefone.insert(0, u.get("telefone", ""))
-        self.entry_matricula.insert(0, str(u["matricula"]))
+        self.entry_nome.insert(0, u.get("nome") or "")
+        self.entry_cpf.insert(0, u.get("cpf") or "")
+        self.entry_email.insert(0, u.get("email") or "")
+        self.entry_telefone.insert(0, u.get("telefone") or "")
+        self.entry_matricula.insert(0, str(u.get("matricula") or ""))
         self.entry_matricula.configure(state="disabled")
-        self.entry_login.insert(0, u["login"])
+        self.entry_login.insert(0, u.get("login") or "")
 
     def _criar_campo(self, parent, label, col, weight=1, show=None):
         parent.grid_columnconfigure(col, weight=weight)

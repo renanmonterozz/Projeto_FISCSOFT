@@ -35,6 +35,16 @@ logging.basicConfig(
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
+
+def _suprimir_erro_tcl():
+    try:
+        import tkinter as _tk
+        root = _tk._default_root
+        if root is not None:
+            root.tk.eval("proc bgerror {msg} {}")
+    except Exception:
+        pass
+
 PERMISSOES_ADMIN = {"Menu Principal", "Itens", "Destinacao", "Agente", "Usuario Externo", "Locais Cadastrados", "Relatorio", "Historico", "Dashboard TCCM"}
 PERMISSOES_AGENTE = {"Menu Principal", "Itens", "Destinacao", "Agente", "Usuario Externo", "Locais Cadastrados", "Relatorio", "Historico", "Dashboard TCCM"}
 
@@ -343,6 +353,7 @@ class LoginApp(ctk.CTk):
             except TclError:
                 pass
             app = LoginApp()
+            _suprimir_erro_tcl()
             app.mainloop()
 
         def _abrir_cadastro_tccm():
@@ -374,6 +385,7 @@ class LoginApp(ctk.CTk):
         if processo_tccm:
             welcome_app.after(100, lambda: self._abrir_menu_principal(welcome_app, perfil, processo_tccm=processo_tccm))
 
+        _suprimir_erro_tcl()
         welcome_app.mainloop()
 
     def _abrir_menu_principal(self, welcome_app, perfil: str, processo_tccm: str = None):
@@ -459,6 +471,7 @@ class LoginApp(ctk.CTk):
             except TclError:
                 pass
             app = LoginApp()
+            _suprimir_erro_tcl()
             app.mainloop()
 
         sidebar = Sidebar(main_app, width=210, on_navigate=navegar, on_sair=logout)
@@ -468,9 +481,11 @@ class LoginApp(ctk.CTk):
         content_frame.pack(side="right", fill="both", expand=True)
 
         navegar("Menu Principal")
+        _suprimir_erro_tcl()
         main_app.mainloop()
 
 
 if __name__ == "__main__":
     app = LoginApp()
+    _suprimir_erro_tcl()
     app.mainloop()

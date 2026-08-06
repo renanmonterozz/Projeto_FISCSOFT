@@ -27,6 +27,16 @@ logging.basicConfig(
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
+
+def _suprimir_erro_tcl():
+    try:
+        import tkinter as _tk
+        root = _tk._default_root
+        if root is not None:
+            root.tk.eval("proc bgerror {msg} {}")
+    except Exception:
+        pass
+
 PERMISSOES_EXTERNO = {"Menu Inicial", "Cadastrar Notas", "Relatorio"}
 
 
@@ -212,6 +222,7 @@ class LoginExterno(ctk.CTk):
             except TclError:
                 pass
             app = LoginExterno()
+            _suprimir_erro_tcl()
             app.mainloop()
 
         sidebar = SidebarExterno(main_app, width=210, on_navigate=navegar, on_sair=logout)
@@ -221,9 +232,11 @@ class LoginExterno(ctk.CTk):
         content_frame.pack(side="right", fill="both", expand=True)
 
         navegar("Menu Inicial")
+        _suprimir_erro_tcl()
         main_app.mainloop()
 
 
 if __name__ == "__main__":
     app = LoginExterno()
+    _suprimir_erro_tcl()
     app.mainloop()
