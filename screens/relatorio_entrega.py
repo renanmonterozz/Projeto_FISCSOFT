@@ -221,6 +221,8 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
         return nome
 
     def _on_item_select(self, selection):
+        if not hasattr(self, "entry_quantidade"):
+            return
         for item in self.itens_catalogo:
             if self._item_display(item) == selection:
                 qtd = item.get("quantidade") or 0
