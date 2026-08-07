@@ -462,7 +462,7 @@ class NotasFiscaisExterno(ctk.CTkFrame):
 
         self.btn_limpar = ctk.CTkButton(
             row, text="REMOVER ANEXO", height=36, corner_radius=6,
-            fg_color="#6B7280", hover_color="#4B5563",
+            fg_color="#CC0000", hover_color="#AA0000",
             text_color="white", border_width=0,
             font=ctk.CTkFont(size=12, weight="bold"),
             width=140,
@@ -653,7 +653,7 @@ class NotasFiscaisExterno(ctk.CTkFrame):
 
         ctk.CTkButton(
             btn_container, text="  Limpar Tudo", height=40, corner_radius=6,
-            fg_color=COLORS["dark"], hover_color=COLORS["dark_hover"],
+            fg_color=COLORS["success_dark"], hover_color=COLORS["success_dark_hover"],
             text_color="white", border_width=0,
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             width=140,
@@ -662,7 +662,7 @@ class NotasFiscaisExterno(ctk.CTkFrame):
 
         ctk.CTkButton(
             btn_container, text="  Voltar", height=40, corner_radius=6,
-            fg_color="#6B7280", hover_color="#4B5563",
+            fg_color=COLORS["success_dark"], hover_color=COLORS["success_dark_hover"],
             text_color="white", border_width=0,
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             width=140,
