@@ -25,6 +25,10 @@ from screens.historico import HistoricoPage
 from screens.tccm_dashboard import TccmDashboardPage, TccmDetalhesPage
 from screens.cadastro_tccm_completo import CadastroTCCMCompleto
 from utils import verify_password
+from fiscsoft_externo.telas.sidebar_externo import SidebarExterno
+from fiscsoft_externo.telas.dashboard_externo import DashboardExterno
+from fiscsoft_externo.telas.notas_fiscais_externo import NotasFiscaisExterno
+from fiscsoft_externo.telas.relatorio_externo import RelatorioExterno
 
 logging.basicConfig(
     level=logging.INFO,
@@ -47,6 +51,7 @@ def _suprimir_erro_tcl():
 
 PERMISSOES_ADMIN = {"Menu Principal", "Itens", "Destinacao", "Agente", "Usuario Externo", "Locais Cadastrados", "Relatorio", "Historico", "Dashboard TCCM"}
 PERMISSOES_AGENTE = {"Menu Principal", "Itens", "Destinacao", "Agente", "Usuario Externo", "Locais Cadastrados", "Relatorio", "Historico", "Dashboard TCCM"}
+PERMISSOES_EXTERNO = {"Menu Inicial", "Cadastrar Notas", "Relatorio"}
 
 # Cores da tela de login
 DOURADO = "#c8b464"
@@ -86,10 +91,10 @@ class LoginApp(ctk.CTk):
         self.label_titulo.place(relx=0.5, rely=0.78, anchor="center")
         pywinstyles.set_opacity(self.label_titulo, color="#000001")
 
-        # --- Botão 1: Entrar com Usuário e Senha ---
-        self.btn_usuario = ctk.CTkButton(
+        # --- Botão único: Entrar no Sistema ---
+        self.btn_entrar = ctk.CTkButton(
             self,
-            text="Entrar com Usuário e Senha",
+            text="Entrar no Sistema",
             width=480,
             height=50,
             corner_radius=16,
@@ -100,29 +105,10 @@ class LoginApp(ctk.CTk):
             font=ctk.CTkFont(family="Segoe UI", size=19),
             border_width=2,
             border_color="#000001",
-            command=self._on_usuario_click
+            command=self._mostrar_formulario_unificado
         )
-        self.btn_usuario.place(relx=0.5, rely=0.86, anchor="center")
-        pywinstyles.set_opacity(self.btn_usuario, color="#000001")
-
-        # --- Botão 2: Entrar com Certificado Digital ---
-        self.btn_certificado = ctk.CTkButton(
-            self,
-            text="Entrar com Certificado Digital",
-            width=480,
-            height=50,
-            corner_radius=16,
-            fg_color=VERDE_POLIGONO,
-            bg_color="#000001",
-            hover_color="#211E1E",
-            text_color=AMARELO_BOTAO,
-            font=ctk.CTkFont(family="Segoe UI", size=19),
-            border_width=2,
-            border_color="#000001",
-            command=self._on_certificado_click
-        )
-        self.btn_certificado.place(relx=0.5, rely=0.93, anchor="center")
-        pywinstyles.set_opacity(self.btn_certificado, color="#000001")
+        self.btn_entrar.place(relx=0.5, rely=0.88, anchor="center")
+        pywinstyles.set_opacity(self.btn_entrar, color="#000001")
 
     def _ajustar_imagem_fundo(self):
         if self._img_pil is None:
@@ -147,121 +133,116 @@ class LoginApp(ctk.CTk):
         self.bg_label.configure(image=img)
         self.bg_label.image = img
 
-    def _mostrar_formulario_login(self):
-        # Frame para o formulário
+    def _mostrar_formulario_unificado(self):
+        self.btn_entrar.place_forget()
+
         self.frame_login = ctk.CTkFrame(self, fg_color="#000001", bg_color="#000001", corner_radius=0)
-        self.frame_login.place(relx=0.5, rely=0.90, anchor="center")
+        self.frame_login.place(relx=0.5, rely=0.88, anchor="center")
         self.frame_login.lift()
         pywinstyles.set_opacity(self.frame_login, color="#000001")
 
-        # Entry - Usuário
-        self.entry_usuario = ctk.CTkEntry(
-            self.frame_login,
-            width=480,
-            height=45,
-            corner_radius=8,
-            font=("Segoe UI", 16),
-            fg_color="#CFFFE3",
-            border_color="#16A34A",
-            border_width=2,
-            text_color="#2D8A4E",
-            placeholder_text_color="#2D8A4E",
-            placeholder_text="Digite seu usuário"
-        )
-        self.entry_usuario.pack(pady=(10, 10))
+        self._modo_login = "usuario"
 
-        # Frame wrapper para senha (campo + olho lado a lado)
+        # --- Campo de credencial com icone de toggle ao lado ---
+        frame_cred = ctk.CTkFrame(self.frame_login, fg_color="transparent", width=586, height=45)
+        frame_cred.pack(pady=(10, 10))
+        frame_cred.pack_propagate(False)
+
+        self.entry_credencial = ctk.CTkEntry(
+            frame_cred,
+            width=480, height=45, corner_radius=8,
+            font=("Segoe UI", 16),
+            fg_color="#CFFFE3", border_color="#16A34A", border_width=2,
+            text_color="#2D8A4E", placeholder_text_color="#2D8A4E",
+            placeholder_text="Digite seu usuario"
+        )
+        self.entry_credencial.place(x=53, y=0)
+
+        self.btn_modo = ctk.CTkButton(
+            frame_cred, text="\U0001f464", width=45, height=45, corner_radius=8,
+            fg_color="#CFFFE3", hover_color="#b0e8c0",
+            text_color="#2D8A4E", font=("Segoe UI", 18),
+            border_width=2, border_color="#16A34A",
+            command=self._toggle_modo_login
+        )
+        self.btn_modo.place(x=541, y=0)
+
+        # --- Campo de senha com olho ---
         frame_senha = ctk.CTkFrame(self.frame_login, fg_color="transparent", width=586, height=45)
         frame_senha.pack(pady=(0, 10))
         frame_senha.pack_propagate(False)
 
-        # Entry - Senha (centralizado, mesma posição do campo de usuário)
         self.entry_senha = ctk.CTkEntry(
             frame_senha,
-            width=480,
-            height=45,
-            corner_radius=8,
+            width=480, height=45, corner_radius=8,
             font=("Segoe UI", 16),
-            fg_color="#CFFFE3",
-            border_color="#16A34A",
-            border_width=2,
-            text_color="#2D8A4E",
-            placeholder_text_color="#2D8A4E",
-            placeholder_text="Digite sua senha",
-            show="*"
+            fg_color="#CFFFE3", border_color="#16A34A", border_width=2,
+            text_color="#2D8A4E", placeholder_text_color="#2D8A4E",
+            placeholder_text="Digite sua senha", show="*"
         )
         self.entry_senha.place(x=53, y=0)
 
-        # Botão do olho (place: ao lado do campo, dentro do frame)
         self.btn_eye = ctk.CTkButton(
-            frame_senha,
-            text="👁",
-            width=45,
-            height=45,
-            corner_radius=8,
-            fg_color="#CFFFE3",
-            hover_color="#b0e8c0",
-            text_color="#2D8A4E",
-            font=("Segoe UI", 18),
-            border_width=2,
-            border_color="#16A34A",
+            frame_senha, text="\U0001f441", width=45, height=45, corner_radius=8,
+            fg_color="#CFFFE3", hover_color="#b0e8c0",
+            text_color="#2D8A4E", font=("Segoe UI", 18),
+            border_width=2, border_color="#16A34A",
             command=self._toggle_senha
         )
         self.btn_eye.place(x=541, y=0)
 
-        # Estado da visibilidade da senha
         self._senha_visivel = False
 
-        # Botões em uma linha
-        frame_botoes = ctk.CTkFrame(self.frame_login, fg_color="#000001")
-        frame_botoes.pack()
-        # Botão Entrar
-        btn_entrar = ctk.CTkButton(
-            frame_botoes,
-            text="Entrar",
-            width=100,
-            height=40,
-            corner_radius=12,
-            fg_color=VERDE_POLIGONO,
-            hover_color="#211E1E",
-            text_color=AMARELO_BOTAO,
-            font=("Segoe UI", 16),
+        # --- Botoes Entrar / Sair ---
+        frame_botoes = ctk.CTkFrame(self.frame_login, fg_color="transparent")
+        frame_botoes.pack(pady=(0, 10))
+
+        ctk.CTkButton(
+            frame_botoes, text="Entrar", width=100, height=40, corner_radius=12,
+            fg_color=VERDE_POLIGONO, hover_color="#211E1E",
+            text_color=AMARELO_BOTAO, font=("Segoe UI", 16),
             command=self._on_entrar_click
-        )
-        btn_entrar.pack(side="left", padx=5)
+        ).pack(side="left", padx=5)
 
-        # Botão Sair
-        btn_sair = ctk.CTkButton(
-            frame_botoes,
-            text="Sair",
-            width=100,
-            height=40,
-            corner_radius=12,
-            fg_color="#8B0000",
-            hover_color="#850202",
-            text_color="white",
-            font=("Segoe UI", 16),
+        ctk.CTkButton(
+            frame_botoes, text="Sair", width=100, height=40, corner_radius=12,
+            fg_color="#8B0000", hover_color="#850202",
+            text_color="white", font=("Segoe UI", 16),
             command=self._on_sair_click
-        )
-        btn_sair.pack(side="left", padx=5)
+        ).pack(side="left", padx=5)
 
-        # Enter no campo de usuário/senha dispara o login
-        self.entry_usuario.bind("<Return>", lambda e: self._on_entrar_click())
+        self.entry_credencial.bind("<Return>", lambda e: self._on_entrar_click())
         self.entry_senha.bind("<Return>", lambda e: self._on_entrar_click())
 
+    def _toggle_modo_login(self):
+        if self._modo_login == "usuario":
+            self._modo_login = "cpf"
+            self.btn_modo.configure(text="\U0001faaa")
+            self.entry_credencial.configure(placeholder_text="Digite seu CPF")
+        else:
+            self._modo_login = "usuario"
+            self.btn_modo.configure(text="\U0001f464")
+            self.entry_credencial.configure(placeholder_text="Digite seu usuario")
+        self.entry_credencial.delete(0, "end")
+
     def _on_entrar_click(self):
-        usuario = self.entry_usuario.get()
+        credencial = self.entry_credencial.get().strip()
         senha = self.entry_senha.get()
 
-        if not usuario or not senha:
+        if not credencial or not senha:
             messagebox.showwarning("Atencao", "Preencha todos os campos!")
             return
 
+        if self._modo_login == "usuario":
+            self._login_usuario(credencial, senha)
+        else:
+            self._login_cpf(credencial, senha)
+
+    def _login_usuario(self, usuario, senha):
         with Database() as db:
             if not db.conexao:
                 messagebox.showerror("Erro", "Nao foi possivel conectar ao banco de dados!")
                 return
-
             sql = "SELECT nome_agente, senha, status, perfil FROM \"agente ibama\" WHERE login = ?"
             resultado = db.executar(sql, (usuario,))
             registro = resultado.fetchone() if resultado else None
@@ -289,34 +270,104 @@ class LoginApp(ctk.CTk):
         else:
             self._abrir_tela_principal(perfil="agente")
 
+    def _login_cpf(self, cpf, senha):
+        with Database() as db:
+            if not db.conexao:
+                messagebox.showerror("Erro", "Nao foi possivel conectar ao banco de dados!")
+                return
+            sql = "SELECT id_infrator, nome_infrator, senha FROM infrator WHERE cpf = ?"
+            resultado = db.executar(sql, (cpf,))
+            registro = resultado.fetchone() if resultado else None
+
+        if not registro:
+            messagebox.showerror("Erro", "CPF ou senha incorretos!")
+            return
+
+        id_infrator, nome, hash_bd = registro
+
+        if not verify_password(senha, hash_bd):
+            messagebox.showerror("Erro", "CPF ou senha incorretos!")
+            return
+
+        self.usuario_logado = nome
+        self.id_infrator = id_infrator
+        self._abrir_tela_externa()
+
     def _on_sair_click(self):
-        # Oculta o frame de login
         self.frame_login.place_forget()
-        # Mostra novamente os botões iniciais
-        self.btn_usuario.place(relx=0.5, rely=0.86, anchor="center")
-        self.btn_certificado.place(relx=0.5, rely=0.93, anchor="center")
+        self.btn_entrar.place(relx=0.5, rely=0.88, anchor="center")
 
     def _toggle_senha(self):
-        # Alterna a visibilidade da senha
         if self._senha_visivel:
             self.entry_senha.configure(show="*")
-            self.btn_eye.configure(text="👁")
+            self.btn_eye.configure(text="\U0001f441")
             self._senha_visivel = False
         else:
             self.entry_senha.configure(show="")
-            self.btn_eye.configure(text="👁")
+            self.btn_eye.configure(text="\U0001f441")
             self._senha_visivel = True
 
-    def _on_usuario_click(self):
-        # Esconde os botões iniciais
-        self.btn_usuario.place_forget()
-        self.btn_certificado.place_forget()
+    def _abrir_tela_externa(self):
+        try:
+            self.quit()
+            self.destroy()
+        except TclError:
+            pass
 
-        # Mostra o formulário de login
-        self._mostrar_formulario_login()
+        main_app = ctk.CTk()
+        main_app.title("FISCSOFT - Acesso Externo")
+        main_app.configure(fg_color=COLORS["white"])
+        main_app.after(0, main_app.state, "zoomed")
+        main_app.usuario_logado = self.usuario_logado
+        main_app.id_infrator = self.id_infrator
 
-    def _on_certificado_click(self):
-        messagebox.showinfo("Certificado Digital", "Funcionalidade em desenvolvimento.")
+        def navegar(pagina: str):
+            if pagina not in PERMISSOES_EXTERNO:
+                messagebox.showwarning("Acesso Negado", "Voce nao tem permissao para acessar esta pagina.")
+                return
+
+            for w in content_frame.winfo_children():
+                w.destroy()
+
+            if pagina == "Menu Inicial":
+                DashboardExterno(
+                    content_frame,
+                    usuario_logado=self.usuario_logado,
+                    id_infrator=self.id_infrator
+                ).pack(fill="both", expand=True)
+            elif pagina == "Cadastrar Notas":
+                NotasFiscaisExterno(
+                    content_frame,
+                    usuario_logado=self.usuario_logado,
+                    id_infrator=self.id_infrator,
+                    on_voltar=lambda: navegar("Menu Inicial"),
+                ).pack(fill="both", expand=True)
+            elif pagina == "Relatorio":
+                RelatorioExterno(
+                    content_frame,
+                    usuario_logado=self.usuario_logado,
+                    id_infrator=self.id_infrator
+                ).pack(fill="both", expand=True)
+
+        def logout():
+            try:
+                main_app.quit()
+                main_app.destroy()
+            except TclError:
+                pass
+            app = LoginApp()
+            _suprimir_erro_tcl()
+            app.mainloop()
+
+        sidebar = SidebarExterno(main_app, width=210, on_navigate=navegar, on_sair=logout)
+        sidebar.pack(side="left", fill="y")
+
+        content_frame = ctk.CTkFrame(main_app, fg_color=COLORS["bg"])
+        content_frame.pack(side="right", fill="both", expand=True)
+
+        navegar("Menu Inicial")
+        _suprimir_erro_tcl()
+        main_app.mainloop()
 
     def _abrir_tela_principal(self, perfil: str = "admin", processo_tccm: str = None):
         try:
