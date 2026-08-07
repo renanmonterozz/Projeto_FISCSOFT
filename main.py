@@ -18,7 +18,7 @@ from screens.sidebar import Sidebar
 from screens.menu_inicial import MenuInicialPage
 from screens.usuarios import UsuariosPage
 from screens.itens import ItensPage
-from screens.agente_mode.infratores import InfratoresPage
+from screens.infratores import InfratoresPage
 from screens.relatorios import RelatoriosPage
 from screens.relatorio_entrega import RelatorioEntregaPage
 from screens.locais import LocaisPage

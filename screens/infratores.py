@@ -172,7 +172,7 @@ class InfratoresPage(CrudBase, ctk.CTkFrame):
         self.render_rows()
 
     def novo_infrator(self):
-        from screens.agente_mode.cadastrar_infrator import CadastrarInfratorWindow
+        from screens.cadastrar_infrator import CadastrarInfratorWindow
         janela = CadastrarInfratorWindow(self)
         self.wait_window(janela)
         self.infratores = self.carregar_do_banco()
@@ -184,7 +184,7 @@ class InfratoresPage(CrudBase, ctk.CTkFrame):
         self.wait_window(janela)
 
     def editar(self, infrator):
-        from screens.agente_mode.cadastrar_infrator import CadastrarInfratorWindow
+        from screens.cadastrar_infrator import CadastrarInfratorWindow
         janela = CadastrarInfratorWindow(self, infrator=infrator)
         self.wait_window(janela)
         self.infratores = self.carregar_do_banco()

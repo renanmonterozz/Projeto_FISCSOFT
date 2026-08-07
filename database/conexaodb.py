@@ -4,7 +4,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "fiscsoft.db")
+DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "fiscsoft.db")
 
 
 class Database:
@@ -23,6 +23,7 @@ class Database:
     def conectar(self) -> bool:
         try:
             logger.info("Conectando ao banco SQLite: %s", self.db_path)
+            os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
             self.conexao = sqlite3.connect(self.db_path)
             self.conexao.execute("PRAGMA foreign_keys = ON")
             self.conexao.row_factory = sqlite3.Row
@@ -284,6 +285,7 @@ def criar_schema():
         (3, '20040-020', 'Av. Rio Branco, 156, Centro, Rio de Janeiro-RJ', 'IBAMA - Regional RJ', 'Pedro Santos', '21-32137000');
     """
 
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     conexao = sqlite3.connect(DB_PATH)
     conexao.execute("PRAGMA foreign_keys = ON")
     conexao.executescript(schema_sql)
