@@ -305,10 +305,10 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
 
                 try:
                     r = db.executar(
-                        'SELECT COUNT(DISTINCT i.id) FROM itens i '
-                        'WHERE i.notas_fiscais IN ('
-                        '  SELECT nf.nota_fiscal FROM "nota fiscal" nf WHERE nf.processo = ?'
-                        ')',
+                        'SELECT COUNT(p.lote) FROM produtos p '
+                        'JOIN "nota fiscal" nf ON p."nota fiscal_nota_fiscal" = nf.nota_fiscal '
+                        'AND p."nota fiscal_agente ibama_matricula" = nf."agente ibama_matricula" '
+                        'WHERE nf.processo = ?',
                         (self.processo_tccm,)
                     ).fetchone()
                     total_itens = r[0] if r else 0
@@ -331,7 +331,7 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
                     total_nf = 0
 
                 try:
-                    r = db.executar('SELECT COUNT(DISTINCT id) FROM itens').fetchone()
+                    r = db.executar('SELECT COUNT(lote) FROM produtos').fetchone()
                     total_itens = r[0] if r else 0
                 except Exception:
                     total_itens = 0

@@ -38,6 +38,7 @@ class Database:
             ('ALTER TABLE tccm ADD COLUMN documento_sei TEXT', "tccm.documento_sei"),
             ('ALTER TABLE tccm ADD COLUMN data_inicio DATE', "tccm.data_inicio"),
             ('ALTER TABLE tccm ADD COLUMN semestres INTEGER NOT NULL DEFAULT 1', "tccm.semestres"),
+            ('ALTER TABLE "nota fiscal" ADD COLUMN arquivo TEXT', '"nota fiscal".arquivo'),
         ]
         for sql, nome in migracoes:
             try:

@@ -30,6 +30,64 @@ ctk.set_default_color_theme("blue")
 PERMISSOES_EXTERNO = {"Menu Inicial", "Cadastrar Notas", "Relatorio"}
 
 
+def abrir_app_externo(usuario_logado, id_infrator, ao_sair=None):
+    main_app = ctk.CTk()
+    main_app.title("FISCSOFT - Acesso Externo")
+    main_app.geometry("1200x700")
+    main_app.configure(fg_color=COLORS["white"])
+    main_app.usuario_logado = usuario_logado
+    main_app.id_infrator = id_infrator
+
+    permissoes = PERMISSOES_EXTERNO
+
+    def navegar(pagina: str):
+        if pagina not in permissoes:
+            messagebox.showwarning("Acesso Negado",
+                                   "Voce nao tem permissao para acessar esta pagina.")
+            return
+
+        for w in content_frame.winfo_children():
+            w.destroy()
+
+        if pagina == "Menu Inicial":
+            DashboardExterno(
+                content_frame,
+                usuario_logado=usuario_logado,
+                id_infrator=id_infrator
+            ).pack(fill="both", expand=True)
+        elif pagina == "Cadastrar Notas":
+            NotasFiscaisExterno(
+                content_frame,
+                usuario_logado=usuario_logado,
+                id_infrator=id_infrator,
+                on_voltar=lambda: navegar("Menu Inicial"),
+            ).pack(fill="both", expand=True)
+        elif pagina == "Relatorio":
+            RelatorioExterno(
+                content_frame,
+                usuario_logado=usuario_logado,
+                id_infrator=id_infrator
+            ).pack(fill="both", expand=True)
+
+    def logout():
+        main_app.quit()
+        main_app.destroy()
+        if ao_sair:
+            ao_sair()
+        else:
+            app = LoginExterno()
+            app.mainloop()
+
+    sidebar = SidebarExterno(main_app, width=210, on_navigate=navegar, on_sair=logout)
+    sidebar.pack(side="left", fill="y")
+
+    content_frame = ctk.CTkFrame(main_app, fg_color=COLORS["bg"])
+    content_frame.pack(side="right", fill="both", expand=True)
+
+    navegar("Menu Inicial")
+    main_app.mainloop()
+
+
 class LoginExterno(ctk.CTk):
     def __init__(self):
         super().__init__()
@@ -164,58 +222,11 @@ class LoginExterno(ctk.CTk):
         self.quit()
         self.destroy()
 
-        main_app = ctk.CTk()
-        main_app.title("FISCSOFT - Acesso Externo")
-        main_app.geometry("1200x700")
-        main_app.configure(fg_color=COLORS["white"])
-        main_app.usuario_logado = self.usuario_logado
-        main_app.id_infrator = self.id_infrator
-
-        permissoes = PERMISSOES_EXTERNO
-
-        def navegar(pagina: str):
-            if pagina not in permissoes:
-                messagebox.showwarning("Acesso Negado",
-                                       "Voce nao tem permissao para acessar esta pagina.")
-                return
-
-            for w in content_frame.winfo_children():
-                w.destroy()
-
-            if pagina == "Menu Inicial":
-                DashboardExterno(
-                    content_frame,
-                    usuario_logado=self.usuario_logado,
-                    id_infrator=self.id_infrator
-                ).pack(fill="both", expand=True)
-            elif pagina == "Cadastrar Notas":
-                NotasFiscaisExterno(
-                    content_frame,
-                    usuario_logado=self.usuario_logado,
-                    id_infrator=self.id_infrator,
-                    on_voltar=lambda: navegar("Menu Inicial"),
-                ).pack(fill="both", expand=True)
-            elif pagina == "Relatorio":
-                RelatorioExterno(
-                    content_frame,
-                    usuario_logado=self.usuario_logado,
-                    id_infrator=self.id_infrator
-                ).pack(fill="both", expand=True)
-
-        def logout():
-            main_app.quit()
-            main_app.destroy()
-            app = LoginExterno()
-            app.mainloop()
-
-        sidebar = SidebarExterno(main_app, width=210, on_navigate=navegar, on_sair=logout)
-        sidebar.pack(side="left", fill="y")
-
-        content_frame = ctk.CTkFrame(main_app, fg_color=COLORS["bg"])
-        content_frame.pack(side="right", fill="both", expand=True)
-
-        navegar("Menu Inicial")
-        main_app.mainloop()
+        abrir_app_externo(
+            self.usuario_logado,
+            self.id_infrator,
+            ao_sair=lambda: LoginExterno().mainloop(),
+        )
 
 
 if __name__ == "__main__":

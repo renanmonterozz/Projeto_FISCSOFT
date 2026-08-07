@@ -24,6 +24,7 @@ from screens.locais import LocaisPage
 from screens.historico import HistoricoPage
 from screens.tccm_dashboard import TccmDashboardPage, TccmDetalhesPage
 from screens.cadastro_tccm_completo import CadastroTCCMCompleto
+from fiscsoft_externo.main_externo import abrir_app_externo
 from utils import verify_password
 
 logging.basicConfig(
@@ -256,28 +257,59 @@ class LoginApp(ctk.CTk):
             resultado = db.executar(sql, (usuario,))
             registro = resultado.fetchone() if resultado else None
 
-        if not registro:
+        if registro:
+            nome, hash_bd, status, perfil = registro
+
+            if not verify_password(senha, hash_bd):
+                messagebox.showerror("Erro", "Usuario ou senha incorretos!")
+                return
+
+            if status != "ativo":
+                messagebox.showerror("Erro", "Usuario inativo! Contate o administrador.")
+                return
+
+            self.usuario_logado = nome
+            perfil_db = (perfil or "agente").lower()
+            self.perfil = "admin" if perfil_db == "administrador" else "agente"
+
+            if self.perfil == "admin":
+                self._abrir_tela_principal(perfil="admin")
+            else:
+                self._abrir_tela_principal(perfil="agente")
+            return
+
+        with Database() as db:
+            if not db.conexao:
+                messagebox.showerror("Erro", "Nao foi possivel conectar ao banco de dados!")
+                return
+
+            sql_inf = "SELECT id_infrator, nome_infrator, senha FROM infrator WHERE cpf = ?"
+            resultado_inf = db.executar(sql_inf, (usuario,))
+            registro_inf = resultado_inf.fetchone() if resultado_inf else None
+
+        if not registro_inf:
             messagebox.showerror("Erro", "Usuario ou senha incorretos!")
             return
 
-        nome, hash_bd, status, perfil = registro
+        id_infrator, nome_inf, hash_bd_inf = registro_inf
 
-        if not verify_password(senha, hash_bd):
+        if not verify_password(senha, hash_bd_inf):
             messagebox.showerror("Erro", "Usuario ou senha incorretos!")
             return
 
-        if status != "ativo":
-            messagebox.showerror("Erro", "Usuario inativo! Contate o administrador.")
-            return
+        self.usuario_logado = nome_inf
+        self.id_infrator = id_infrator
+        self._abrir_app_externo()
 
-        self.usuario_logado = nome
-        perfil_db = (perfil or "agente").lower()
-        self.perfil = "admin" if perfil_db == "administrador" else "agente"
+    def _abrir_app_externo(self):
+        self.quit()
+        self.destroy()
 
-        if self.perfil == "admin":
-            self._abrir_tela_principal(perfil="admin")
-        else:
-            self._abrir_tela_principal(perfil="agente")
+        abrir_app_externo(
+            self.usuario_logado,
+            self.id_infrator,
+            ao_sair=lambda: LoginApp().mainloop(),
+        )
 
     def _on_sair_click(self):
         # Oculta o frame de login

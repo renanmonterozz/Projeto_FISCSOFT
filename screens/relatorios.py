@@ -1,5 +1,6 @@
 import _path  # noqa: F401
 
+import os
 from datetime import datetime as _dt
 from tkinter import messagebox
 
@@ -195,28 +196,39 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
                      font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
                      text_color=COLORS["text_muted"]).pack(anchor="w", pady=(0, 5))
 
-        ctk.CTkLabel(arquivos_inner, text="Nenhum arquivo anexado",
-                     font=ctk.CTkFont(size=FONTS["size_small"]),
-                     text_color=COLORS["text_muted"]).pack(anchor="w")
+        self.lbl_arquivo_anexado = ctk.CTkLabel(arquivos_inner, text="Nenhum arquivo anexado",
+                                                font=ctk.CTkFont(size=FONTS["size_small"]),
+                                                text_color=COLORS["text_muted"], anchor="w")
+        self.lbl_arquivo_anexado.pack(anchor="w")
+
+        self.btn_visualizar_arquivo = ctk.CTkButton(arquivos_inner, text="Visualizar Arquivo", height=30,
+                                                    corner_radius=4, fg_color=COLORS["primary"],
+                                                    hover_color=COLORS["primary_hover"], text_color="white",
+                                                    font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
+                                                    command=self.visualizar_arquivo)
+        self.btn_visualizar_arquivo.pack(anchor="w", pady=(8, 0))
 
         btn_frame = ctk.CTkFrame(detail_container, fg_color="transparent")
         btn_frame.pack(fill="x", padx=10, pady=(10, 15))
 
-        ctk.CTkButton(btn_frame, text="Aprovar", height=36, corner_radius=4,
-                      fg_color=COLORS["success_dark"], hover_color=COLORS["success_dark_hover"], text_color="white",
-                      font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                      command=self.aprovar).pack(side="left", padx=(0, 5))
+        self.btn_aprovar = ctk.CTkButton(btn_frame, text="Aprovar", height=36, corner_radius=4,
+                                         fg_color=COLORS["success_dark"], hover_color=COLORS["success_dark_hover"], text_color="white",
+                                         font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
+                                         command=self.aprovar)
+        self.btn_aprovar.pack(side="left", padx=(0, 5))
 
-        ctk.CTkButton(btn_frame, text="Solicitar Correcao", height=36, corner_radius=4,
-                      fg_color=COLORS["warning"], hover_color=COLORS["warning_hover"], text_color=COLORS["text"],
-                      font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                      command=self.solicitar_correcao).pack(side="left", padx=(0, 5))
+        self.btn_solicitar_correcao = ctk.CTkButton(btn_frame, text="Solicitar Correcao", height=36, corner_radius=4,
+                                                     fg_color=COLORS["warning"], hover_color=COLORS["warning_hover"], text_color=COLORS["text"],
+                                                     font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
+                                                     command=self.solicitar_correcao)
+        self.btn_solicitar_correcao.pack(side="left", padx=(0, 5))
 
-        ctk.CTkButton(btn_frame, text="Rejeitar", height=36, corner_radius=4,
-                      fg_color=COLORS["danger"], hover_color=COLORS["danger_hover"],
-                      text_color="white",
-                      font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                      command=self.rejeitar).pack(side="left")
+        self.btn_rejeitar = ctk.CTkButton(btn_frame, text="Rejeitar", height=36, corner_radius=4,
+                                          fg_color=COLORS["danger"], hover_color=COLORS["danger_hover"],
+                                          text_color="white",
+                                          font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
+                                          command=self.rejeitar)
+        self.btn_rejeitar.pack(side="left")
 
     def carregar_do_banco(self):
         try:
@@ -227,7 +239,8 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
                                 i.nome_infrator, i.cpf,
                                 nf.processo, nf."agente ibama_matricula", nf.status_nota,
                                 t.total_devido, t.total_pago,
-                                COUNT(p.lote) as qtd_itens
+                                COUNT(p.lote) as qtd_itens,
+                                nf.arquivo
                          FROM "nota fiscal" nf
                          JOIN tccm t ON nf.processo = t.processo
                          JOIN infrator i ON i.id_infrator = t."infrator_id_infrator"
@@ -236,7 +249,7 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
                          GROUP BY nf.nota_fiscal, nf.data, nf.valor_total,
                                 i.nome_infrator, i.cpf, nf.processo,
                                 nf."agente ibama_matricula", nf.status_nota,
-                                t.total_devido, t.total_pago"""
+                                t.total_devido, t.total_pago, nf.arquivo"""
                 try:
                     resultados = db.executar(sql)
                 except Exception:
@@ -270,6 +283,7 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
                             "itens": qtd_itens,
                             "total_devido": total_devido,
                             "total_pago": total_pago,
+                            "arquivo": row[11] if len(row) > 11 else None,
                         })
                 return notas
         except Exception:
@@ -331,6 +345,46 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
         self.info_labels["Status:"].configure(text=nota["status"])
         self.itens_label.configure(text=f"{nota['itens']} itens declarados")
 
+        arquivo = nota.get("arquivo")
+        if arquivo:
+            self.lbl_arquivo_anexado.configure(text=os.path.basename(arquivo), text_color=COLORS["text"])
+            self.btn_visualizar_arquivo.configure(state="normal")
+        else:
+            self.lbl_arquivo_anexado.configure(text="Nenhum arquivo anexado", text_color=COLORS["text_muted"])
+            self.btn_visualizar_arquivo.configure(state="disabled")
+
+        self._atualizar_estado_botoes(nota["status"])
+
+    def _atualizar_estado_botoes(self, status):
+        if status == "Aprovada":
+            self.btn_aprovar.configure(state="disabled")
+            self.btn_solicitar_correcao.configure(state="disabled")
+            self.btn_rejeitar.configure(state="disabled")
+        elif status == "Rejeitada":
+            self.btn_aprovar.configure(state="disabled")
+            self.btn_solicitar_correcao.configure(state="disabled")
+            self.btn_rejeitar.configure(state="disabled")
+        elif status == "Correcao Solicitada":
+            self.btn_aprovar.configure(state="normal")
+            self.btn_solicitar_correcao.configure(state="disabled")
+            self.btn_rejeitar.configure(state="normal")
+        else:
+            self.btn_aprovar.configure(state="normal")
+            self.btn_solicitar_correcao.configure(state="normal")
+            self.btn_rejeitar.configure(state="normal")
+
+    def visualizar_arquivo(self):
+        if not self.nf_selecionada:
+            return
+        arquivo = self.nf_selecionada.get("arquivo")
+        if not arquivo or not os.path.exists(arquivo):
+            messagebox.showwarning("Aviso", "Arquivo anexado nao encontrado.")
+            return
+        try:
+            os.startfile(arquivo)
+        except Exception as e:
+            messagebox.showerror("Erro", f"Nao foi possivel abrir o arquivo:\n{e}")
+
     def atualizar_cards(self):
         total = len(self.notas)
         pendentes = sum(1 for n in self.notas if n["status"] == "Pendente")
@@ -347,6 +401,12 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
 
     def _atualizar_status_nota(self, novo_status):
         if not self.nf_selecionada:
+            return
+        status_atual = self.nf_selecionada.get("status")
+        if status_atual in ("Aprovada", "Rejeitada"):
+            messagebox.showwarning("Aviso", "Esta nota fiscal ja foi finalizada e nao pode mais ser alterada.")
+            return
+        if novo_status == status_atual:
             return
         with Database() as db:
             if db.conexao:
@@ -390,6 +450,7 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
         self.nf_selecionada["status"] = novo_status
         self.notas = self.carregar_do_banco()
         self.render_rows()
+        self._atualizar_estado_botoes(novo_status)
 
     def filtrar(self):
         periodo = self.entry_periodo.get().strip().lower()

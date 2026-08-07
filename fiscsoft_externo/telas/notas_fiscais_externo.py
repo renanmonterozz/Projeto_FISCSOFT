@@ -1,6 +1,7 @@
 import sys
 import os
 import re
+import shutil
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from datetime import datetime
@@ -13,8 +14,10 @@ try:
 except ImportError:
     PDF_DISPONIVEL = False
 
-from config.styles import COLORS, FONTS
+from config.styles import ASSETS_DIR, COLORS, FONTS
 from database.conexaodb import Database
+
+ANEXOS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "assets", "anexos")
 
 
 class NotasFiscaisExterno(ctk.CTkFrame):
@@ -695,6 +698,19 @@ class NotasFiscaisExterno(ctk.CTkFrame):
 
         valor_total = sum(item["subtotal"] for item in self.itens_lista)
 
+        arquivo_path = None
+        if self.arquivo_selecionado:
+            try:
+                os.makedirs(ANEXOS_DIR, exist_ok=True)
+                ext = os.path.splitext(self.arquivo_selecionado)[1] or ".pdf"
+                nome_arquivo = f"{numero}{ext}"
+                destino = os.path.join(ANEXOS_DIR, nome_arquivo)
+                shutil.copy2(self.arquivo_selecionado, destino)
+                arquivo_path = destino
+            except Exception as e:
+                messagebox.showerror("Erro", f"Erro ao salvar o arquivo anexado:\n{e}")
+                return
+
         with Database() as db:
             if not db.conexao:
                 messagebox.showerror("Erro", "Nao foi possivel conectar ao banco de dados.")
@@ -710,9 +726,9 @@ class NotasFiscaisExterno(ctk.CTkFrame):
 
                 sql = """INSERT INTO "nota fiscal"
                          (nota_fiscal, semestre, data, chave_de_acesso, valor_total,
-                          "agente ibama_matricula", status_nota, processo)
-                         VALUES (?, ?, ?, ?, ?, ?, 'Pendente', ?)"""
-                db.executar(sql, (numero, 1, data, chave, valor_total, matricula, processo))
+                          "agente ibama_matricula", status_nota, processo, arquivo)
+                         VALUES (?, ?, ?, ?, ?, ?, 'Pendente', ?, ?)"""
+                db.executar(sql, (numero, 1, data, chave, valor_total, matricula, processo, arquivo_path))
 
                 for idx, item in enumerate(self.itens_lista):
                     lote = f"{numero}-ITEM-{idx+1}"
