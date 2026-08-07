@@ -24,7 +24,7 @@ from screens.locais import LocaisPage
 from screens.historico import HistoricoPage
 from screens.tccm_dashboard import TccmDashboardPage, TccmDetalhesPage
 from screens.cadastro_tccm_completo import CadastroTCCMCompleto
-from utils import verify_password
+from utils import verify_password, login_por_certificado
 from fiscsoft_externo.telas.sidebar_externo import SidebarExterno
 from fiscsoft_externo.telas.dashboard_externo import DashboardExterno
 from fiscsoft_externo.telas.notas_fiscais_externo import NotasFiscaisExterno
@@ -91,10 +91,10 @@ class LoginApp(ctk.CTk):
         self.label_titulo.place(relx=0.5, rely=0.78, anchor="center")
         pywinstyles.set_opacity(self.label_titulo, color="#000001")
 
-        # --- Botão único: Entrar no Sistema ---
+        # --- Botão único: Fazer Login ---
         self.btn_entrar = ctk.CTkButton(
             self,
-            text="Entrar no Sistema",
+            text="Fazer Login",
             width=480,
             height=50,
             corner_radius=16,
@@ -107,8 +107,27 @@ class LoginApp(ctk.CTk):
             border_color="#000001",
             command=self._mostrar_formulario_unificado
         )
-        self.btn_entrar.place(relx=0.5, rely=0.88, anchor="center")
+        self.btn_entrar.place(relx=0.5, rely=0.865, anchor="center")
         pywinstyles.set_opacity(self.btn_entrar, color="#000001")
+
+        # --- Botao: Entrar com Certificado Digital ---
+        self.btn_certificado = ctk.CTkButton(
+            self,
+            text="Entrar com Certificado Digital",
+            width=480,
+            height=50,
+            corner_radius=16,
+            fg_color=VERDE_POLIGONO,
+            bg_color="#000001",
+            hover_color="#211E1E",
+            text_color=AMARELO_BOTAO,
+            font=ctk.CTkFont(family="Segoe UI", size=19),
+            border_width=2,
+            border_color="#000001",
+            command=self._login_certificado
+        )
+        self.btn_certificado.place(relx=0.5, rely=0.945, anchor="center")
+        pywinstyles.set_opacity(self.btn_certificado, color="#000001")
 
     def _ajustar_imagem_fundo(self):
         if self._img_pil is None:
@@ -135,6 +154,7 @@ class LoginApp(ctk.CTk):
 
     def _mostrar_formulario_unificado(self):
         self.btn_entrar.place_forget()
+        self.btn_certificado.place_forget()
 
         self.frame_login = ctk.CTkFrame(self, fg_color="#000001", bg_color="#000001", corner_radius=0)
         self.frame_login.place(relx=0.5, rely=0.88, anchor="center")
@@ -295,7 +315,34 @@ class LoginApp(ctk.CTk):
 
     def _on_sair_click(self):
         self.frame_login.place_forget()
-        self.btn_entrar.place(relx=0.5, rely=0.88, anchor="center")
+        self.btn_entrar.place(relx=0.5, rely=0.865, anchor="center")
+        self.btn_certificado.place(relx=0.5, rely=0.945, anchor="center")
+
+    def _login_certificado(self):
+        self.btn_entrar.place_forget()
+        self.btn_certificado.place_forget()
+        try:
+            sucesso, mensagem, dados = login_por_certificado()
+
+            if not sucesso:
+                messagebox.showerror("Erro", mensagem)
+                self.btn_entrar.place(relx=0.5, rely=0.865, anchor="center")
+                self.btn_certificado.place(relx=0.5, rely=0.945, anchor="center")
+                return
+
+            self.usuario_logado = dados["nome"]
+            perfil_db = (dados["perfil"] or "agente").lower()
+            self.perfil = "admin" if perfil_db == "administrador" else "agente"
+
+            if self.perfil == "admin":
+                self._abrir_tela_principal(perfil="admin")
+            else:
+                self._abrir_tela_principal(perfil="agente")
+
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro ao autenticar com certificado: {e}")
+            self.btn_entrar.place(relx=0.5, rely=0.865, anchor="center")
+            self.btn_certificado.place(relx=0.5, rely=0.945, anchor="center")
 
     def _toggle_senha(self):
         if self._senha_visivel:
