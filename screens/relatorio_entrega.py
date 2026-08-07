@@ -8,6 +8,7 @@ from tkinter import messagebox
 import customtkinter as ctk
 
 from config.styles import COLORS, FONTS
+from config.permissoes import pode_acao
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
@@ -15,12 +16,14 @@ from utils import registrar_log
 
 
 class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
-    def __init__(self, master, on_voltar=None, usuario_logado=None, processo_tccm=None, **kwargs):
+    def __init__(self, master, on_voltar=None, usuario_logado=None, processo_tccm=None, perfil="admin", **kwargs):
         super().__init__(master, **kwargs)
         self.configure(fg_color=COLORS["bg"])
         self.on_voltar = on_voltar
         self.usuario_logado = usuario_logado
         self.processo_tccm = processo_tccm
+        self.perfil = perfil
+        self.pode_cadastrar_local = pode_acao(perfil, "gerenciar_locais")
         self.itens_lista = []
         self.local_selecionado = None
         self.locais_catalogo = []
@@ -113,19 +116,20 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
             text_color=COLORS["text"],
         ).pack(side="left")
 
-        btn_cadastrar = ctk.CTkButton(
-            header_frame,
-            text="+ Cadastrar Novo Local",
-            height=32, corner_radius=4,
-            fg_color=COLORS["white"],
-            hover_color=COLORS["hover"],
-            text_color=COLORS["primary"],
-            border_width=1,
-            border_color=COLORS["primary"],
-            font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-            command=self.cadastrar_local,
-        )
-        btn_cadastrar.pack(side="right")
+        if self.pode_cadastrar_local:
+            btn_cadastrar = ctk.CTkButton(
+                header_frame,
+                text="+ Cadastrar Novo Local",
+                height=32, corner_radius=4,
+                fg_color=COLORS["white"],
+                hover_color=COLORS["hover"],
+                text_color=COLORS["primary"],
+                border_width=1,
+                border_color=COLORS["primary"],
+                font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
+                command=self.cadastrar_local,
+            )
+            btn_cadastrar.pack(side="right")
 
         combo_frame = ctk.CTkFrame(section, fg_color="transparent")
         combo_frame.pack(fill="x", padx=20, pady=(0, 10))

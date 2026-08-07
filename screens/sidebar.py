@@ -5,6 +5,7 @@ from PIL import Image
 import os
 
 from config.styles import ASSETS_DIR, COLORS, FONTS
+from config.permissoes import paginas_do_perfil
 
 
 def carregar_icone(caminho: str, tamanho_max: int = 20):
@@ -20,7 +21,7 @@ def carregar_icone(caminho: str, tamanho_max: int = 20):
 
 
 class Sidebar(ctk.CTkFrame):
-    def __init__(self, master, on_navigate=None, on_sair=None, **kwargs):
+    def __init__(self, master, on_navigate=None, on_sair=None, perfil=None, **kwargs):
         super().__init__(master, **kwargs)
         self.configure(fg_color="#FAFAFA", corner_radius=0)
         self.on_navigate = on_navigate
@@ -55,7 +56,12 @@ class Sidebar(ctk.CTkFrame):
         nav_container = ctk.CTkFrame(self, fg_color="transparent")
         nav_container.pack(fill="x", padx=18, pady=(0, 10))
 
+        paginas_permitidas = paginas_do_perfil(perfil) if perfil else None
+
         for text, img_path in self.nav_items:
+            if paginas_permitidas is not None and text not in paginas_permitidas:
+                continue
+
             btn_icon = carregar_icone(img_path)
 
             btn = ctk.CTkButton(

@@ -4,6 +4,7 @@ import customtkinter as ctk
 from tkinter import messagebox
 
 from config.styles import COLORS, FONTS
+from config.permissoes import pode_acao
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
@@ -11,10 +12,12 @@ from utils import registrar_log
 
 
 class UsuariosPage(CrudBase, ctk.CTkFrame):
-    def __init__(self, master, usuario_logado=None, **kwargs):
+    def __init__(self, master, usuario_logado=None, perfil="admin", **kwargs):
         super().__init__(master, **kwargs)
         self.configure(fg_color=COLORS["bg"])
         self.usuario_logado = usuario_logado
+        self.perfil = perfil
+        self.pode_editar = pode_acao(perfil, "gerenciar_usuarios")
 
         self.build_header("Agentes IBAMA", "Gerencie os agentes cadastrados no sistema")
         self.build_filter_bar()
@@ -33,10 +36,12 @@ class UsuariosPage(CrudBase, ctk.CTkFrame):
 
         self.build_action_btn(btn_frame, "  Pesquisar", carregar_icone("lupa.png"), self.pesquisar)
         self.build_action_btn(btn_frame, "  Limpar", carregar_icone("apagar.png"), self.limpar_filtros)
-        self.build_action_btn(btn_frame, "  Novo Usuario", carregar_icone("mais.png"),
-                              self.novo_usuario, fg_color=COLORS["primary"],
-                              hover_color=COLORS["primary_hover"], text_color="white",
-                              border=False, bold=True)
+
+        if self.pode_editar:
+            self.build_action_btn(btn_frame, "  Novo Usuario", carregar_icone("mais.png"),
+                                  self.novo_usuario, fg_color=COLORS["primary"],
+                                  hover_color=COLORS["primary_hover"], text_color="white",
+                                  border=False, bold=True)
 
     def build_table(self):
         CrudBase.build_table(self, pad_y=(0, 30))
@@ -142,11 +147,13 @@ class UsuariosPage(CrudBase, ctk.CTkFrame):
                 anchor=anchor,
             ).place(relx=rx, relwidth=rw, rely=0, relheight=1)
 
-        self.add_action_buttons(linha, [
-            ("\U0001f441", lambda u=usuario: self.visualizar(u)),
-            ("\u270f", lambda u=usuario: self.editar(u)),
-            ("\U0001f5d1", lambda u=usuario: self.excluir(u)),
-        ])
+        acoes = [("\U0001f441", lambda u=usuario: self.visualizar(u))]
+        if self.pode_editar:
+            acoes += [
+                ("\u270f", lambda u=usuario: self.editar(u)),
+                ("\U0001f5d1", lambda u=usuario: self.excluir(u)),
+            ]
+        self.add_action_buttons(linha, acoes)
 
     def pesquisar(self):
         busca = self.entry_busca.get().strip().lower()

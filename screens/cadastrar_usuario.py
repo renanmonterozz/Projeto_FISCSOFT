@@ -6,8 +6,16 @@ from PIL import Image
 import os
 
 from config.styles import COLORS, FONTS, ASSETS_DIR
+from config.permissoes import normalizar_perfil
 from database.conexaodb import Database
 from utils import hash_password, registrar_log
+
+
+PERFIL_DISPLAY = {
+    "admin": "Administrador",
+    "agente": "Agente",
+    "operador": "Operador",
+}
 
 
 class CadastrarUsuarioWindow(ctk.CTkToplevel):
@@ -91,7 +99,9 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
         row4 = ctk.CTkFrame(form, fg_color="transparent")
         row4.pack(fill="x", padx=20, pady=(0, 15))
 
-        self.combo_perfil = self._criar_combobox(row4, "Perfil*", 0, ["agente", "operador", "admin"])
+        self.combo_perfil = self._criar_combobox(row4, "Perfil*", 0,
+                                                 ["Administrador", "Agente", "Operador"],
+                                                 default="Agente")
 
         btn_frame = ctk.CTkFrame(form, fg_color="transparent")
         btn_frame.pack(fill="x", padx=20, pady=(25, 20))
@@ -137,6 +147,8 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
         self.entry_matricula.insert(0, str(u.get("matricula") or ""))
         self.entry_matricula.configure(state="disabled")
         self.entry_login.insert(0, u.get("login") or "")
+        perfil_atual = normalizar_perfil(u.get("perfil"))
+        self.combo_perfil.set(PERFIL_DISPLAY.get(perfil_atual, "Operador"))
 
     def _criar_campo(self, parent, label, col, weight=1, show=None):
         parent.grid_columnconfigure(col, weight=weight)
@@ -160,7 +172,7 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
         entry.pack(fill="x")
         return entry
 
-    def _criar_combobox(self, parent, label, col, values):
+    def _criar_combobox(self, parent, label, col, values, default=None):
         parent.grid_columnconfigure(col, weight=1)
 
         frame = ctk.CTkFrame(parent, fg_color="transparent")
@@ -182,7 +194,7 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
             text_color=COLORS["text"],
         )
         combo.pack(fill="x")
-        combo.set(values[0])
+        combo.set(default if default is not None else values[0])
         return combo
 
     def salvar(self):

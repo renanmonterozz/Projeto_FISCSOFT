@@ -32,7 +32,12 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
             titulo = f"TCCM - {processo_tccm}"
             subtitulo = "Notas fiscais e itens deste processo"
         else:
-            titulo = "Menu do Administrador" if perfil == "admin" else "Menu do Agente"
+            if perfil == "admin":
+                titulo = "Menu do Administrador"
+            elif perfil == "operador":
+                titulo = "Menu do Operador"
+            else:
+                titulo = "Menu do Agente"
             subtitulo = "Gerencie usuarios, relatorios e informacoes do sistema"
         self.build_header(titulo, subtitulo)
         self.build_stats_cards()

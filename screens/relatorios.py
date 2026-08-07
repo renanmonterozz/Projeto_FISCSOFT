@@ -7,6 +7,7 @@ from tkinter import messagebox
 import customtkinter as ctk
 
 from config.styles import COLORS, FONTS
+from config.permissoes import pode_acao
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
@@ -34,10 +35,12 @@ COL_NF_CFG = [
 
 
 class RelatoriosPage(CrudBase, ctk.CTkFrame):
-    def __init__(self, master, usuario_logado=None, **kwargs):
+    def __init__(self, master, usuario_logado=None, perfil="admin", **kwargs):
         super().__init__(master, **kwargs)
         self.configure(fg_color=COLORS["bg"])
         self.usuario_logado = usuario_logado
+        self.perfil = perfil
+        self.pode_aprovar = pode_acao(perfil, "aprovar_nota")
         self.nf_selecionada = None
 
         self.build_header("Monitoramento de Notas Fiscais",
@@ -211,24 +214,29 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
         btn_frame = ctk.CTkFrame(detail_container, fg_color="transparent")
         btn_frame.pack(fill="x", padx=10, pady=(10, 15))
 
-        self.btn_aprovar = ctk.CTkButton(btn_frame, text="Aprovar", height=36, corner_radius=4,
-                                         fg_color=COLORS["success_dark"], hover_color=COLORS["success_dark_hover"], text_color="white",
-                                         font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                                         command=self.aprovar)
-        self.btn_aprovar.pack(side="left", padx=(0, 5))
+        if self.pode_aprovar:
+            self.btn_aprovar = ctk.CTkButton(btn_frame, text="Aprovar", height=36, corner_radius=4,
+                                             fg_color=COLORS["success_dark"], hover_color=COLORS["success_dark_hover"], text_color="white",
+                                             font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
+                                             command=self.aprovar)
+            self.btn_aprovar.pack(side="left", padx=(0, 5))
 
-        self.btn_solicitar_correcao = ctk.CTkButton(btn_frame, text="Solicitar Correcao", height=36, corner_radius=4,
-                                                     fg_color=COLORS["warning"], hover_color=COLORS["warning_hover"], text_color=COLORS["text"],
-                                                     font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                                                     command=self.solicitar_correcao)
-        self.btn_solicitar_correcao.pack(side="left", padx=(0, 5))
+            self.btn_solicitar_correcao = ctk.CTkButton(btn_frame, text="Solicitar Correcao", height=36, corner_radius=4,
+                                                         fg_color=COLORS["warning"], hover_color=COLORS["warning_hover"], text_color=COLORS["text"],
+                                                         font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
+                                                         command=self.solicitar_correcao)
+            self.btn_solicitar_correcao.pack(side="left", padx=(0, 5))
 
-        self.btn_rejeitar = ctk.CTkButton(btn_frame, text="Rejeitar", height=36, corner_radius=4,
-                                          fg_color=COLORS["danger"], hover_color=COLORS["danger_hover"],
-                                          text_color="white",
-                                          font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                                          command=self.rejeitar)
-        self.btn_rejeitar.pack(side="left")
+            self.btn_rejeitar = ctk.CTkButton(btn_frame, text="Rejeitar", height=36, corner_radius=4,
+                                              fg_color=COLORS["danger"], hover_color=COLORS["danger_hover"],
+                                              text_color="white",
+                                              font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
+                                              command=self.rejeitar)
+            self.btn_rejeitar.pack(side="left")
+        else:
+            ctk.CTkLabel(btn_frame, text="Somente leitura — apenas o administrador pode aprovar ou rejeitar notas.",
+                         font=ctk.CTkFont(size=FONTS["size_small"]),
+                         text_color=COLORS["text_muted"], anchor="w").pack(anchor="w")
 
     def carregar_do_banco(self):
         try:
@@ -356,6 +364,8 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
         self._atualizar_estado_botoes(nota["status"])
 
     def _atualizar_estado_botoes(self, status):
+        if not self.pode_aprovar:
+            return
         if status == "Aprovada":
             self.btn_aprovar.configure(state="disabled")
             self.btn_solicitar_correcao.configure(state="disabled")

@@ -12,6 +12,7 @@ from PIL import Image
 import customtkinter as ctk
 
 from config.styles import ASSETS_DIR, COLORS, FONTS
+from config.permissoes import PAGINAS_EXTERNO, normalizar_perfil, paginas_do_perfil, pode_acao
 from database.conexaodb import Database
 from screens.sidebar import Sidebar
 from screens.menu_inicial import MenuInicialPage
@@ -50,9 +51,6 @@ def _suprimir_erro_tcl():
     except Exception:
         pass
 
-PERMISSOES_ADMIN = {"Menu Principal", "Itens", "Destinacao", "Agente", "Usuario Externo", "Locais Cadastrados", "Relatorio", "Historico", "Dashboard TCCM"}
-PERMISSOES_AGENTE = {"Menu Principal", "Itens", "Destinacao", "Agente", "Usuario Externo", "Locais Cadastrados", "Relatorio", "Historico", "Dashboard TCCM"}
-PERMISSOES_EXTERNO = {"Menu Inicial", "Cadastrar Notas", "Relatorio"}
 
 # Cores da tela de login
 DOURADO = "#c8b464"
@@ -260,13 +258,9 @@ class LoginApp(ctk.CTk):
                 return
 
             self.usuario_logado = nome
-            perfil_db = (perfil or "agente").lower()
-            self.perfil = "admin" if perfil_db == "administrador" else "agente"
+            self.perfil = normalizar_perfil(perfil)
 
-            if self.perfil == "admin":
-                self._abrir_tela_principal(perfil="admin")
-            else:
-                self._abrir_tela_principal(perfil="agente")
+            self._abrir_tela_principal(perfil=self.perfil)
             return
 
         with Database() as db:
@@ -354,7 +348,7 @@ class LoginApp(ctk.CTk):
         main_app.id_infrator = self.id_infrator
 
         def navegar(pagina: str):
-            if pagina not in PERMISSOES_EXTERNO:
+            if pagina not in PAGINAS_EXTERNO:
                 messagebox.showwarning("Acesso Negado", "Voce nao tem permissao para acessar esta pagina.")
                 return
 
@@ -440,6 +434,9 @@ class LoginApp(ctk.CTk):
             app.mainloop()
 
         def _abrir_cadastro_tccm():
+            if not pode_acao(perfil, "criar_tccm"):
+                messagebox.showwarning("Acesso Negado", "Voce nao tem permissao para cadastrar TCCM.")
+                return
             win = ctk.CTkToplevel(welcome_app)
             win.title("Cadastro de TCCM")
             win.geometry("900x650")
@@ -485,7 +482,7 @@ class LoginApp(ctk.CTk):
         main_app.usuario_logado = self.usuario_logado
         main_app.perfil = perfil
 
-        permissoes = PERMISSOES_ADMIN if perfil == "admin" else PERMISSOES_AGENTE
+        permissoes = paginas_do_perfil(perfil)
 
         _processo_tccm = processo_tccm
 
@@ -507,18 +504,19 @@ class LoginApp(ctk.CTk):
                                 processo_tccm=processo_tccm).pack(fill="both", expand=True)
             elif pagina == "Itens":
                 ItensPage(content_frame, on_voltar=lambda: navegar("Menu Principal"),
-                          processo_tccm=processo_tccm).pack(fill="both", expand=True)
+                          processo_tccm=processo_tccm, perfil=perfil).pack(fill="both", expand=True)
             elif pagina == "Destinacao":
                 RelatorioEntregaPage(content_frame, on_voltar=lambda: navegar("Menu Principal"),
-                                     usuario_logado=usuario_logado, processo_tccm=processo_tccm).pack(fill="both", expand=True)
+                                     usuario_logado=usuario_logado, processo_tccm=processo_tccm,
+                                     perfil=perfil).pack(fill="both", expand=True)
             elif pagina == "Agente":
-                UsuariosPage(content_frame, usuario_logado=usuario_logado).pack(fill="both", expand=True)
+                UsuariosPage(content_frame, usuario_logado=usuario_logado, perfil=perfil).pack(fill="both", expand=True)
             elif pagina == "Usuario Externo":
-                InfratoresPage(content_frame).pack(fill="both", expand=True)
+                InfratoresPage(content_frame, perfil=perfil).pack(fill="both", expand=True)
             elif pagina == "Locais Cadastrados":
-                LocaisPage(content_frame, usuario_logado=usuario_logado).pack(fill="both", expand=True)
+                LocaisPage(content_frame, usuario_logado=usuario_logado, perfil=perfil).pack(fill="both", expand=True)
             elif pagina == "Relatorio":
-                RelatoriosPage(content_frame, usuario_logado=usuario_logado).pack(fill="both", expand=True)
+                RelatoriosPage(content_frame, usuario_logado=usuario_logado, perfil=perfil).pack(fill="both", expand=True)
             elif pagina == "Historico":
                 HistoricoPage(content_frame, usuario_logado=usuario_logado).pack(fill="both", expand=True)
             elif pagina == "Dashboard TCCM":
@@ -557,7 +555,7 @@ class LoginApp(ctk.CTk):
             _suprimir_erro_tcl()
             app.mainloop()
 
-        sidebar = Sidebar(main_app, width=210, on_navigate=navegar, on_sair=logout)
+        sidebar = Sidebar(main_app, width=210, on_navigate=navegar, on_sair=logout, perfil=perfil)
         sidebar.pack(side="left", fill="y")
 
         content_frame = ctk.CTkFrame(main_app, fg_color=COLORS["bg"])

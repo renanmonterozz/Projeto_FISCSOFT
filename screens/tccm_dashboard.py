@@ -6,6 +6,7 @@ from datetime import datetime as _dt
 import customtkinter as ctk
 
 from config.styles import COLORS, FONTS
+from config.permissoes import pode_acao
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
 
@@ -1112,6 +1113,7 @@ class TccmDashboardPage(CrudBase, ctk.CTkFrame):
         self.configure(fg_color=COLORS["bg"])
         self.usuario_logado = usuario_logado
         self.perfil = perfil
+        self.pode_criar_tccm = pode_acao(perfil, "criar_tccm")
 
         self.tccms_todos = []
 
@@ -1137,12 +1139,13 @@ class TccmDashboardPage(CrudBase, ctk.CTkFrame):
         right = ctk.CTkFrame(header, fg_color="transparent")
         right.pack(side="right")
 
-        ctk.CTkButton(
-            right, text="+ Novo TCCM", height=36, corner_radius=6,
-            fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
-            text_color="white", font=ctk.CTkFont(size=12, weight="bold"),
-            command=self._navegar_cadastro,
-        ).pack(side="left", padx=(0, 8))
+        if self.pode_criar_tccm:
+            ctk.CTkButton(
+                right, text="+ Novo TCCM", height=36, corner_radius=6,
+                fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
+                text_color="white", font=ctk.CTkFont(size=12, weight="bold"),
+                command=self._navegar_cadastro,
+            ).pack(side="left", padx=(0, 8))
 
         ctk.CTkButton(
             right, text="Sair", height=36, corner_radius=6,

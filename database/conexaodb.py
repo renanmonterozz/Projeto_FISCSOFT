@@ -50,6 +50,33 @@ class Database:
                     continue
                 logger.debug("Migracao ignorada para %s: %s", nome, e)
 
+        self._migrar_perfis()
+
+    def _migrar_perfis(self):
+        """Normaliza os valores da coluna perfil para os nomes padrao
+        (Administrador / Agente / Operador)."""
+        try:
+            normalizacoes = [
+                ("Administrador", ("admin", "administrador")),
+                ("Agente", ("agente",)),
+                ("Operador", ("operador", "usuario", "user")),
+            ]
+            for novo, antigos in normalizacoes:
+                marca = ",".join("?" for _ in antigos)
+                cursor = self.conexao.execute(
+                    f'SELECT COUNT(*) FROM "agente ibama" WHERE LOWER(perfil) IN ({marca})',
+                    antigos,
+                )
+                if cursor.fetchone()[0] > 0:
+                    self.conexao.execute(
+                        f'UPDATE "agente ibama" SET perfil = ? WHERE LOWER(perfil) IN ({marca})',
+                        (novo, *antigos),
+                    )
+                    logger.info("Migracao aplicada: perfis '%s' -> '%s'", "/".join(antigos), novo)
+            self.conexao.commit()
+        except sqlite3.Error:
+            pass
+
     def desconectar(self):
         if self.conexao:
             self.conexao.close()
