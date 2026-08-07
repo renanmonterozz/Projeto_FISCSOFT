@@ -82,7 +82,7 @@ class VisualizarUsuarioWindow(ctk.CTkToplevel):
                 state="normal"
             )
             entry.pack(fill="x", pady=(2, 0))
-            entry.insert(0, value)
+            entry.insert(0, value or "")
             entry.configure(state="disabled")
 
     def _build_dados_pessoais(self, parent):

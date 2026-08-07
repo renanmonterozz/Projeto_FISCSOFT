@@ -221,6 +221,8 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
         return nome
 
     def _on_item_select(self, selection):
+        if not hasattr(self, "entry_quantidade"):
+            return
         for item in self.itens_catalogo:
             if self._item_display(item) == selection:
                 qtd = item.get("quantidade") or 0
@@ -808,8 +810,8 @@ if __name__ == "__main__":
 
     app = ctk.CTk()
     app.title("FISCSOFT - Relatorio de Entrega de Materiais")
-    app.geometry("1400x800")
     app.configure(fg_color=COLORS["bg"])
+    app.after(0, app.state, "zoomed")
 
     RelatorioEntregaPage(app).pack(fill="both", expand=True)
     app.mainloop()
