@@ -16,6 +16,7 @@ except ImportError:
 
 from config.styles import ASSETS_DIR, ASSETS_DIR, COLORS, FONTS
 from database.conexaodb import Database
+from screens.widgets import ComboBoxComSeta
 
 ANEXOS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "assets", "anexos")
 
@@ -89,16 +90,16 @@ class NotasFiscaisExterno(ctk.CTkFrame):
             text_color=COLORS["text_muted"],
         ).pack(anchor="w", pady=(0, 3))
 
-        self.combo_processo = ComboBoxSeta(
+        self.combo_processo = ComboBoxComSeta(
             col_processo, values=["Carregando..."],
             height=38, border_width=1, border_color=COLORS["border"],
             corner_radius=4, fg_color=COLORS["white"], text_color=COLORS["text"],
             button_color=COLORS["primary"], button_hover_color=COLORS["primary_hover"],
             dropdown_fg_color=COLORS["white"], dropdown_hover_color=COLORS["primary_light"],
+            command=self._on_processo_changed,
         )
         self.combo_processo.pack(fill="x")
         self.combo_processo.set("")
-        self.combo_processo.bind("<<ComboboxSelected>>", self._on_processo_changed)
 
     def _criar_campo_grid(self, parent, row, col, label_text, placeholder=None):
         frame = ctk.CTkFrame(parent, fg_color="transparent")
@@ -227,7 +228,7 @@ class NotasFiscaisExterno(ctk.CTkFrame):
 
         self.itens_tccm = []
         nomes_itens = ["Selecione um processo primeiro"]
-        self.combo_item = ComboBoxSeta(
+        self.combo_item = ComboBoxComSeta(
             col_item, values=nomes_itens,
             height=34, border_width=1, border_color=COLORS["border"],
             corner_radius=4, fg_color=COLORS["white"], text_color=COLORS["text"],

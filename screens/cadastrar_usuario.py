@@ -8,6 +8,7 @@ import os
 from config.styles import COLORS, FONTS, ASSETS_DIR
 from config.permissoes import normalizar_perfil
 from database.conexaodb import Database
+from screens.widgets import ComboBoxComSeta
 from utils import hash_password, registrar_log
 
 
@@ -184,7 +185,7 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
             text_color=COLORS["text"],
         ).pack(anchor="w", pady=(0, 4))
 
-        combo = ctk.CTkComboBox(
+        combo = ComboBoxComSeta(
             frame, values=values, height=36,
             corner_radius=4, border_width=1,
             border_color=COLORS["border"],
