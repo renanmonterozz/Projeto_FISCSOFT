@@ -14,7 +14,7 @@ try:
 except ImportError:
     PDF_DISPONIVEL = False
 
-from config.styles import ASSETS_DIR, COLORS, FONTS
+from config.styles import ASSETS_DIR, ASSETS_DIR, COLORS, FONTS
 from database.conexaodb import Database
 
 ANEXOS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "assets", "anexos")
@@ -89,7 +89,7 @@ class NotasFiscaisExterno(ctk.CTkFrame):
             text_color=COLORS["text_muted"],
         ).pack(anchor="w", pady=(0, 3))
 
-        self.combo_processo = ctk.CTkComboBox(
+        self.combo_processo = ComboBoxSeta(
             col_processo, values=["Carregando..."],
             height=38, border_width=1, border_color=COLORS["border"],
             corner_radius=4, fg_color=COLORS["white"], text_color=COLORS["text"],
@@ -227,7 +227,7 @@ class NotasFiscaisExterno(ctk.CTkFrame):
 
         self.itens_tccm = []
         nomes_itens = ["Selecione um processo primeiro"]
-        self.combo_item = ctk.CTkComboBox(
+        self.combo_item = ComboBoxSeta(
             col_item, values=nomes_itens,
             height=34, border_width=1, border_color=COLORS["border"],
             corner_radius=4, fg_color=COLORS["white"], text_color=COLORS["text"],
@@ -288,51 +288,41 @@ class NotasFiscaisExterno(ctk.CTkFrame):
         )
         btn_add.pack(side="left", pady=(16, 0))
 
-        tree_frame = ctk.CTkFrame(itens_card, fg_color="transparent")
+        tree_frame = ctk.CTkFrame(itens_card, fg_color=COLORS["white"])
         tree_frame.pack(fill="x", padx=20, pady=(0, 0))
 
-        style = ttk.Style()
-        style.theme_use("default")
-        style.configure("Itens.Treeview",
-                         background=COLORS["white"],
-                         foreground=COLORS["text"],
-                         rowheight=32,
-                         fieldbackground=COLORS["white"],
-                         borderwidth=0,
-                         font=(None, FONTS["size_small"]))
-        style.configure("Itens.Treeview.Heading",
-                         background=COLORS["table_header"],
-                         foreground=COLORS["text_muted"],
-                         borderwidth=0,
-                         font=(None, FONTS["size_small"], "bold"))
-        style.map("Itens.Treeview",
-                   background=[("selected", COLORS["primary_light"])],
-                   foreground=[("selected", COLORS["text"])])
-
-        tree_container = ctk.CTkFrame(tree_frame, fg_color=COLORS["border"], corner_radius=4)
-        tree_container.pack(fill="x")
-
-        colunas = ("item", "qtd", "preco", "subtotal")
-        self.tree_itens = ttk.Treeview(
-            tree_container, columns=colunas, show="headings",
-            style="Itens.Treeview", height=4, selectmode="browse"
+        # --- Cabeçalho separado ---
+        table_wrapper = ctk.CTkFrame(
+            tree_frame, fg_color=COLORS["white"], corner_radius=4,
+            border_width=1, border_color=COLORS["border"]
         )
-        self.tree_itens.heading("item", text="Item", anchor="w")
-        self.tree_itens.heading("qtd", text="Qtd.", anchor="w")
-        self.tree_itens.heading("preco", text="Preco Unit. (R$)", anchor="w")
-        self.tree_itens.heading("subtotal", text="Subtotal (R$)", anchor="w")
+        table_wrapper.pack(fill="x")
 
-        self.tree_itens.column("item", width=300, minwidth=200, anchor="w")
-        self.tree_itens.column("qtd", width=60, minwidth=50, anchor="w")
-        self.tree_itens.column("preco", width=140, minwidth=100, anchor="w")
-        self.tree_itens.column("subtotal", width=140, minwidth=100, anchor="w")
+        header_frame = ctk.CTkFrame(table_wrapper, fg_color=COLORS["table_header"],
+                                     height=36, corner_radius=3)
+        header_frame.pack(fill="x", padx=1, pady=(1, 0))
+        header_frame.pack_propagate(False)
 
-        tree_scroll = ttk.Scrollbar(tree_container, orient="vertical",
-                                     command=self.tree_itens.yview)
-        self.tree_itens.configure(yscrollcommand=tree_scroll.set)
+        header_cols = [
+            (0.0,  0.46, "w",     "Item"),
+            (0.46, 0.14, "w",     "Qtd."),
+            (0.60, 0.20, "w",     "Preco Unit. (R$)"),
+            (0.80, 0.20, "w",     "Subtotal (R$)"),
+        ]
 
-        self.tree_itens.pack(side="left", fill="x", expand=True, padx=(4, 0), pady=4)
-        tree_scroll.pack(side="right", fill="y", pady=4, padx=(0, 4))
+        for rx, rw, anchor, texto in header_cols:
+            ctk.CTkLabel(
+                header_frame, text=texto,
+                font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
+                text_color=COLORS["text_muted"], anchor=anchor,
+            ).place(relx=rx, relwidth=rw, rely=0, relheight=1)
+
+        # --- Container das linhas (substitui o Treeview) ---
+        self.table_body = ctk.CTkScrollableFrame(
+            table_wrapper, fg_color=COLORS["white"], corner_radius=0,
+            height=120
+        )
+        self.table_body.pack(fill="x", padx=1, pady=(0, 1))
 
         btn_row = ctk.CTkFrame(itens_card, fg_color="transparent")
         btn_row.pack(fill="x", padx=20, pady=(5, 8))
@@ -409,30 +399,64 @@ class NotasFiscaisExterno(ctk.CTkFrame):
         self.entry_preco.delete(0, "end")
 
     def _remover_item_selecionado(self):
-        sel = self.tree_itens.selection()
-        if not sel:
-            messagebox.showwarning("Atencao", "Selecione um item na tabela para remover.")
-            return
-        idx = self.tree_itens.index(sel[0])
-        if 0 <= idx < len(self.itens_lista):
-            self.itens_lista.pop(idx)
-            self._render_itens()
+        if not self.item_selecionado_idx is None:
+            idx = self.item_selecionado_idx
+            if 0 <= idx < len(self.itens_lista):
+                self.itens_lista.pop(idx)
+                self.item_selecionado_idx = None
+                self._render_itens()
 
     def _render_itens(self):
-        for item in self.tree_itens.get_children():
-            self.tree_itens.delete(item)
+        for widget in self.table_body.winfo_children():
+            widget.destroy()
+
+        self.item_selecionado_idx = None
 
         if not self.itens_lista:
             self.lbl_total_geral.configure(text="Total Itens: R$ 0,00")
             return
 
-        for item in self.itens_lista:
+        col_cfg = [
+            (0.0,  0.46, "w"),
+            (0.46, 0.14, "w"),
+            (0.60, 0.20, "w"),
+            (0.80, 0.20, "w"),
+        ]
+
+        for idx, item in enumerate(self.itens_lista):
             preco_fmt = f"R$ {item['preco_unitario']:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
             subtotal_fmt = f"R$ {item['subtotal']:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-            self.tree_itens.insert("", "end", values=(
-                item["nome"], item["quantidade"], preco_fmt, subtotal_fmt
-            ))
 
+            row_frame = ctk.CTkFrame(self.table_body, fg_color="transparent")
+            row_frame.pack(fill="x")
+
+            linha = ctk.CTkFrame(row_frame, fg_color="white", corner_radius=0,
+                                 border_width=1, border_color=COLORS["border"])
+            linha.pack(fill="x", padx=1, pady=(1, 0))
+            linha.configure(height=32)
+            linha.pack_propagate(False)
+
+            valores = [item["nome"], str(item["quantidade"]), preco_fmt, subtotal_fmt]
+
+            for (rx, rw, anchor), texto in zip(col_cfg, valores):
+                ctk.CTkLabel(
+                    linha, text=texto,
+                    font=ctk.CTkFont(size=FONTS["size_small"]),
+                    text_color=COLORS["text"], anchor=anchor,
+                ).place(relx=rx, relwidth=rw, rely=0, relheight=1)
+
+            def _selecionar(i=idx, frame=linha):
+                for w in self.table_body.winfo_children():
+                    for c in w.winfo_children():
+                        c.configure(fg_color="white")
+                frame.configure(fg_color=COLORS["primary_light"])
+                self.item_selecionado_idx = i
+
+            linha.bind("<Button-1>", lambda e, i=idx, f=linha: _selecionar(i, f))
+            for child in linha.winfo_children():
+                child.bind("<Button-1>", lambda e, i=idx, f=linha: _selecionar(i, f))
+
+        self.item_selecionado_idx = None
         total_geral = sum(item["subtotal"] for item in self.itens_lista)
         total_fmt = f"R$ {total_geral:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
         self.lbl_total_geral.configure(text=f"Total Itens: {total_fmt}")
@@ -616,6 +640,7 @@ class NotasFiscaisExterno(ctk.CTkFrame):
 
         if 'itens' in dados:
             self.itens_lista = []
+            self.item_selecionado_idx = None
             for item_pdf in dados['itens']:
                 item_match = None
                 for item_tccm in self.itens_tccm:
@@ -661,7 +686,10 @@ class NotasFiscaisExterno(ctk.CTkFrame):
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             width=140,
             command=self._limpar_campos,
-        ).pack(side="left", padx=(0, 10))
+        ).pack(side="left")
+
+        voltar_container = ctk.CTkFrame(self.scroll, fg_color="transparent")
+        voltar_container.pack(fill="x", padx=30, pady=(18, 26))
 
         ctk.CTkButton(
             btn_container, text="  Voltar", height=40, corner_radius=6,
@@ -670,7 +698,7 @@ class NotasFiscaisExterno(ctk.CTkFrame):
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             width=140,
             command=self._voltar,
-        ).pack(side="left")
+        ).pack(anchor="center")
 
     def _salvar(self):
         numero = self.entry_numero.get().strip()
