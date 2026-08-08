@@ -52,12 +52,6 @@ def _suprimir_erro_tcl():
         pass
 
 
-# Cores da tela de login
-DOURADO = "#c8b464"
-AMARELO_BOTAO = "#FFF48C"
-VERDE_POLIGONO = "#302F2F"
-
-
 class LoginApp(ctk.CTk):
     def __init__(self):
         super().__init__()
@@ -83,12 +77,12 @@ class LoginApp(ctk.CTk):
             self,
             text="ACESSE O SISTEMA!",
             font=("Libre Baskerville", 36),
-            text_color="#FFF9BE",
-            fg_color="#000001",
-            bg_color="#000001"
+            text_color=COLORS["login_title_text"],
+            fg_color=COLORS["login_black"],
+            bg_color=COLORS["login_black"]
         )
         self.label_titulo.place(relx=0.5, rely=0.78, anchor="center")
-        pywinstyles.set_opacity(self.label_titulo, color="#000001")
+        pywinstyles.set_opacity(self.label_titulo, color=COLORS["login_black"])
 
         # --- Botão único: Fazer Login ---
         self.btn_entrar = ctk.CTkButton(
@@ -97,17 +91,17 @@ class LoginApp(ctk.CTk):
             width=480,
             height=50,
             corner_radius=16,
-            fg_color=VERDE_POLIGONO,
-            bg_color="#000001",
-            hover_color="#211E1E",
-            text_color=AMARELO_BOTAO,
+            fg_color=COLORS["dark"],
+            bg_color=COLORS["login_black"],
+            hover_color=COLORS["dark_hover"],
+            text_color=COLORS["login_btn_text"],
             font=ctk.CTkFont(family="Segoe UI", size=19),
             border_width=2,
-            border_color="#000001",
+            border_color=COLORS["login_black"],
             command=self._mostrar_formulario_unificado
         )
         self.btn_entrar.place(relx=0.5, rely=0.865, anchor="center")
-        pywinstyles.set_opacity(self.btn_entrar, color="#000001")
+        pywinstyles.set_opacity(self.btn_entrar, color=COLORS["login_black"])
 
         # --- Botao: Entrar com Certificado Digital ---
         self.btn_certificado = ctk.CTkButton(
@@ -116,17 +110,17 @@ class LoginApp(ctk.CTk):
             width=480,
             height=50,
             corner_radius=16,
-            fg_color=VERDE_POLIGONO,
-            bg_color="#000001",
-            hover_color="#211E1E",
-            text_color=AMARELO_BOTAO,
+            fg_color=COLORS["dark"],
+            bg_color=COLORS["login_black"],
+            hover_color=COLORS["dark_hover"],
+            text_color=COLORS["login_btn_text"],
             font=ctk.CTkFont(family="Segoe UI", size=19),
             border_width=2,
-            border_color="#000001",
+            border_color=COLORS["login_black"],
             command=self._login_certificado
         )
         self.btn_certificado.place(relx=0.5, rely=0.945, anchor="center")
-        pywinstyles.set_opacity(self.btn_certificado, color="#000001")
+        pywinstyles.set_opacity(self.btn_certificado, color=COLORS["login_black"])
 
     def _ajustar_imagem_fundo(self):
         if self._img_pil is None:
@@ -155,10 +149,10 @@ class LoginApp(ctk.CTk):
         self.btn_entrar.place_forget()
         self.btn_certificado.place_forget()
 
-        self.frame_login = ctk.CTkFrame(self, fg_color="#000001", bg_color="#000001", corner_radius=0)
+        self.frame_login = ctk.CTkFrame(self, fg_color=COLORS["login_black"], bg_color=COLORS["login_black"], corner_radius=0)
         self.frame_login.place(relx=0.5, rely=0.88, anchor="center")
         self.frame_login.lift()
-        pywinstyles.set_opacity(self.frame_login, color="#000001")
+        pywinstyles.set_opacity(self.frame_login, color=COLORS["login_black"])
 
         self._modo_login = "usuario"
 
@@ -171,17 +165,17 @@ class LoginApp(ctk.CTk):
             frame_cred,
             width=480, height=45, corner_radius=8,
             font=("Segoe UI", 16),
-            fg_color="#CFFFE3", border_color="#16A34A", border_width=2,
-            text_color="#2D8A4E", placeholder_text_color="#2D8A4E",
+            fg_color=COLORS["login_field_bg"], border_color=COLORS["login_field_border"], border_width=2,
+            text_color=COLORS["login_field_text"], placeholder_text_color=COLORS["login_field_text"],
             placeholder_text="Digite seu usuario"
         )
         self.entry_credencial.place(x=53, y=0)
 
         self.btn_modo = ctk.CTkButton(
             frame_cred, text="\U0001f464", width=45, height=45, corner_radius=8,
-            fg_color="#CFFFE3", hover_color="#b0e8c0",
-            text_color="#2D8A4E", font=("Segoe UI", 18),
-            border_width=2, border_color="#16A34A",
+            fg_color=COLORS["login_field_bg"], hover_color=COLORS["login_field_hover"],
+            text_color=COLORS["login_field_text"], font=("Segoe UI", 18),
+            border_width=2, border_color=COLORS["login_field_border"],
             command=self._toggle_modo_login
         )
         self.btn_modo.place(x=541, y=0)
@@ -195,17 +189,17 @@ class LoginApp(ctk.CTk):
             frame_senha,
             width=480, height=45, corner_radius=8,
             font=("Segoe UI", 16),
-            fg_color="#CFFFE3", border_color="#16A34A", border_width=2,
-            text_color="#2D8A4E", placeholder_text_color="#2D8A4E",
+            fg_color=COLORS["login_field_bg"], border_color=COLORS["login_field_border"], border_width=2,
+            text_color=COLORS["login_field_text"], placeholder_text_color=COLORS["login_field_text"],
             placeholder_text="Digite sua senha", show="*"
         )
         self.entry_senha.place(x=53, y=0)
 
         self.btn_eye = ctk.CTkButton(
             frame_senha, text="\U0001f441", width=45, height=45, corner_radius=8,
-            fg_color="#CFFFE3", hover_color="#b0e8c0",
-            text_color="#2D8A4E", font=("Segoe UI", 18),
-            border_width=2, border_color="#16A34A",
+            fg_color=COLORS["login_field_bg"], hover_color=COLORS["login_field_hover"],
+            text_color=COLORS["login_field_text"], font=("Segoe UI", 18),
+            border_width=2, border_color=COLORS["login_field_border"],
             command=self._toggle_senha
         )
         self.btn_eye.place(x=541, y=0)
@@ -218,15 +212,15 @@ class LoginApp(ctk.CTk):
 
         ctk.CTkButton(
             frame_botoes, text="Entrar", width=100, height=40, corner_radius=12,
-            fg_color=VERDE_POLIGONO, hover_color="#211E1E",
-            text_color=AMARELO_BOTAO, font=("Segoe UI", 16),
+            fg_color=COLORS["dark"], hover_color=COLORS["dark_hover"],
+            text_color=COLORS["login_btn_text"], font=("Segoe UI", 16),
             command=self._on_entrar_click
         ).pack(side="left", padx=5)
 
         ctk.CTkButton(
             frame_botoes, text="Sair", width=100, height=40, corner_radius=12,
-            fg_color="#8B0000", hover_color="#850202",
-            text_color="white", font=("Segoe UI", 16),
+            fg_color=COLORS["login_btn_danger"], hover_color=COLORS["login_btn_danger_hover"],
+            text_color=COLORS["white"], font=("Segoe UI", 16),
             command=self._on_sair_click
         ).pack(side="left", padx=5)
 
