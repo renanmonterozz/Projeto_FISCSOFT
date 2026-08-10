@@ -4,7 +4,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "fiscsoft.db")
+DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "fiscsoft.db")
 
 
 class Database:
@@ -23,13 +23,60 @@ class Database:
     def conectar(self) -> bool:
         try:
             logger.info("Conectando ao banco SQLite: %s", self.db_path)
+            os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
             self.conexao = sqlite3.connect(self.db_path)
             self.conexao.execute("PRAGMA foreign_keys = ON")
             self.conexao.row_factory = sqlite3.Row
+            self._migrar()
             return True
         except sqlite3.Error as e:
             logger.error("Erro ao conectar ao banco: %s", e)
             return False
+
+    def _migrar(self):
+        migracoes = [
+            ("ALTER TABLE itens ADD COLUMN processo VARCHAR(100)", "itens.processo"),
+            ('ALTER TABLE tccm ADD COLUMN documento_sei TEXT', "tccm.documento_sei"),
+            ('ALTER TABLE tccm ADD COLUMN data_inicio DATE', "tccm.data_inicio"),
+            ('ALTER TABLE tccm ADD COLUMN semestres INTEGER NOT NULL DEFAULT 1', "tccm.semestres"),
+            ('ALTER TABLE "nota fiscal" ADD COLUMN arquivo TEXT', '"nota fiscal".arquivo'),
+        ]
+        for sql, nome in migracoes:
+            try:
+                self.conexao.execute(sql)
+                self.conexao.commit()
+                logger.info("Migracao aplicada: %s", nome)
+            except sqlite3.OperationalError as e:
+                if "duplicate column name" in str(e).lower():
+                    continue
+                logger.debug("Migracao ignorada para %s: %s", nome, e)
+
+        self._migrar_perfis()
+
+    def _migrar_perfis(self):
+        """Normaliza os valores da coluna perfil para os nomes padrao
+        (Administrador / Agente / Operador)."""
+        try:
+            normalizacoes = [
+                ("Administrador", ("admin", "administrador")),
+                ("Agente", ("agente",)),
+                ("Operador", ("operador", "usuario", "user")),
+            ]
+            for novo, antigos in normalizacoes:
+                marca = ",".join("?" for _ in antigos)
+                cursor = self.conexao.execute(
+                    f'SELECT COUNT(*) FROM "agente ibama" WHERE LOWER(perfil) IN ({marca})',
+                    antigos,
+                )
+                if cursor.fetchone()[0] > 0:
+                    self.conexao.execute(
+                        f'UPDATE "agente ibama" SET perfil = ? WHERE LOWER(perfil) IN ({marca})',
+                        (novo, *antigos),
+                    )
+                    logger.info("Migracao aplicada: perfis '%s' -> '%s'", "/".join(antigos), novo)
+            self.conexao.commit()
+        except sqlite3.Error:
+            pass
 
     def desconectar(self):
         if self.conexao:
@@ -238,6 +285,7 @@ def criar_schema():
         (3, '20040-020', 'Av. Rio Branco, 156, Centro, Rio de Janeiro-RJ', 'IBAMA - Regional RJ', 'Pedro Santos', '21-32137000');
     """
 
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     conexao = sqlite3.connect(DB_PATH)
     conexao.execute("PRAGMA foreign_keys = ON")
     conexao.executescript(schema_sql)

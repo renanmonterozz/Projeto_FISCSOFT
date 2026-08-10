@@ -6,8 +6,10 @@ from datetime import datetime as _dt
 import customtkinter as ctk
 
 from config.styles import COLORS, FONTS
+from config.permissoes import pode_acao
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
+from screens.widgets import ComboBoxComSeta
 
 
 def _fmt_date(val):
@@ -23,6 +25,16 @@ def _fmt_date(val):
 
 def _fmt_brl(valor):
     return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
+COL_TCCM_CFG = [
+    (0.0, 0.14, "w"),
+    (0.14, 0.26, "w"),
+    (0.40, 0.14, "center"),
+    (0.54, 0.14, "center"),
+    (0.68, 0.14, "center"),
+    (0.82, 0.12, "center"),
+]
 
 
 class CircularProgressBar(ctk.CTkFrame):
@@ -366,7 +378,7 @@ class ModalCadastrarTCCM(ctk.CTkToplevel):
         agente_row.grid_columnconfigure(0, weight=1)
 
         opcoes_agentes = [f"{a[0]} - {a[1]}" for a in self.agentes] if self.agentes else ["Nenhum agente"]
-        combo = ctk.CTkComboBox(agente_row, values=opcoes_agentes,
+        combo = ComboBoxComSeta(agente_row, values=opcoes_agentes,
                                 height=38, corner_radius=4,
                                 fg_color=COLORS["white"], border_color=COLORS["border"],
                                 button_color=COLORS["primary"],
@@ -390,7 +402,7 @@ class ModalCadastrarTCCM(ctk.CTkToplevel):
         infrator_row.grid_columnconfigure(0, weight=1)
 
         opcoes_infratores = [f"{i[0]} - {i[1]}" for i in self.infratores] if self.infratores else ["Nenhum infrator"]
-        combo = ctk.CTkComboBox(infrator_row, values=opcoes_infratores,
+        combo = ComboBoxComSeta(infrator_row, values=opcoes_infratores,
                                 height=38, corner_radius=4,
                                 fg_color=COLORS["white"], border_color=COLORS["border"],
                                 button_color=COLORS["primary"],
@@ -1102,6 +1114,7 @@ class TccmDashboardPage(CrudBase, ctk.CTkFrame):
         self.configure(fg_color=COLORS["bg"])
         self.usuario_logado = usuario_logado
         self.perfil = perfil
+        self.pode_criar_tccm = pode_acao(perfil, "criar_tccm")
 
         self.tccms_todos = []
 
@@ -1127,12 +1140,13 @@ class TccmDashboardPage(CrudBase, ctk.CTkFrame):
         right = ctk.CTkFrame(header, fg_color="transparent")
         right.pack(side="right")
 
-        ctk.CTkButton(
-            right, text="+ Novo TCCM", height=36, corner_radius=6,
-            fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
-            text_color="white", font=ctk.CTkFont(size=12, weight="bold"),
-            command=self._navegar_cadastro,
-        ).pack(side="left", padx=(0, 8))
+        if self.pode_criar_tccm:
+            ctk.CTkButton(
+                right, text="+ Novo TCCM", height=36, corner_radius=6,
+                fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
+                text_color="white", font=ctk.CTkFont(size=12, weight="bold"),
+                command=self._navegar_cadastro,
+            ).pack(side="left", padx=(0, 8))
 
         ctk.CTkButton(
             right, text="Sair", height=36, corner_radius=6,
@@ -1152,7 +1166,7 @@ class TccmDashboardPage(CrudBase, ctk.CTkFrame):
         self._card_concluidos = self._criar_card_status(self._cards_frame, "Concluidos", "0", COLORS["success_dark"], 1)
 
     def _criar_card_status(self, parent, titulo, valor, cor, col):
-        card = ctk.CTkFrame(parent, fg_color=COLORS["white"], corner_radius=6,
+        card = ctk.CTkFrame(parent, fg_color=COLORS["white"], corner_radius=4,
                             border_width=1, border_color=COLORS["border"])
         card.grid(row=0, column=col, padx=5, sticky="nsew")
 
@@ -1175,7 +1189,7 @@ class TccmDashboardPage(CrudBase, ctk.CTkFrame):
         return card, lbl
 
     def _build_progress_section(self):
-        section = ctk.CTkFrame(self, fg_color=COLORS["white"], corner_radius=6,
+        section = ctk.CTkFrame(self, fg_color=COLORS["white"], corner_radius=4,
                                border_width=1, border_color=COLORS["border"])
         section.pack(fill="x", padx=30, pady=(0, 15))
 
@@ -1248,7 +1262,7 @@ class TccmDashboardPage(CrudBase, ctk.CTkFrame):
         self.lbl_count.pack(side="right", padx=(0, 12))
 
         filter_frame = ctk.CTkFrame(header_row, fg_color="transparent")
-        filter_frame.pack(side="right")
+        filter_frame.pack(side="right", padx=(0, 24))
 
         ctk.CTkLabel(filter_frame, text="Filtrar:",
                       font=ctk.CTkFont(size=FONTS["size_small"]),
@@ -1269,14 +1283,16 @@ class TccmDashboardPage(CrudBase, ctk.CTkFrame):
 
         cols = ctk.CTkFrame(col_header, fg_color="transparent")
         cols.pack(side="left", fill="x", expand=True, padx=(15, 0))
-        weights = [2, 3, 2, 2, 2, 2, 1]
-        for w in weights:
-            cols.grid_columnconfigure(cols.grid_size()[1], weight=w)
 
-        for i, col in enumerate(["Processo", "Infrator", "Total Devido", "Total Pago", "Validade", "Status", ""]):
-            ctk.CTkLabel(cols, text=col,
-                          font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                          text_color=COLORS["text_muted"]).grid(row=0, column=i, sticky="w", padx=8)
+        colunas = ["Processo", "Infrator", "Total Devido", "Total Pago", "Validade", "Status"]
+
+        for texto, (rx, rw, anchor) in zip(colunas, COL_TCCM_CFG):
+            ctk.CTkLabel(
+                cols, text=texto,
+                font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
+                text_color=COLORS["text_muted"],
+                anchor=anchor,
+            ).place(relx=rx, relwidth=rw, rely=0, relheight=1)
 
         self.table_body = ctk.CTkScrollableFrame(container, fg_color="transparent")
         self.table_body.pack(fill="both", expand=True)
@@ -1366,9 +1382,6 @@ class TccmDashboardPage(CrudBase, ctk.CTkFrame):
 
             cols = ctk.CTkFrame(row, fg_color="transparent")
             cols.pack(side="left", fill="x", expand=True, padx=(15, 0))
-            weights = [2, 3, 2, 2, 2, 2, 1]
-            for w in weights:
-                cols.grid_columnconfigure(cols.grid_size()[1], weight=w)
 
             if t["status"] == "concluido":
                 st_text = "Concluido"
@@ -1386,11 +1399,14 @@ class TccmDashboardPage(CrudBase, ctk.CTkFrame):
                 t["data_validade"], st_text,
             ]
             for i, valor in enumerate(dados):
+                relx, relwidth, anchor = COL_TCCM_CFG[i]
                 cor = COLORS["text"] if i == 0 else (st_cor if i == 5 else COLORS["text_muted"])
                 weight = "bold" if i == 0 or i == 5 else "normal"
-                ctk.CTkLabel(cols, text=valor,
-                              font=ctk.CTkFont(size=FONTS["size_small"], weight=weight),
-                              text_color=cor, anchor="w").grid(row=0, column=i, sticky="w", padx=8)
+                ctk.CTkLabel(
+                    cols, text=valor,
+                    font=ctk.CTkFont(size=FONTS["size_small"], weight=weight),
+                    text_color=cor, anchor=anchor,
+                ).place(relx=relx, relwidth=relwidth, rely=0, relheight=1)
 
             ctk.CTkButton(
                 row, text="\u25b6", width=32, height=28,
@@ -1398,7 +1414,7 @@ class TccmDashboardPage(CrudBase, ctk.CTkFrame):
                 hover_color=COLORS["primary_hover"], text_color="white",
                 font=ctk.CTkFont(size=12),
                 command=lambda proc=t["processo"]: self._selecionar(proc),
-            ).pack(side="right", padx=(0, 15))
+            ).place(relx=1.0, rely=0.5, anchor="e", x=-15)
 
     def _selecionar(self, processo):
         if self.on_selecionar:

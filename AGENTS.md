@@ -1,61 +1,23 @@
-# FISCSOFT - Projeto de Inspecao do IBAMA
+# FISCSOFT - Sistema de Inspecao do IBAMA
 
-## Visao Geral
-Sistema desktop (Python/customtkinter) para gerenciamento de Termos de Coordenacao e Controle de Material (TCCM) do IBAMA.
-Dois modos de uso:
-- **Interno**: administradores e agentes IBAMA logam com usuario/senha
-- **Externo**: infratores acessam via CPF
+Desktop (Python/customtkinter + SQLite) para TCCM. Dois modos no mesmo login: interno (agentes/admin) e externo (infratores via CPF).
+
+## Comandos
+
+- Rodar: `& .venv\Scripts\python.exe main.py` (entry unico — interno e externo)
+- Sem testes; verificar com `-m py_compile main.py database\conexaodb.py`
 
 ## Arquitetura
-- **main.py**: Login, navegacao entre telas (welcome_app -> main_app com sidebar)
-- **screens/**: Telas do sistema (customtkinter + CrudBase)
-- **database/**: Conexao SQLite (conexaodb.py), schema SQL, banco fiscsoft.db
-- **config/**: Estilos (COLORS, FONTS, ASSETS_DIR) em styles.py
-- **utils.py**: Utilitarios (verificacao de senha, registro de logs)
-- **assets/**: Icones e imagens PNG
 
-## Fluxo TCCM (principal)
-1. Login -> Tela de boas-vindas (TccmDashboardPage) com lista de TCCMs ativos
-2. Usuario seleciona um TCCM -> Navega para menu principal com sidebar
-3. Conteudo filtrado pelo TCCM selecionado:
-   - Menu Principal (MenuInicialPage): NFs e stats do TCCM
-   - Itens (ItensPage): itens vinculados ao TCCM via NFs
-   - Dashboard TCCM (TccmDetalhesPage): detalhes, pessoas, NFs e itens
+- `main.py` = entry unico; login interno (`"agente ibama"`) e externo (`infrator` por CPF); telas mapeadas em `navegar()`.
+- `config/permissoes.py` = fonte unica de acesso (perfis admin/agente/operador; `pode_acao`/`paginas_do_perfil`).
+- Banco: `data/fiscsoft.db` (versionado; users teste admin/agente/operador, infrator CPF 12345678900). Schema inline em `criar_schema()`; `schema.sql` e MySQL legado; migracoes rodam na conexao (`_migrar`/`_migrar_perfis`).
+- Tabelas com espaco exigem aspas: `"agente ibama"`, `"nota fiscal"`.
+- `_path.py` importado por todas as telas (sys.path) — nao excluir.
+- pt-BR; cores/fontes/assets em `config/styles.py`.
 
-## Tabelas do Banco (principais)
-- **tccm**: processo (PK), total_pago, total_devido, status, data_validade, intervalo
-- **nota fiscal**: nota_fiscal (PK), processo, data, valor_total, status_nota, chave_de_acesso
-- **produtos**: lote, quantidade, preco_unitario, nota fiscal_nota_fiscal (FK)
-- **itens**: id, nome, descricao, tipo, notas_fiscais (FK para NF)
-- **infrator**: id_infrator, nome_infrator, cpf, email
-- **agente ibama**: matricula, nome_agente, login, senha, perfil, status
+## Trabalho (economia de tokens)
 
-## Navegacao
-- Sidebar (screens/sidebar.py): navega por nome de pagina via callback `on_navigate(pagina)`
-- `navegar()` em main.py: mapeia nome da pagina para classe da tela
-- `processo_tccm`: propagado via closure para filtrar conteudo
-
-## Convencoes
-- linguagem: portugues (BR) em UI e codigo
-- Estilo visual: COLORS e FONTS de config/styles.py
-- CRUDBase (screens/crud_base.py): classe base com build_header, build_filter_container, etc.
-- customtkinter (ctk): framework de UI
-- Banco: SQLite via Database context manager (database/conexaodb.py)
-
-## Comando para rodar
-```bash
-cd C:\Users\60291566\Documents\GitHub\Projeto_FISCSOFT
-python main.py
-```
-
-## Telas principais
-- `TccmDashboardPage`: Lista selecionavel de TCCMs (tela de boas-vindas)
-- `TccmDetalhesPage`: Detalhes de um TCCM (info, pessoas, NFs, itens)
-- `MenuInicialPage`: Dashboard do TCCM com NFs e stats
-- `ItensPage`: Lista de itens (filtrados por TCCM quando aplicavel)
-- `RelatorioEntregaPage`: Relatorio de entrega de materiais
-- `UsuariosPage`: Gestao de agentes
-- `InfratoresPage`: Gestao de infratores
-- `LocaisPage`: Locais cadastrados
-- `RelatoriosPage`: Relatorios gerais
-- `HistoricoPage`: Historico de acoes
+- Nao leia o projeto inteiro: comece pelos arquivos relacionados ao pedido; so leia mais com dependencia real; sem buscas globais sem necessidade.
+- Menor alteracao possivel; nao refatore/altere arquitetura sem pedido; rode so a verificacao necessaria.
+- Nao leia: `.venv/`, `__pycache__/`, `*.pyc`, `*.log`, temporarios/caches, `.git/`, binarios, config sensivel (.env/credenciais).

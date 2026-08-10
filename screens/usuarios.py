@@ -3,7 +3,12 @@ import _path  # noqa: F401
 import customtkinter as ctk
 from tkinter import messagebox
 
+<<<<<<< HEAD
 from config.styles import get_colors, FONTS
+=======
+from config.styles import COLORS, FONTS
+from config.permissoes import pode_acao
+>>>>>>> main
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
@@ -11,10 +16,12 @@ from utils import registrar_log
 
 
 class UsuariosPage(CrudBase, ctk.CTkFrame):
-    def __init__(self, master, usuario_logado=None, **kwargs):
+    def __init__(self, master, usuario_logado=None, perfil="admin", **kwargs):
         super().__init__(master, **kwargs)
         self.configure(fg_color=get_colors()["bg"])
         self.usuario_logado = usuario_logado
+        self.perfil = perfil
+        self.pode_editar = pode_acao(perfil, "gerenciar_usuarios")
 
         self.build_header(
             "Agentes IBAMA",
@@ -37,10 +44,19 @@ class UsuariosPage(CrudBase, ctk.CTkFrame):
 
         self.build_action_btn(btn_frame, "  Pesquisar", carregar_icone("lupa.png"), self.pesquisar)
         self.build_action_btn(btn_frame, "  Limpar", carregar_icone("apagar.png"), self.limpar_filtros)
+<<<<<<< HEAD
         self.build_action_btn(btn_frame, "  Novo Usuario", carregar_icone("mais.png"),
                               self.novo_usuario, fg_color=colors["primary"],
                               hover_color=colors["primary_hover"], text_color="white",
                               border=False, bold=True)
+=======
+
+        if self.pode_editar:
+            self.build_action_btn(btn_frame, "  Novo Usuario", carregar_icone("mais.png"),
+                                  self.novo_usuario, fg_color=COLORS["primary"],
+                                  hover_color=COLORS["primary_hover"], text_color="white",
+                                  border=False, bold=True)
+>>>>>>> main
 
     def build_table(self):
         colors = get_colors()
@@ -148,11 +164,13 @@ class UsuariosPage(CrudBase, ctk.CTkFrame):
                 anchor=anchor,
             ).place(relx=rx, relwidth=rw, rely=0, relheight=1)
 
-        self.add_action_buttons(linha, [
-            ("\U0001f441", lambda u=usuario: self.visualizar(u)),
-            ("\u270f", lambda u=usuario: self.editar(u)),
-            ("\U0001f5d1", lambda u=usuario: self.excluir(u)),
-        ])
+        acoes = [("\U0001f441", lambda u=usuario: self.visualizar(u))]
+        if self.pode_editar:
+            acoes += [
+                ("\u270f", lambda u=usuario: self.editar(u)),
+                ("\U0001f5d1", lambda u=usuario: self.excluir(u)),
+            ]
+        self.add_action_buttons(linha, acoes)
 
     def pesquisar(self):
         busca = self.entry_busca.get().strip().lower()
@@ -220,8 +238,13 @@ if __name__ == "__main__":
 
     app = ctk.CTk()
     app.title("FISCSOFT - Usuarios")
+<<<<<<< HEAD
     app.geometry("1200x700")
     app.configure(fg_color=get_colors()["bg"])
+=======
+    app.configure(fg_color=COLORS["bg"])
+    app.after(0, app.state, "zoomed")
+>>>>>>> main
 
     UsuariosPage(app).pack(fill="both", expand=True)
     app.mainloop()

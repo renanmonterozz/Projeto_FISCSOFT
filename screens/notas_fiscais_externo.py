@@ -1,6 +1,8 @@
-import sys
+import _path  # noqa: F401
+
 import os
 import re
+import shutil
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from datetime import datetime
@@ -13,8 +15,11 @@ try:
 except ImportError:
     PDF_DISPONIVEL = False
 
-from config.styles import COLORS, FONTS
+from config.styles import ASSETS_DIR, ASSETS_DIR, COLORS, FONTS
 from database.conexaodb import Database
+from screens.widgets import ComboBoxComSeta
+
+ANEXOS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "anexos")
 
 
 class NotasFiscaisExterno(ctk.CTkFrame):
@@ -33,15 +38,15 @@ class NotasFiscaisExterno(ctk.CTkFrame):
 
         self._build_header()
         self._build_form()
-        self._build_itens_section()
         self._build_upload_section()
+        self._build_itens_section()
         self._build_action_buttons()
         self._carregar_processos()
         self._carregar_itens_tccm()
 
     def _build_header(self):
         header = ctk.CTkFrame(self.scroll, fg_color="transparent")
-        header.pack(fill="x", padx=40, pady=(30, 5))
+        header.pack(fill="x", padx=30, pady=(14, 6))
 
         ctk.CTkLabel(
             header, text="Cadastrar Nota Fiscal",
@@ -60,45 +65,31 @@ class NotasFiscaisExterno(ctk.CTkFrame):
             self.scroll, fg_color=COLORS["white"], corner_radius=6,
             border_width=1, border_color=COLORS["border"]
         )
-        form_card.pack(fill="x", padx=40, pady=(20, 0))
+        form_card.pack(fill="x", padx=30, pady=(10, 0))
 
         ctk.CTkLabel(
             form_card, text="Dados da Nota Fiscal",
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             text_color=COLORS["text"],
-        ).pack(anchor="w", padx=25, pady=(20, 10))
+        ).pack(anchor="w", padx=20, pady=(12, 10))
 
-        self.entry_numero = self._criar_campo(form_card, "Numero da Nota Fiscal*")
-        self.entry_chave = self._criar_campo(form_card, "Chave de Acesso*")
+        form = ctk.CTkFrame(form_card, fg_color="transparent")
+        form.pack(fill="x", padx=20, pady=(0, 14))
+        form.grid_columnconfigure(0, weight=1)
+        form.grid_columnconfigure(1, weight=1)
 
-        row_meio = ctk.CTkFrame(form_card, fg_color="transparent")
-        row_meio.pack(fill="x", padx=25, pady=(0, 10))
+        self.entry_numero = self._criar_campo_grid(form, 0, 0, "Numero da Nota Fiscal*")
+        self.entry_chave = self._criar_campo_grid(form, 0, 1, "Chave de Acesso*")
+        self.entry_data = self._criar_campo_grid(form, 1, 0, "Data de Emissao*", "dd/mm/aaaa")
 
-        col_data = ctk.CTkFrame(row_meio, fg_color="transparent")
-        col_data.pack(side="left", fill="x", expand=True, padx=(0, 20))
-
-        ctk.CTkLabel(
-            col_data, text="Data de Emissao*",
-            font=ctk.CTkFont(size=FONTS["size_small"]),
-            text_color=COLORS["text_muted"],
-        ).pack(anchor="w", pady=(0, 4))
-
-        self.entry_data = ctk.CTkEntry(
-            col_data, placeholder_text="dd/mm/aaaa",
-            height=38, border_width=1, border_color=COLORS["border"],
-            corner_radius=4, fg_color=COLORS["white"], text_color=COLORS["text"],
-            placeholder_text_color=COLORS["text_muted"], width=200,
-        )
-        self.entry_data.pack(anchor="w")
-
-        col_processo = ctk.CTkFrame(row_meio, fg_color="transparent")
-        col_processo.pack(side="left", fill="x", expand=True)
+        col_processo = ctk.CTkFrame(form, fg_color="transparent")
+        col_processo.grid(row=1, column=1, sticky="ew", padx=(8, 0))
 
         ctk.CTkLabel(
             col_processo, text="Processo (TCCM)*",
             font=ctk.CTkFont(size=FONTS["size_small"]),
             text_color=COLORS["text_muted"],
-        ).pack(anchor="w", pady=(0, 4))
+        ).pack(anchor="w", pady=(0, 3))
 
         self.combo_processo = ctk.CTkComboBox(
             col_processo, values=["Carregando..."],
@@ -106,25 +97,25 @@ class NotasFiscaisExterno(ctk.CTkFrame):
             corner_radius=4, fg_color=COLORS["white"], text_color=COLORS["text"],
             button_color=COLORS["primary"], button_hover_color=COLORS["primary_hover"],
             dropdown_fg_color=COLORS["white"], dropdown_hover_color=COLORS["primary_light"],
-            width=250,
+            command=self._on_processo_changed,
         )
-        self.combo_processo.pack(anchor="w")
+        self.combo_processo.pack(fill="x")
         self.combo_processo.set("")
-        self.combo_processo.bind("<<ComboboxSelected>>", self._on_processo_changed)
 
-    def _criar_campo(self, parent, label_text):
+    def _criar_campo_grid(self, parent, row, col, label_text, placeholder=None):
         frame = ctk.CTkFrame(parent, fg_color="transparent")
-        frame.pack(fill="x", padx=25, pady=(0, 10))
+        frame.grid(row=row, column=col, sticky="ew", padx=(0, 8) if col == 0 else (8, 0), pady=(0, 12))
 
         ctk.CTkLabel(
             frame, text=label_text,
             font=ctk.CTkFont(size=FONTS["size_small"]),
             text_color=COLORS["text_muted"],
-        ).pack(anchor="w", pady=(0, 4))
+        ).pack(anchor="w", pady=(0, 3))
 
         entry = ctk.CTkEntry(
             frame, height=38, border_width=1, border_color=COLORS["border"],
             corner_radius=4, fg_color=COLORS["white"], text_color=COLORS["text"],
+            placeholder_text=placeholder or "",
             placeholder_text_color=COLORS["text_muted"],
         )
         entry.pack(fill="x")
@@ -181,12 +172,10 @@ class NotasFiscaisExterno(ctk.CTkFrame):
             with Database() as db:
                 if not db.conexao:
                     return
-                sql = """SELECT DISTINCT i.id, i.nome, i.descricao, i.unidade_medida
-                         FROM produtos p
-                         JOIN itens i ON p.itens_id = i.id
-                         JOIN "nota fiscal" nf ON p."nota fiscal_nota_fiscal" = nf.nota_fiscal
-                         WHERE nf.processo = ? AND i.status = 'Ativo'
-                         ORDER BY i.nome"""
+                sql = """SELECT id, nome, descricao, unidade_medida
+                         FROM itens
+                         WHERE processo = ? AND status = 'Ativo'
+                         ORDER BY nome"""
                 resultado = db.executar(sql, (processo,))
                 if resultado:
                     rows = resultado.fetchall()
@@ -218,140 +207,130 @@ class NotasFiscaisExterno(ctk.CTkFrame):
             self.scroll, fg_color=COLORS["white"], corner_radius=6,
             border_width=1, border_color=COLORS["border"]
         )
-        itens_card.pack(fill="x", padx=40, pady=(15, 0))
+        itens_card.pack(fill="x", padx=30, pady=(10, 0))
 
         ctk.CTkLabel(
             itens_card, text="Itens da Nota Fiscal",
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             text_color=COLORS["text"],
-        ).pack(anchor="w", padx=25, pady=(20, 10))
+        ).pack(anchor="w", padx=20, pady=(10, 6))
 
         add_frame = ctk.CTkFrame(itens_card, fg_color="transparent")
-        add_frame.pack(fill="x", padx=25, pady=(0, 10))
+        add_frame.pack(fill="x", padx=20, pady=(0, 5))
 
         col_item = ctk.CTkFrame(add_frame, fg_color="transparent")
-        col_item.pack(side="left", fill="x", expand=True, padx=(0, 10))
+        col_item.pack(side="left", fill="x", expand=True, padx=(0, 8))
 
         ctk.CTkLabel(
             col_item, text="Item (itens vinculados ao TCCM selecionado)",
             font=ctk.CTkFont(size=FONTS["size_small"]),
             text_color=COLORS["text_muted"],
-        ).pack(anchor="w", pady=(0, 4))
+        ).pack(anchor="w", pady=(0, 3))
 
         self.itens_tccm = []
         nomes_itens = ["Selecione um processo primeiro"]
         self.combo_item = ctk.CTkComboBox(
             col_item, values=nomes_itens,
-            height=36, border_width=1, border_color=COLORS["border"],
+            height=34, border_width=1, border_color=COLORS["border"],
             corner_radius=4, fg_color=COLORS["white"], text_color=COLORS["text"],
             button_color=COLORS["primary"], button_hover_color=COLORS["primary_hover"],
             dropdown_fg_color=COLORS["white"], dropdown_hover_color=COLORS["primary_light"],
-            width=300,
+            width=280,
         )
         self.combo_item.pack(anchor="w")
         self.combo_item.set(nomes_itens[0])
 
         btn_refresh = ctk.CTkButton(
-            col_item, text="Atualizar", height=36, width=80, corner_radius=4,
+            col_item, text="Atualizar", height=34, width=70, corner_radius=4,
             fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
             text_color="white", border_width=0,
             font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
             command=self._carregar_itens_tccm,
         )
-        btn_refresh.pack(side="left", padx=(8, 0), pady=(18, 0))
+        btn_refresh.pack(side="left", padx=(6, 0), pady=(16, 0))
 
         col_qtd = ctk.CTkFrame(add_frame, fg_color="transparent")
-        col_qtd.pack(side="left", padx=(0, 10))
+        col_qtd.pack(side="left", padx=(0, 8))
 
         ctk.CTkLabel(
             col_qtd, text="Qtd.",
             font=ctk.CTkFont(size=FONTS["size_small"]),
             text_color=COLORS["text_muted"],
-        ).pack(anchor="w", pady=(0, 4))
+        ).pack(anchor="w", pady=(0, 3))
 
         self.entry_qtd = ctk.CTkEntry(
-            col_qtd, height=36, width=70, border_width=1, border_color=COLORS["border"],
+            col_qtd, height=34, width=60, border_width=1, border_color=COLORS["border"],
             corner_radius=4, fg_color=COLORS["white"], text_color=COLORS["text"],
             placeholder_text="0",
         )
         self.entry_qtd.pack(anchor="w")
 
         col_preco = ctk.CTkFrame(add_frame, fg_color="transparent")
-        col_preco.pack(side="left", padx=(0, 10))
+        col_preco.pack(side="left", padx=(0, 8))
 
         ctk.CTkLabel(
             col_preco, text="Preco Unit. (R$)",
             font=ctk.CTkFont(size=FONTS["size_small"]),
             text_color=COLORS["text_muted"],
-        ).pack(anchor="w", pady=(0, 4))
+        ).pack(anchor="w", pady=(0, 3))
 
         self.entry_preco = ctk.CTkEntry(
-            col_preco, height=36, width=120, border_width=1, border_color=COLORS["border"],
+            col_preco, height=34, width=100, border_width=1, border_color=COLORS["border"],
             corner_radius=4, fg_color=COLORS["white"], text_color=COLORS["text"],
             placeholder_text="0,00",
         )
         self.entry_preco.pack(anchor="w")
 
         btn_add = ctk.CTkButton(
-            add_frame, text="+ Adicionar", height=36, width=120, corner_radius=4,
+            add_frame, text="+ Adicionar", height=34, width=110, corner_radius=4,
             fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
             text_color="white", border_width=0,
             font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
             command=self._adicionar_item,
         )
-        btn_add.pack(side="left", pady=(20, 0))
+        btn_add.pack(side="left", pady=(16, 0))
 
-        tree_frame = ctk.CTkFrame(itens_card, fg_color="transparent")
-        tree_frame.pack(fill="x", padx=25, pady=(10, 0))
+        tree_frame = ctk.CTkFrame(itens_card, fg_color=COLORS["white"])
+        tree_frame.pack(fill="x", padx=20, pady=(0, 0))
 
-        style = ttk.Style()
-        style.theme_use("default")
-        style.configure("Itens.Treeview",
-                         background=COLORS["white"],
-                         foreground=COLORS["text"],
-                         rowheight=32,
-                         fieldbackground=COLORS["white"],
-                         borderwidth=0,
-                         font=(None, FONTS["size_small"]))
-        style.configure("Itens.Treeview.Heading",
-                         background=COLORS["table_header"],
-                         foreground=COLORS["text_muted"],
-                         borderwidth=0,
-                         font=(None, FONTS["size_small"], "bold"))
-        style.map("Itens.Treeview",
-                   background=[("selected", COLORS["primary_light"])],
-                   foreground=[("selected", COLORS["text"])])
-
-        tree_container = ctk.CTkFrame(tree_frame, fg_color=COLORS["border"], corner_radius=4)
-        tree_container.pack(fill="x")
-
-        colunas = ("item", "qtd", "preco", "subtotal")
-        self.tree_itens = ttk.Treeview(
-            tree_container, columns=colunas, show="headings",
-            style="Itens.Treeview", height=5, selectmode="browse"
+        # --- Cabeçalho separado ---
+        table_wrapper = ctk.CTkFrame(
+            tree_frame, fg_color=COLORS["white"], corner_radius=4,
+            border_width=1, border_color=COLORS["border"]
         )
-        self.tree_itens.heading("item", text="Item", anchor="w")
-        self.tree_itens.heading("qtd", text="Qtd.", anchor="w")
-        self.tree_itens.heading("preco", text="Preco Unit. (R$)", anchor="w")
-        self.tree_itens.heading("subtotal", text="Subtotal (R$)", anchor="w")
+        table_wrapper.pack(fill="x")
 
-        self.tree_itens.column("item", width=300, minwidth=200, anchor="w")
-        self.tree_itens.column("qtd", width=60, minwidth=50, anchor="w")
-        self.tree_itens.column("preco", width=140, minwidth=100, anchor="w")
-        self.tree_itens.column("subtotal", width=140, minwidth=100, anchor="w")
+        header_frame = ctk.CTkFrame(table_wrapper, fg_color=COLORS["table_header"],
+                                     height=36, corner_radius=3)
+        header_frame.pack(fill="x", padx=1, pady=(1, 0))
+        header_frame.pack_propagate(False)
 
-        tree_scroll = ttk.Scrollbar(tree_container, orient="vertical",
-                                     command=self.tree_itens.yview)
-        self.tree_itens.configure(yscrollcommand=tree_scroll.set)
+        header_cols = [
+            (0.0,  0.46, "w",     "Item"),
+            (0.46, 0.14, "w",     "Qtd."),
+            (0.60, 0.20, "w",     "Preco Unit. (R$)"),
+            (0.80, 0.20, "w",     "Subtotal (R$)"),
+        ]
 
-        self.tree_itens.pack(side="left", fill="x", expand=True, padx=(4, 0), pady=4)
-        tree_scroll.pack(side="right", fill="y", pady=4, padx=(0, 4))
+        for rx, rw, anchor, texto in header_cols:
+            ctk.CTkLabel(
+                header_frame, text=texto,
+                font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
+                text_color=COLORS["text_muted"], anchor=anchor,
+            ).place(relx=rx, relwidth=rw, rely=0, relheight=1)
+
+        # --- Container das linhas (substitui o Treeview) ---
+        self.table_body = ctk.CTkScrollableFrame(
+            table_wrapper, fg_color=COLORS["white"], corner_radius=0,
+            height=120
+        )
+        self.table_body.pack(fill="x", padx=1, pady=(0, 1))
 
         btn_row = ctk.CTkFrame(itens_card, fg_color="transparent")
-        btn_row.pack(fill="x", padx=25, pady=(8, 10))
+        btn_row.pack(fill="x", padx=20, pady=(5, 8))
 
         self.btn_remover_item = ctk.CTkButton(
-            btn_row, text="Remover selecionado", height=32, width=160, corner_radius=4,
+            btn_row, text="Remover selecionado", height=30, width=150, corner_radius=4,
             fg_color=COLORS["danger"], hover_color=COLORS["danger_hover"],
             text_color="white", border_width=0,
             font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
@@ -422,73 +401,110 @@ class NotasFiscaisExterno(ctk.CTkFrame):
         self.entry_preco.delete(0, "end")
 
     def _remover_item_selecionado(self):
-        sel = self.tree_itens.selection()
-        if not sel:
-            messagebox.showwarning("Atencao", "Selecione um item na tabela para remover.")
-            return
-        idx = self.tree_itens.index(sel[0])
-        if 0 <= idx < len(self.itens_lista):
-            self.itens_lista.pop(idx)
-            self._render_itens()
+        if not self.item_selecionado_idx is None:
+            idx = self.item_selecionado_idx
+            if 0 <= idx < len(self.itens_lista):
+                self.itens_lista.pop(idx)
+                self.item_selecionado_idx = None
+                self._render_itens()
 
     def _render_itens(self):
-        for item in self.tree_itens.get_children():
-            self.tree_itens.delete(item)
+        for widget in self.table_body.winfo_children():
+            widget.destroy()
+
+        self.item_selecionado_idx = None
 
         if not self.itens_lista:
             self.lbl_total_geral.configure(text="Total Itens: R$ 0,00")
             return
 
-        for item in self.itens_lista:
+        col_cfg = [
+            (0.0,  0.46, "w"),
+            (0.46, 0.14, "w"),
+            (0.60, 0.20, "w"),
+            (0.80, 0.20, "w"),
+        ]
+
+        for idx, item in enumerate(self.itens_lista):
             preco_fmt = f"R$ {item['preco_unitario']:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
             subtotal_fmt = f"R$ {item['subtotal']:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-            self.tree_itens.insert("", "end", values=(
-                item["nome"], item["quantidade"], preco_fmt, subtotal_fmt
-            ))
 
+            row_frame = ctk.CTkFrame(self.table_body, fg_color="transparent")
+            row_frame.pack(fill="x")
+
+            linha = ctk.CTkFrame(row_frame, fg_color="white", corner_radius=0,
+                                 border_width=1, border_color=COLORS["border"])
+            linha.pack(fill="x", padx=1, pady=(1, 0))
+            linha.configure(height=32)
+            linha.pack_propagate(False)
+
+            valores = [item["nome"], str(item["quantidade"]), preco_fmt, subtotal_fmt]
+
+            for (rx, rw, anchor), texto in zip(col_cfg, valores):
+                ctk.CTkLabel(
+                    linha, text=texto,
+                    font=ctk.CTkFont(size=FONTS["size_small"]),
+                    text_color=COLORS["text"], anchor=anchor,
+                ).place(relx=rx, relwidth=rw, rely=0, relheight=1)
+
+            def _selecionar(i=idx, frame=linha):
+                for w in self.table_body.winfo_children():
+                    for c in w.winfo_children():
+                        c.configure(fg_color="white")
+                frame.configure(fg_color=COLORS["primary_light"])
+                self.item_selecionado_idx = i
+
+            linha.bind("<Button-1>", lambda e, i=idx, f=linha: _selecionar(i, f))
+            for child in linha.winfo_children():
+                child.bind("<Button-1>", lambda e, i=idx, f=linha: _selecionar(i, f))
+
+        self.item_selecionado_idx = None
         total_geral = sum(item["subtotal"] for item in self.itens_lista)
         total_fmt = f"R$ {total_geral:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
         self.lbl_total_geral.configure(text=f"Total Itens: {total_fmt}")
 
     def _build_upload_section(self):
-        upload_frame = ctk.CTkFrame(self.scroll, fg_color="transparent")
-        upload_frame.pack(fill="x", padx=40, pady=(25, 0))
+        upload_card = ctk.CTkFrame(
+            self.scroll, fg_color=COLORS["white"], corner_radius=6,
+            border_width=1, border_color=COLORS["border"]
+        )
+        upload_card.pack(fill="x", padx=30, pady=(10, 0))
+
+        row = ctk.CTkFrame(upload_card, fg_color="transparent")
+        row.pack(fill="x", padx=20, pady=(10, 8))
 
         ctk.CTkLabel(
-            upload_frame, text="Anexar arquivo da Nota Fiscal *",
+            row, text="Anexar arquivo da Nota Fiscal *",
             font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
             text_color=COLORS["text"],
-        ).pack(anchor="w", pady=(0, 10))
-
-        btn_row = ctk.CTkFrame(upload_frame, fg_color="transparent")
-        btn_row.pack(fill="x")
+        ).pack(side="left")
 
         self.btn_anexar = ctk.CTkButton(
-            btn_row, text="ANEXAR PDF", height=70, corner_radius=8,
+            row, text="ANEXAR PDF", height=36, corner_radius=6,
             fg_color="#CC0000", hover_color="#AA0000",
             text_color="white", border_width=0,
-            font=ctk.CTkFont(size=13, weight="bold"),
-            width=120,
+            font=ctk.CTkFont(size=12, weight="bold"),
+            width=110,
             command=self._selecionar_arquivo,
         )
         self.btn_anexar.pack(side="right")
 
         self.btn_limpar = ctk.CTkButton(
-            btn_row, text="LIMPAR", height=70, corner_radius=8,
-            fg_color="#6B7280", hover_color="#4B5563",
+            row, text="REMOVER ANEXO", height=36, corner_radius=6,
+            fg_color="#CC0000", hover_color="#AA0000",
             text_color="white", border_width=0,
-            font=ctk.CTkFont(size=13, weight="bold"),
-            width=120,
-            command=self._limpar_campos,
+            font=ctk.CTkFont(size=12, weight="bold"),
+            width=140,
+            command=self._limpar_arquivo,
         )
-        self.btn_limpar.pack(side="right", padx=(0, 10))
+        self.btn_limpar.pack(side="right", padx=(0, 8))
 
         self.lbl_arquivo = ctk.CTkFrame(
-            upload_frame, fg_color=COLORS["white"], corner_radius=4,
+            upload_card, fg_color=COLORS["white"], corner_radius=4,
             border_width=1, border_color=COLORS["border"],
-            height=36,
+            height=30,
         )
-        self.lbl_arquivo.pack(fill="x", padx=0, pady=(10, 0))
+        self.lbl_arquivo.pack(fill="x", padx=20, pady=(0, 12))
         self.lbl_arquivo.pack_propagate(False)
 
         self.lbl_arquivo_text = ctk.CTkLabel(
@@ -626,6 +642,7 @@ class NotasFiscaisExterno(ctk.CTkFrame):
 
         if 'itens' in dados:
             self.itens_lista = []
+            self.item_selecionado_idx = None
             for item_pdf in dados['itens']:
                 item_match = None
                 for item_tccm in self.itens_tccm:
@@ -653,11 +670,11 @@ class NotasFiscaisExterno(ctk.CTkFrame):
 
     def _build_action_buttons(self):
         btn_container = ctk.CTkFrame(self.scroll, fg_color="transparent")
-        btn_container.pack(fill="x", padx=40, pady=(30, 30))
+        btn_container.pack(fill="x", padx=30, pady=(14, 20))
 
         ctk.CTkButton(
-            btn_container, text="Salvar Nota Fiscal", height=40, corner_radius=6,
-            fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
+            btn_container, text="Enviar para Agente", height=40, corner_radius=6,
+            fg_color=COLORS["success_dark"], hover_color=COLORS["success_dark_hover"],
             text_color="white", border_width=0,
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             width=200,
@@ -665,13 +682,25 @@ class NotasFiscaisExterno(ctk.CTkFrame):
         ).pack(side="left", padx=(0, 10))
 
         ctk.CTkButton(
+            btn_container, text="  Limpar Tudo", height=40, corner_radius=6,
+            fg_color=COLORS["success_dark"], hover_color=COLORS["success_dark_hover"],
+            text_color="white", border_width=0,
+            font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
+            width=140,
+            command=self._limpar_campos,
+        ).pack(side="left")
+
+        voltar_container = ctk.CTkFrame(self.scroll, fg_color="transparent")
+        voltar_container.pack(fill="x", padx=30, pady=(18, 26))
+
+        ctk.CTkButton(
             btn_container, text="  Voltar", height=40, corner_radius=6,
-            fg_color="#6B7280", hover_color="#4B5563",
+            fg_color=COLORS["success_dark"], hover_color=COLORS["success_dark_hover"],
             text_color="white", border_width=0,
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             width=140,
             command=self._voltar,
-        ).pack(side="left")
+        ).pack(anchor="center")
 
     def _salvar(self):
         numero = self.entry_numero.get().strip()
@@ -699,6 +728,19 @@ class NotasFiscaisExterno(ctk.CTkFrame):
 
         valor_total = sum(item["subtotal"] for item in self.itens_lista)
 
+        arquivo_path = None
+        if self.arquivo_selecionado:
+            try:
+                os.makedirs(ANEXOS_DIR, exist_ok=True)
+                ext = os.path.splitext(self.arquivo_selecionado)[1] or ".pdf"
+                nome_arquivo = f"{numero}{ext}"
+                destino = os.path.join(ANEXOS_DIR, nome_arquivo)
+                shutil.copy2(self.arquivo_selecionado, destino)
+                arquivo_path = destino
+            except Exception as e:
+                messagebox.showerror("Erro", f"Erro ao salvar o arquivo anexado:\n{e}")
+                return
+
         with Database() as db:
             if not db.conexao:
                 messagebox.showerror("Erro", "Nao foi possivel conectar ao banco de dados.")
@@ -714,9 +756,9 @@ class NotasFiscaisExterno(ctk.CTkFrame):
 
                 sql = """INSERT INTO "nota fiscal"
                          (nota_fiscal, semestre, data, chave_de_acesso, valor_total,
-                          "agente ibama_matricula", status_nota, processo)
-                         VALUES (?, ?, ?, ?, ?, ?, 'Pendente', ?)"""
-                db.executar(sql, (numero, 1, data, chave, valor_total, matricula, processo))
+                          "agente ibama_matricula", status_nota, processo, arquivo)
+                         VALUES (?, ?, ?, ?, ?, ?, 'Pendente', ?, ?)"""
+                db.executar(sql, (numero, 1, data, chave, valor_total, matricula, processo, arquivo_path))
 
                 for idx, item in enumerate(self.itens_lista):
                     lote = f"{numero}-ITEM-{idx+1}"
@@ -733,12 +775,16 @@ class NotasFiscaisExterno(ctk.CTkFrame):
 
                 db.commitar()
                 messagebox.showinfo("Sucesso",
-                    f"Nota fiscal cadastrada com sucesso!\n"
+                    f"Nota fiscal enviada para o agente responsavel pela validacao!\n"
                     f"Valor Total: R$ {valor_total:,.2f}\n"
                     f"Itens: {len(self.itens_lista)}")
                 self._limpar_campos()
             except Exception as e:
                 messagebox.showerror("Erro", f"Erro ao salvar nota fiscal:\n{e}")
+
+    def _limpar_arquivo(self):
+        self.arquivo_selecionado = None
+        self.lbl_arquivo_text.configure(text="Nenhum arquivo anexado")
 
     def _limpar_campos(self):
         self.entry_numero.delete(0, "end")

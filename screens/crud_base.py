@@ -36,6 +36,18 @@ def _rebuild_sidebar_and_content(page):
 
 
 class CrudBase:
+    CARD_BORDER_RADIUS = 4
+
+    def build_card(self, parent, **kwargs):
+        return ctk.CTkFrame(
+            parent,
+            fg_color=COLORS["white"],
+            corner_radius=self.CARD_BORDER_RADIUS,
+            border_width=1,
+            border_color=COLORS["border"],
+            **kwargs,
+        )
+
     def build_header(self, title, subtitle):
         colors = get_colors()
         header = ctk.CTkFrame(self, fg_color="transparent")

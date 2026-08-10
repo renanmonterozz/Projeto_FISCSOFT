@@ -1,55 +1,55 @@
 # Projeto_FISCSOFT
 
-Sistema desktop para gerenciamento de fiscalizacao do IBAMA, construido com CustomTkinter e MySQL.
+Sistema desktop para gerenciamento de Termos de Coordenacao e Controle de Material (TCCM) do IBAMA, construido com CustomTkinter e SQLite.
 
 ## Funcionalidades
 
-- Tela de login com autenticacao por usuario/senha (bcrypt)
-- Controle de acesso por perfil (Admin / Agente)
-- Navegacao por sidebar com multiplas paginas
+- Tela de login com autenticacao por usuario/senha (bcrypt + SHA-256 legado)
+- Controle de acesso por perfil (Administrador / Agente / Operador)
+- Modo externo para infratores (login via CPF)
+- Navegacao por sidebar com multiplas paginas (filtrada por perfil)
 - Gerenciamento de Agentes IBAMA (CRUD)
 - Gerenciamento de Infratores (CRUD)
 - Gerenciamento de Itens (CRUD + importacao Excel)
 - Monitoramento de Notas Fiscais com acoes (Aprovar/Rejeitar)
 - Relatorio de Entrega de Materiais
-- Conexao com banco de dados MySQL (Aiven Cloud)
+- Banco de dados SQLite local
 
 ## Estrutura do projeto
 
 ```
 Projeto_FISCSOFT/
-├── main.py                    # Ponto de entrada (login + navegacao)
-├── utils.py                   # Hash de senhas (bcrypt)
-├── .env.example               # Template de variaveis de ambiente
+├── main.py                    # Ponto de entrada (sistema interno: login + navegacao)
+├── utils.py                   # Hash de senhas (bcrypt), verificacao e log de auditoria
 ├── config/
-│   └── styles.py              # Cores, fontes e constantes visuais
+│   ├── styles.py              # Cores, fontes e constantes visuais
+│   └── permissoes.py          # Matriz de permissoes por perfil (paginas e acoes)
 ├── database/
-│   ├── conexaodb.py           # Classe Database (com context manager)
-│   ├── schema.sql             # Script DDL unificado
-│   └── bd_FiscSoft.sql        # Dump com dados de teste
-├── screens/
+│   ├── conexaodb.py           # Classe Database (context manager, migracoes, schema SQLite)
+│   └── schema.sql             # Referencia do schema (MySQL legado)
+├── data/
+│   └── fiscsoft.db            # Banco de dados SQLite
+├── screens/                   # Telas do sistema interno
 │   ├── crud_base.py           # Mixin reutilizavel para paginas CRUD
 │   ├── sidebar.py             # Componente de navegacao lateral
 │   ├── usuarios.py            # Gerenciamento de Agentes IBAMA
-│   ├── cadastrar_usuario.py   # Formulario cadastro/edicao agente
-│   ├── visualizar_usuario.py  # Visualizacao de agente
+│   ├── infratores.py          # Gerenciamento de Infratores
 │   ├── itens.py               # Gerenciamento de Itens + Excel
 │   ├── relatorios.py          # Monitoramento de Notas Fiscais
-│   ├── relatorio_entrega.py   # Relatorio de Entrega
-│   └── agente_mode/
-│       ├── infratores.py         # Gerenciamento de Infratores
-│       ├── cadastrar_infrator.py  # Formulario cadastro/edicao infrator
-│       └── visualizar_infrator.py # Visualizacao de infrator
+│   └── ...
+├── fiscsoft_externo/          # Sistema externo (infratores via CPF)
+│   └── telas/
 ├── assets/
 │   ├── imagens/               # Icones e imagens do sistema
+│   ├── fontes/                # Fontes (Libre Baskerville)
 │   └── planilhas/             # Planilhas para importacao
+├── docs/                      # Documentacao e relatorios de sessao
 └── requirements.txt           # Dependencias do projeto
 ```
 
 ## Pre-requisitos
 
 - Python 3.8+
-- MySQL Server
 - pip
 
 ## Instalacao
@@ -74,28 +74,24 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-4. Configure o banco de dados:
-   - Copie `.env.example` para `.env` e preencha suas credenciais
-   - Execute `database/schema.sql` para criar as tabelas
+4. O banco SQLite (`data/fiscsoft.db`) e criado automaticamente ao rodar o sistema.
 
 ## Executando
 
 ```bash
-python main.py
+python main.py            # Sistema interno e externo (infratores via CPF)
 ```
 
 ## Seguranca
 
-- Senhas armazenadas com bcrypt (hash com salt)
-- Credenciais do banco em `.env` (nao versionado)
+- Senhas armazenadas com bcrypt (hash com salt); compatibilidade com SHA-256 legado
 - Queries parametrizadas (prevencao de SQL Injection)
-- Controle de acesso por perfil de usuario
+- Controle de acesso por perfil de usuario (telas e acoes)
 
 ## Dependencias
 
 - customtkinter - Interface grafica moderna baseada em tkinter
-- mysql-connector-python - Driver de conexao com MySQL
 - Pillow - Processamento de imagens
 - pandas - Leitura de planilhas Excel
-- python-dotenv - Carregamento de variaveis de ambiente
 - bcrypt - Hash seguro de senhas
+- pywinstyles - Estilo visual em janelas Windows

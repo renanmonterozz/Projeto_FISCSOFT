@@ -7,19 +7,28 @@ from tkinter import messagebox
 
 import customtkinter as ctk
 
+<<<<<<< HEAD
 from config.styles import get_colors, FONTS
+=======
+from config.styles import COLORS, FONTS
+from config.permissoes import pode_acao
+>>>>>>> main
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
+from screens.widgets import ComboBoxComSeta
 from utils import registrar_log
 
 
 class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
-    def __init__(self, master, on_voltar=None, usuario_logado=None, **kwargs):
+    def __init__(self, master, on_voltar=None, usuario_logado=None, processo_tccm=None, perfil="admin", **kwargs):
         super().__init__(master, **kwargs)
         self.configure(fg_color=get_colors()["bg"])
         self.on_voltar = on_voltar
         self.usuario_logado = usuario_logado
+        self.processo_tccm = processo_tccm
+        self.perfil = perfil
+        self.pode_cadastrar_local = pode_acao(perfil, "gerenciar_locais")
         self.itens_lista = []
         self.local_selecionado = None
         self.locais_catalogo = []
@@ -113,6 +122,7 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
             text_color=colors["text"],
         ).pack(side="left")
 
+<<<<<<< HEAD
         btn_cadastrar = ctk.CTkButton(
             header_frame,
             text="+ Cadastrar Novo Local",
@@ -126,6 +136,22 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
             command=self.cadastrar_local,
         )
         btn_cadastrar.pack(side="right")
+=======
+        if self.pode_cadastrar_local:
+            btn_cadastrar = ctk.CTkButton(
+                header_frame,
+                text="+ Cadastrar Novo Local",
+                height=32, corner_radius=4,
+                fg_color=COLORS["white"],
+                hover_color=COLORS["hover"],
+                text_color=COLORS["primary"],
+                border_width=1,
+                border_color=COLORS["primary"],
+                font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
+                command=self.cadastrar_local,
+            )
+            btn_cadastrar.pack(side="right")
+>>>>>>> main
 
         combo_frame = ctk.CTkFrame(section, fg_color="transparent")
         combo_frame.pack(fill="x", padx=20, pady=(0, 10))
@@ -137,7 +163,7 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
         ).pack(anchor="w", pady=(0, 4))
 
         nomes_locais = [f"{l['instituicao']} - {l['endereco']}" for l in self.locais_catalogo] if self.locais_catalogo else ["Nenhum local cadastrado"]
-        self.combo_local = ctk.CTkComboBox(
+        self.combo_local = ComboBoxComSeta(
             combo_frame, values=nomes_locais,
             height=38, border_width=1, border_color=colors["border"],
             corner_radius=4, fg_color=colors["white"], text_color=colors["text"],
@@ -180,17 +206,56 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
             with Database() as db:
                 if not db.conexao:
                     return
-                sql = """SELECT id, nome, descricao, unidade_medida
-                         FROM itens WHERE status = 'Ativo'
-                         ORDER BY nome"""
-                resultado = db.executar(sql)
-                if resultado:
-                    self.itens_catalogo = [
-                        {"id": row[0], "nome": row[1], "descricao": row[2], "unidade": row[3]}
-                        for row in resultado.fetchall()
-                    ]
+                if self.processo_tccm:
+                    sql = """SELECT p.itens_id, p.nome_item, i.descricao, i.unidade_medida,
+                                    COALESCE(SUM(p.quantidade), 0)
+                             FROM produtos p
+                             JOIN "nota fiscal" nf
+                               ON nf.nota_fiscal = p."nota fiscal_nota_fiscal"
+                              AND nf."agente ibama_matricula" = p."nota fiscal_agente ibama_matricula"
+                             LEFT JOIN itens i ON i.id = p.itens_id
+                             WHERE nf.processo = ?
+                             GROUP BY p.itens_id, p.nome_item, i.descricao, i.unidade_medida
+                             ORDER BY p.nome_item"""
+                    resultado = db.executar(sql, (self.processo_tccm,))
+                    if resultado:
+                        self.itens_catalogo = [
+                            {"id": row[0], "nome": row[1],
+                             "descricao": row[2] or row[1],
+                             "unidade": row[3], "quantidade": row[4] or 0}
+                            for row in resultado.fetchall()
+                        ]
+                else:
+                    sql = """SELECT id, nome, descricao, unidade_medida
+                             FROM itens WHERE status = 'Ativo'
+                             ORDER BY nome"""
+                    resultado = db.executar(sql)
+                    if resultado:
+                        self.itens_catalogo = [
+                            {"id": row[0], "nome": row[1], "descricao": row[2],
+                             "unidade": row[3], "quantidade": 0}
+                            for row in resultado.fetchall()
+                        ]
         except Exception:
             self.itens_catalogo = []
+
+    def _item_display(self, item):
+        nome = item.get("nome") or item.get("item") or ""
+        desc = item.get("descricao")
+        if desc and desc != nome:
+            return f"{nome} ({desc})"
+        return nome
+
+    def _on_item_select(self, selection):
+        if not hasattr(self, "entry_quantidade"):
+            return
+        for item in self.itens_catalogo:
+            if self._item_display(item) == selection:
+                qtd = item.get("quantidade") or 0
+                self.entry_quantidade.delete(0, "end")
+                if qtd:
+                    self.entry_quantidade.insert(0, str(qtd))
+                return
 
     def build_adicionar_itens_section(self, parent):
         colors = get_colors()
@@ -221,17 +286,26 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
             text_color=colors["text_muted"],
         ).pack(anchor="w")
 
-        nomes_itens = [f"{i['nome']} ({i['descricao']})" for i in self.itens_catalogo] if self.itens_catalogo else ["Nenhum item ativo"]
-        self.combo_item = ctk.CTkComboBox(
+        nomes_itens = [self._item_display(i) for i in self.itens_catalogo] if self.itens_catalogo else (["Nenhum item registrado no TCCM"] if self.processo_tccm else ["Nenhum item ativo"])
+        self.combo_item = ComboBoxComSeta(
             item_frame, values=nomes_itens,
+<<<<<<< HEAD
             height=36, border_width=1, border_color=colors["border"],
             corner_radius=4, fg_color=colors["white"], text_color=colors["text"],
             button_color=colors["primary"], button_hover_color=colors["primary_hover"],
             dropdown_fg_color=colors["white"], dropdown_hover_color=colors["primary_light"],
+=======
+            height=36, border_width=1, border_color=COLORS["border"],
+            corner_radius=4, fg_color=COLORS["white"], text_color=COLORS["text"],
+            button_color=COLORS["primary"], button_hover_color=COLORS["primary_hover"],
+            dropdown_fg_color=COLORS["white"], dropdown_hover_color=COLORS["primary_light"],
+            command=self._on_item_select,
+>>>>>>> main
         )
         self.combo_item.pack(fill="x")
         if nomes_itens:
             self.combo_item.set(nomes_itens[0])
+            self._on_item_select(nomes_itens[0])
 
         self._bind_scroll(self.combo_item)
 
@@ -508,7 +582,7 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
 
         item_info = None
         for item in self.itens_catalogo:
-            if f"{item['nome']} ({item['descricao']})" == display:
+            if self._item_display(item) == display:
                 item_info = item
                 break
 
@@ -583,7 +657,7 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
 
     def editar_item(self, idx):
         item = self.itens_lista[idx]
-        display = f"{item['item']} ({item['descricao']})"
+        display = self._item_display(item)
         self.combo_item.set(display)
         self.entry_quantidade.delete(0, "end")
         self.entry_quantidade.insert(0, str(item["quantidade"]))
@@ -775,8 +849,13 @@ if __name__ == "__main__":
 
     app = ctk.CTk()
     app.title("FISCSOFT - Relatorio de Entrega de Materiais")
+<<<<<<< HEAD
     app.geometry("1400x800")
     app.configure(fg_color=get_colors()["bg"])
+=======
+    app.configure(fg_color=COLORS["bg"])
+    app.after(0, app.state, "zoomed")
+>>>>>>> main
 
     RelatorioEntregaPage(app).pack(fill="both", expand=True)
     app.mainloop()

@@ -29,6 +29,16 @@ _LIGHT_COLORS = {
     "white": "#FFFFFF",
     "nav_hover": "#CFFFE3",
     "nav_text": "#1F1F1F",
+    "login_black": "#000001",
+    "login_title_text": "#FFF9BE",
+    "login_btn_text": "#FFF48C",
+    "login_btn_hover": "#211E1E",
+    "login_field_bg": "#CFFFE3",
+    "login_field_border": "#16A34A",
+    "login_field_text": "#2D8A4E",
+    "login_field_hover": "#b0e8c0",
+    "login_btn_danger": "#8B0000",
+    "login_btn_danger_hover": "#850202",
 }
 
 _DARK_COLORS = {

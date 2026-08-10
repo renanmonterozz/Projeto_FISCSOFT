@@ -5,9 +5,22 @@ from tkinter import messagebox
 from PIL import Image
 import os
 
+<<<<<<< HEAD
 from config.styles import get_colors, FONTS, ASSETS_DIR
+=======
+from config.styles import COLORS, FONTS, ASSETS_DIR
+from config.permissoes import normalizar_perfil
+>>>>>>> main
 from database.conexaodb import Database
+from screens.widgets import ComboBoxComSeta
 from utils import hash_password, registrar_log
+
+
+PERFIL_DISPLAY = {
+    "admin": "Administrador",
+    "agente": "Agente",
+    "operador": "Operador",
+}
 
 
 class CadastrarUsuarioWindow(ctk.CTkToplevel):
@@ -93,7 +106,9 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
         row4 = ctk.CTkFrame(form, fg_color="transparent")
         row4.pack(fill="x", padx=20, pady=(0, 15))
 
-        self.combo_perfil = self._criar_combobox(row4, "Perfil*", 0, ["agente", "operador", "admin"])
+        self.combo_perfil = self._criar_combobox(row4, "Perfil*", 0,
+                                                 ["Administrador", "Agente", "Operador"],
+                                                 default="Agente")
 
         btn_frame = ctk.CTkFrame(form, fg_color="transparent")
         btn_frame.pack(fill="x", padx=20, pady=(25, 20))
@@ -132,13 +147,15 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
 
     def preencher_campos(self):
         u = self.usuario_edicao
-        self.entry_nome.insert(0, u["nome"])
-        self.entry_cpf.insert(0, u["cpf"])
-        self.entry_email.insert(0, u["email"])
-        self.entry_telefone.insert(0, u.get("telefone", ""))
-        self.entry_matricula.insert(0, str(u["matricula"]))
+        self.entry_nome.insert(0, u.get("nome") or "")
+        self.entry_cpf.insert(0, u.get("cpf") or "")
+        self.entry_email.insert(0, u.get("email") or "")
+        self.entry_telefone.insert(0, u.get("telefone") or "")
+        self.entry_matricula.insert(0, str(u.get("matricula") or ""))
         self.entry_matricula.configure(state="disabled")
-        self.entry_login.insert(0, u["login"])
+        self.entry_login.insert(0, u.get("login") or "")
+        perfil_atual = normalizar_perfil(u.get("perfil"))
+        self.combo_perfil.set(PERFIL_DISPLAY.get(perfil_atual, "Operador"))
 
     def _criar_campo(self, parent, label, col, weight=1, show=None):
         colors = get_colors()
@@ -163,8 +180,12 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
         entry.pack(fill="x")
         return entry
 
+<<<<<<< HEAD
     def _criar_combobox(self, parent, label, col, values):
         colors = get_colors()
+=======
+    def _criar_combobox(self, parent, label, col, values, default=None):
+>>>>>>> main
         parent.grid_columnconfigure(col, weight=1)
 
         frame = ctk.CTkFrame(parent, fg_color="transparent")
@@ -176,7 +197,7 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
             text_color=colors["text"],
         ).pack(anchor="w", pady=(0, 4))
 
-        combo = ctk.CTkComboBox(
+        combo = ComboBoxComSeta(
             frame, values=values, height=36,
             corner_radius=4, border_width=1,
             border_color=colors["border"],
@@ -186,7 +207,7 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
             text_color=colors["text"],
         )
         combo.pack(fill="x")
-        combo.set(values[0])
+        combo.set(default if default is not None else values[0])
         return combo
 
     def salvar(self):
