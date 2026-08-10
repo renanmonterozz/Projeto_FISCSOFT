@@ -38,7 +38,6 @@ Projeto_FISCSOFT/
 │   ├── relatorios.py          # Monitoramento de Notas Fiscais
 │   └── ...
 ├── fiscsoft_externo/          # Sistema externo (infratores via CPF)
-│   ├── main_externo.py
 │   └── telas/
 ├── assets/
 │   ├── imagens/               # Icones e imagens do sistema
@@ -80,8 +79,7 @@ pip install -r requirements.txt
 ## Executando
 
 ```bash
-python main.py            # Sistema interno
-python fiscsoft_externo\main_externo.py   # Sistema externo (infratores)
+python main.py            # Sistema interno e externo (infratores via CPF)
 ```
 
 ## Seguranca

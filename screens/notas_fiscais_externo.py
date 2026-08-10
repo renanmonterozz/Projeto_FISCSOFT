@@ -1,4 +1,5 @@
-import sys
+import _path  # noqa: F401
+
 import os
 import re
 import shutil
@@ -18,7 +19,7 @@ from config.styles import ASSETS_DIR, ASSETS_DIR, COLORS, FONTS
 from database.conexaodb import Database
 from screens.widgets import ComboBoxComSeta
 
-ANEXOS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "assets", "anexos")
+ANEXOS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "anexos")
 
 
 class NotasFiscaisExterno(ctk.CTkFrame):
@@ -90,7 +91,7 @@ class NotasFiscaisExterno(ctk.CTkFrame):
             text_color=COLORS["text_muted"],
         ).pack(anchor="w", pady=(0, 3))
 
-        self.combo_processo = ComboBoxComSeta(
+        self.combo_processo = ctk.CTkComboBox(
             col_processo, values=["Carregando..."],
             height=38, border_width=1, border_color=COLORS["border"],
             corner_radius=4, fg_color=COLORS["white"], text_color=COLORS["text"],
@@ -228,7 +229,7 @@ class NotasFiscaisExterno(ctk.CTkFrame):
 
         self.itens_tccm = []
         nomes_itens = ["Selecione um processo primeiro"]
-        self.combo_item = ComboBoxComSeta(
+        self.combo_item = ctk.CTkComboBox(
             col_item, values=nomes_itens,
             height=34, border_width=1, border_color=COLORS["border"],
             corner_radius=4, fg_color=COLORS["white"], text_color=COLORS["text"],

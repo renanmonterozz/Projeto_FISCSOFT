@@ -25,12 +25,11 @@ from screens.locais import LocaisPage
 from screens.historico import HistoricoPage
 from screens.tccm_dashboard import TccmDashboardPage, TccmDetalhesPage
 from screens.cadastro_tccm_completo import CadastroTCCMCompleto
-from fiscsoft_externo.main_externo import abrir_app_externo
 from utils import verify_password, login_por_certificado
-from fiscsoft_externo.telas.sidebar_externo import SidebarExterno
-from fiscsoft_externo.telas.dashboard_externo import DashboardExterno
-from fiscsoft_externo.telas.notas_fiscais_externo import NotasFiscaisExterno
-from fiscsoft_externo.telas.relatorio_externo import RelatorioExterno
+from screens.sidebar_externo import SidebarExterno
+from screens.dashboard_externo import DashboardExterno
+from screens.notas_fiscais_externo import NotasFiscaisExterno
+from screens.relatorio_externo import RelatorioExterno
 
 logging.basicConfig(
     level=logging.INFO,
@@ -304,17 +303,7 @@ class LoginApp(ctk.CTk):
 
         self.usuario_logado = nome_inf
         self.id_infrator = id_infrator
-        self._abrir_app_externo()
-
-    def _abrir_app_externo(self):
-        self.quit()
-        self.destroy()
-
-        abrir_app_externo(
-            self.usuario_logado,
-            self.id_infrator,
-            ao_sair=lambda: LoginApp().mainloop(),
-        )
+        self._abrir_tela_externa()
 
     def _login_cpf(self, cpf, senha):
         with Database() as db:
