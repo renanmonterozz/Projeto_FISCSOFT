@@ -9,6 +9,7 @@ from config.styles import COLORS, FONTS
 from config.permissoes import pode_acao
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
+from screens.widgets import ComboBoxComSeta
 
 
 def _fmt_date(val):
@@ -377,7 +378,7 @@ class ModalCadastrarTCCM(ctk.CTkToplevel):
         agente_row.grid_columnconfigure(0, weight=1)
 
         opcoes_agentes = [f"{a[0]} - {a[1]}" for a in self.agentes] if self.agentes else ["Nenhum agente"]
-        combo = ctk.CTkComboBox(agente_row, values=opcoes_agentes,
+        combo = ComboBoxComSeta(agente_row, values=opcoes_agentes,
                                 height=38, corner_radius=4,
                                 fg_color=COLORS["white"], border_color=COLORS["border"],
                                 button_color=COLORS["primary"],
@@ -401,7 +402,7 @@ class ModalCadastrarTCCM(ctk.CTkToplevel):
         infrator_row.grid_columnconfigure(0, weight=1)
 
         opcoes_infratores = [f"{i[0]} - {i[1]}" for i in self.infratores] if self.infratores else ["Nenhum infrator"]
-        combo = ctk.CTkComboBox(infrator_row, values=opcoes_infratores,
+        combo = ComboBoxComSeta(infrator_row, values=opcoes_infratores,
                                 height=38, corner_radius=4,
                                 fg_color=COLORS["white"], border_color=COLORS["border"],
                                 button_color=COLORS["primary"],

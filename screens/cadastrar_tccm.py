@@ -8,6 +8,7 @@ import customtkinter as ctk
 
 from config.styles import ASSETS_DIR, COLORS, FONTS
 from database.conexaodb import Database
+from screens.widgets import ComboBoxComSeta
 
 
 class CadastrarTCCMPage(ctk.CTkFrame):
@@ -151,7 +152,7 @@ class CadastrarTCCMPage(ctk.CTkFrame):
         ).pack(anchor="w", pady=(15, 6))
 
         opcoes_agentes = [f"{a[0]} - {a[1]}" for a in self.agentes] if self.agentes else ["Nenhum agente"]
-        self.combo_agente = ctk.CTkComboBox(
+        self.combo_agente = ComboBoxComSeta(
             agente_col, values=opcoes_agentes,
             height=42, corner_radius=6,
             fg_color=COLORS["white"], border_color=COLORS["border"],
@@ -172,7 +173,7 @@ class CadastrarTCCMPage(ctk.CTkFrame):
         ).pack(anchor="w", pady=(15, 6))
 
         opcoes_infratores = [f"{i[0]} - {i[1]}" for i in self.infratores] if self.infratores else ["Nenhum infrator"]
-        self.combo_infrator = ctk.CTkComboBox(
+        self.combo_infrator = ComboBoxComSeta(
             infrator_col, values=opcoes_infratores,
             height=42, corner_radius=6,
             fg_color=COLORS["white"], border_color=COLORS["border"],
@@ -192,7 +193,7 @@ class CadastrarTCCMPage(ctk.CTkFrame):
             text_color=COLORS["text"],
         ).pack(anchor="w", pady=(15, 6))
 
-        self.combo_unidade = ctk.CTkComboBox(
+        self.combo_unidade = ComboBoxComSeta(
             unidade_frame, values=self._carregar_unidades(),
             height=42, corner_radius=6,
             fg_color=COLORS["white"], border_color=COLORS["border"],
