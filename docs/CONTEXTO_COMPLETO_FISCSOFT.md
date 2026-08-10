@@ -242,13 +242,13 @@ O sistema externo está localizado em:
 
 `fiscsoft_externo/`
 
-## `fiscsoft_externo/main_externo.py`
+## `main.py`
 
-Responsável por:
+Responsável pelo login unificado e navegação dos dois modos (interno e externo):
 
-* login;
-* navegação;
-* acesso do infrator por CPF.
+* login interno (`"agente ibama"`);
+* login externo (infrator por CPF);
+* navegação interna e externa.
 
 ## `fiscsoft_externo/telas/sidebar_externo.py`
 
@@ -1135,7 +1135,6 @@ Arquivos principais (sistema interno - main.py):
 - screens/visualizar_infrator.py: Popup visualizar infrator
 
 Arquivos principais (sistema externo - fiscsoft_externo/):
-- fiscsoft_externo/main_externo.py: Login e navegação (infrator via CPF)
 - fiscsoft_externo/telas/sidebar_externo.py: Menu lateral (3 itens)
 - fiscsoft_externo/telas/dashboard_externo.py: Painel com cards + TCCM + últimas notas
 - fiscsoft_externo/telas/notas_fiscais_externo.py: Cadastro de notas com Treeview de itens, ComboBox de processo/itens, upload de PDF

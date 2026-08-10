@@ -4,7 +4,7 @@ Desktop (Python/customtkinter + SQLite) para TCCM. Dois modos no mesmo login: in
 
 ## Comandos
 
-- Rodar: `& .venv\Scripts\python.exe main.py` (externo so: `fiscsoft_externo\main_externo.py`)
+- Rodar: `& .venv\Scripts\python.exe main.py` (entry unico — interno e externo)
 - Sem testes; verificar com `-m py_compile main.py database\conexaodb.py`
 
 ## Arquitetura
