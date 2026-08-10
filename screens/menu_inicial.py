@@ -107,6 +107,16 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
         self.atualizar_cards()
 
     def build_notas_table(self):
+        self.colunas_place = [
+            (0.00, 0.15, "w"),  # Numero da NF
+            (0.15, 0.23, "w"),  # Chave de acesso
+            (0.38, 0.15, "w"),  # Data de Emissao
+            (0.53, 0.08, "w"),  # Itens
+            (0.61, 0.15, "w"),  # Valor Total
+            (0.76, 0.16, "w"),  # Usuario
+            (0.92, 0.08, "w"),  # Status
+        ]
+
         section = ctk.CTkFrame(
             self, fg_color=COLORS["white"], corner_radius=4,
             border_width=1, border_color=COLORS["border"]
@@ -133,24 +143,19 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
             "Numero da NF", "Chave de acesso", "Data de Emissao",
             "Itens", "Valor Total(R$)", "Usuario", "Status"
         ]
-        weights = [2, 3, 2, 1, 2, 2, 1]
-
         header = ctk.CTkFrame(section, fg_color=COLORS["table_header"], height=40, corner_radius=0)
         header.pack(fill="x", padx=15, pady=(5, 0))
         header.pack_propagate(False)
 
         cols_frame = ctk.CTkFrame(header, fg_color="transparent")
-        cols_frame.pack(side="left", fill="x", expand=True, padx=(10, 0))
+        cols_frame.pack(side="left", fill="x", expand=True, padx=(10, 16))
 
-        for i, w in enumerate(weights):
-            cols_frame.grid_columnconfigure(i, weight=w)
-
-        for i, col in enumerate(columns):
+        for col, (relx, relwidth, anchor) in zip(columns, self.colunas_place):
             ctk.CTkLabel(
                 cols_frame, text=col,
                 font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                text_color=COLORS["text_muted"]
-            ).grid(row=0, column=i, sticky="w", padx=5)
+                text_color=COLORS["text_muted"], anchor=anchor,
+            ).place(relx=relx, relwidth=relwidth, rely=0, relheight=1)
 
         self.table_body = ctk.CTkScrollableFrame(
             section, fg_color=COLORS["white"], corner_radius=0
@@ -240,7 +245,6 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
             ).pack(pady=30)
             return
 
-        weights = [2, 3, 2, 1, 2, 2, 1]
         for idx, nota in enumerate(self.notas):
             linha = ctk.CTkFrame(self.table_body, fg_color="transparent", height=44)
             linha.pack(fill="x")
@@ -250,27 +254,6 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
 
             cols = ctk.CTkFrame(linha, fg_color="transparent")
             cols.pack(side="left", fill="x", expand=True, padx=(10, 0))
-
-            for i, w in enumerate(weights):
-                cols.grid_columnconfigure(i, weight=w)
-
-            dados = [
-                nota["nota_fiscal"], nota["chave_de_acesso"], nota["data"],
-                str(nota["qtd_itens"]), f"R$ {nota['valor_total']:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
-                nota["usuario"]
-            ]
-
-            for i, valor in enumerate(dados):
-                cor = COLORS["text"] if i == 0 else COLORS["text_muted"]
-                ctk.CTkLabel(
-                    cols, text=valor,
-                    font=ctk.CTkFont(size=FONTS["size_small"]),
-                    text_color=cor, anchor="w"
-                ).grid(row=0, column=i, sticky="w", padx=5)
-
-            status_frame = ctk.CTkFrame(linha, fg_color="transparent", width=80)
-            status_frame.pack(side="right", padx=(0, 10))
-            status_frame.pack_propagate(False)
 
             if nota["status"] == "Aprovada":
                 status_color = COLORS["success_dark"]
@@ -282,12 +265,22 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
                 status_color = COLORS["warning"]
                 status_text = "\u26A0"
 
-            status_icon = ctk.CTkLabel(
-                status_frame, text=status_text,
-                font=ctk.CTkFont(size=16, weight="bold"),
-                text_color=status_color
-            )
-            status_icon.pack(expand=True)
+            dados = [
+                (nota["nota_fiscal"], COLORS["text"]),
+                (nota["chave_de_acesso"], COLORS["text_muted"]),
+                (nota["data"], COLORS["text_muted"]),
+                (str(nota["qtd_itens"]), COLORS["text_muted"]),
+                (f"R$ {nota['valor_total']:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), COLORS["text_muted"]),
+                (nota["usuario"], COLORS["text_muted"]),
+                (status_text, status_color),
+            ]
+
+            for (relx, relwidth, anchor), (valor, cor) in zip(self.colunas_place, dados):
+                ctk.CTkLabel(
+                    cols, text=valor,
+                    font=ctk.CTkFont(size=FONTS["size_small"]),
+                    text_color=cor, anchor=anchor,
+                ).place(relx=relx, relwidth=relwidth, rely=0, relheight=1)
 
         self.lbl_total_registros.configure(text=f"Total de Registros: {len(self.notas)}")
         valor_total = sum(n["valor_total"] for n in self.notas)
