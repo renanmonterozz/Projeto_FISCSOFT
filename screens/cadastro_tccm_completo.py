@@ -34,10 +34,10 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
 
         self._botoes_sidebar = []
         self._paginas = [
-            ("tccm", "Dados do TCCM"),
-            ("agente", "Agente Responsavel"),
-            ("infrator", "Infrator"),
-            ("itens", "Itens"),
+            ("Tccm", "Dados do TCCM"),
+            ("Agente", "Agente Responsavel"),
+            ("Infrator", "Infrator"),
+            ("Itens", "Itens"),
         ]
 
         for key, label in self._paginas:
@@ -76,7 +76,7 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
         self._paginas_widgets = {}
         self._criar_paginas()
 
-        self._mostrar_pagina("tccm")
+        self._mostrar_pagina("TCCM")
 
     def _criar_paginas(self):
         self._criar_pagina_tccm()
@@ -86,7 +86,7 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
 
     def _criar_pagina_tccm(self):
         container = ctk.CTkScrollableFrame(self.content_frame, fg_color="transparent")
-        self._paginas_widgets["tccm"] = container
+        self._paginas_widgets["TCCM"] = container
 
         self.entries_tccm = {}
 
@@ -97,7 +97,7 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
                       font=ctk.CTkFont(size=FONTS["size_title"], weight="bold"),
                       text_color=COLORS["text"]).pack(anchor="w")
 
-        ctk.CTkLabel(header, text="Informe os dados basicos do Termo de Coordenacao e Controle de Material.",
+        ctk.CTkLabel(header, text="Informe os dados basicos do Termo de Cooperação e Conversão de Multa.",
                       font=ctk.CTkFont(size=FONTS["size_subtitle"]),
                       text_color=COLORS["text_muted"]).pack(anchor="w", pady=(4, 0))
 
@@ -188,7 +188,7 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
 
     def _criar_pagina_agente(self):
         container = ctk.CTkScrollableFrame(self.content_frame, fg_color="transparent")
-        self._paginas_widgets["agente"] = container
+        self._paginas_widgets["Agente"] = container
 
         self.entries_agente = {}
 
@@ -236,7 +236,7 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
 
     def _criar_pagina_infrator(self):
         container = ctk.CTkScrollableFrame(self.content_frame, fg_color="transparent")
-        self._paginas_widgets["infrator"] = container
+        self._paginas_widgets["Infrator"] = container
 
         self.entries_infrator = {}
 
@@ -284,7 +284,7 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
 
     def _criar_pagina_itens(self):
         container = ctk.CTkScrollableFrame(self.content_frame, fg_color="transparent")
-        self._paginas_widgets["itens"] = container
+        self._paginas_widgets["Itens"] = container
 
         header = ctk.CTkFrame(container, fg_color="transparent")
         header.pack(fill="x", padx=30, pady=(25, 15))
@@ -306,10 +306,12 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
         form_inner.grid_columnconfigure(0, weight=2)
         form_inner.grid_columnconfigure(1, weight=2)
         form_inner.grid_columnconfigure(2, weight=1)
-        form_inner.grid_columnconfigure(3, weight=1)
-        form_inner.grid_columnconfigure(4, weight=0)
+        form_inner.grid_columnconfigure(3, weight=2)
+        form_inner.grid_columnconfigure(4, weight=1)
+        form_inner.grid_columnconfigure(5, weight=1)
+        form_inner.grid_columnconfigure(6, weight=0)
 
-        ctk.CTkLabel(form_inner, text="Nome*",
+        ctk.CTkLabel(form_inner, text="Nome do Item*",
                       font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
                       text_color=COLORS["text_muted"]).grid(row=0, column=0, sticky="w", padx=(0, 6))
         self.entry_item_nome = ctk.CTkEntry(form_inner, height=38, corner_radius=6,
@@ -318,7 +320,7 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
                                             placeholder_text="Nome do item")
         self.entry_item_nome.grid(row=1, column=0, sticky="ew", padx=(0, 6))
 
-        ctk.CTkLabel(form_inner, text="Descricao*",
+        ctk.CTkLabel(form_inner, text="Descricao",
                       font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
                       text_color=COLORS["text_muted"]).grid(row=0, column=1, sticky="w", padx=(0, 6))
         self.entry_item_desc = ctk.CTkEntry(form_inner, height=38, corner_radius=6,
@@ -327,30 +329,50 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
                                             placeholder_text="Descricao do item")
         self.entry_item_desc.grid(row=1, column=1, sticky="ew", padx=(0, 6))
 
-        ctk.CTkLabel(form_inner, text="Qtd.*",
+        ctk.CTkLabel(form_inner, text="Tipo de Material*",
                       font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
                       text_color=COLORS["text_muted"]).grid(row=0, column=2, sticky="w", padx=(0, 6))
+        self.entry_item_tipo = ctk.CTkComboBox(form_inner, values=["Consumivel", "Permanente"],
+                                               height=38, corner_radius=6, state="readonly",
+                                               fg_color=COLORS["white"], border_color=COLORS["border"],
+                                               button_color=COLORS["primary"],
+                                               dropdown_fg_color=COLORS["white"])
+        self.entry_item_tipo.grid(row=1, column=2, sticky="ew", padx=(0, 6))
+
+        ctk.CTkLabel(form_inner, text="Justificativa*",
+                      font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
+                      text_color=COLORS["text_muted"]).grid(row=0, column=3, sticky="w", padx=(0, 6))
+        self.entry_item_just = ctk.CTkEntry(form_inner, height=38, corner_radius=6,
+                                            border_width=1, border_color=COLORS["border"],
+                                            fg_color=COLORS["white"], text_color=COLORS["text"],
+                                            placeholder_text="Justificativa do item")
+        self.entry_item_just.grid(row=1, column=3, sticky="ew", padx=(0, 6))
+
+        ctk.CTkLabel(form_inner, text="Qtd.*",
+                      font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
+                      text_color=COLORS["text_muted"]).grid(row=0, column=4, sticky="w", padx=(0, 6))
         self.entry_item_qtd = ctk.CTkEntry(form_inner, height=38, corner_radius=6,
                                            border_width=1, border_color=COLORS["border"],
                                            fg_color=COLORS["white"], text_color=COLORS["text"],
-                                           placeholder_text="0", width=80)
-        self.entry_item_qtd.grid(row=1, column=2, sticky="ew", padx=(0, 6))
+                                           placeholder_text="0")
+        self.entry_item_qtd.grid(row=1, column=4, sticky="ew", padx=(0, 6))
 
-        ctk.CTkLabel(form_inner, text="Unidade",
+        ctk.CTkLabel(form_inner, text="Unidade de Medida*",
                       font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                      text_color=COLORS["text_muted"]).grid(row=0, column=3, sticky="w", padx=(0, 6))
-        self.entry_item_unidade = ctk.CTkEntry(form_inner, height=38, corner_radius=6,
-                                               border_width=1, border_color=COLORS["border"],
-                                               fg_color=COLORS["white"], text_color=COLORS["text"],
-                                               placeholder_text="Unidade", width=100)
-        self.entry_item_unidade.grid(row=1, column=3, sticky="ew", padx=(0, 6))
+                      text_color=COLORS["text_muted"]).grid(row=0, column=5, sticky="w", padx=(0, 6))
+        self.entry_item_unidade = ctk.CTkComboBox(form_inner, values=["Unidade", "Caixa", "Litro", "Kg"],
+                                                  height=38, corner_radius=6, state="readonly",
+                                                  fg_color=COLORS["white"], border_color=COLORS["border"],
+                                                  button_color=COLORS["primary"],
+                                                  dropdown_fg_color=COLORS["white"])
+        self.entry_item_unidade.grid(row=1, column=5, sticky="ew", padx=(0, 6))
 
         ctk.CTkButton(
             form_inner, text="+ Adicionar", height=38, width=110, corner_radius=6,
             fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
             text_color="white", font=ctk.CTkFont(size=12, weight="bold"),
             command=self._adicionar_item,
-        ).grid(row=1, column=4, padx=(6, 0))
+        ).grid(row=1, column=6, padx=(6, 0))
 
         self.itens_container = ctk.CTkFrame(container, fg_color="transparent")
         self.itens_container.pack(fill="x", padx=30, pady=(0, 20))
@@ -408,11 +430,13 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
     def _adicionar_item(self):
         nome = self.entry_item_nome.get().strip()
         desc = self.entry_item_desc.get().strip()
+        tipo = self.entry_item_tipo.get().strip()
+        just = self.entry_item_just.get().strip()
         qtd = self.entry_item_qtd.get().strip()
         unidade = self.entry_item_unidade.get().strip()
 
-        if not all([nome, desc, qtd]):
-            messagebox.showwarning("Atencao", "Preencha nome, descricao e quantidade!", parent=self)
+        if not all([nome, desc, just, qtd]):
+            messagebox.showwarning("Atencao", "Preencha nome, descricao, justificativa e quantidade!", parent=self)
             return
 
         try:
@@ -424,14 +448,18 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
         self.itens_lista.append({
             "nome": nome,
             "descricao": desc,
+            "tipo": tipo or "Consumivel",
+            "justificativa": just,
             "quantidade": qtd_val,
-            "unidade": unidade or "Unidade",
+            "unidade_medida": unidade or "Unidade",
         })
 
         self.entry_item_nome.delete(0, "end")
         self.entry_item_desc.delete(0, "end")
+        self.entry_item_just.delete(0, "end")
         self.entry_item_qtd.delete(0, "end")
-        self.entry_item_unidade.delete(0, "end")
+        self.entry_item_tipo.set("Consumivel")
+        self.entry_item_unidade.set("Unidade")
 
         self._renderizar_itens()
 
@@ -452,13 +480,14 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
         hdr = ctk.CTkFrame(self.itens_container, fg_color=COLORS["table_header"], height=36, corner_radius=6)
         hdr.pack(fill="x", pady=(0, 4))
         hdr.pack_propagate(False)
-        hdr.grid_columnconfigure(0, weight=2)
-        hdr.grid_columnconfigure(1, weight=3)
-        hdr.grid_columnconfigure(2, weight=1)
+        hdr.grid_columnconfigure(0, weight=3)
+        hdr.grid_columnconfigure(1, weight=1)
+        hdr.grid_columnconfigure(2, weight=2)
         hdr.grid_columnconfigure(3, weight=1)
-        hdr.grid_columnconfigure(4, weight=0)
+        hdr.grid_columnconfigure(4, weight=1)
+        hdr.grid_columnconfigure(5, weight=0)
 
-        for i, col in enumerate(["Nome", "Descricao", "Qtd.", "Unidade", ""]):
+        for i, col in enumerate(["Nome", "Tipo de Material", "Justificativa", "Qtd.", "Unidade de Medida", ""]):
             ctk.CTkLabel(hdr, text=col,
                           font=ctk.CTkFont(size=11, weight="bold"),
                           text_color=COLORS["text_muted"]).grid(row=0, column=i, sticky="w", padx=10)
@@ -468,13 +497,15 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
             row = ctk.CTkFrame(self.itens_container, fg_color=row_bg, height=36, corner_radius=0)
             row.pack(fill="x", pady=1)
             row.pack_propagate(False)
-            row.grid_columnconfigure(0, weight=2)
-            row.grid_columnconfigure(1, weight=3)
-            row.grid_columnconfigure(2, weight=1)
+            row.grid_columnconfigure(0, weight=3)
+            row.grid_columnconfigure(1, weight=1)
+            row.grid_columnconfigure(2, weight=2)
             row.grid_columnconfigure(3, weight=1)
-            row.grid_columnconfigure(4, weight=0)
+            row.grid_columnconfigure(4, weight=1)
+            row.grid_columnconfigure(5, weight=0)
 
-            dados = [item["nome"], item["descricao"], str(item["quantidade"]), item["unidade"]]
+            dados = [item["nome"], item["tipo"], item["justificativa"],
+                     str(item["quantidade"]), item["unidade_medida"]]
             for i, valor in enumerate(dados):
                 cor = COLORS["text"] if i == 0 else COLORS["text_muted"]
                 ctk.CTkLabel(row, text=valor,
@@ -486,7 +517,7 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
                 fg_color=COLORS["danger"], hover_color=COLORS["danger_hover"],
                 text_color="white", font=ctk.CTkFont(size=11),
                 command=lambda idx=idx: self._remover_item(idx),
-            ).grid(row=0, column=4, padx=(6, 10))
+            ).grid(row=0, column=5, padx=(6, 10))
 
     def _salvar_tudo(self):
         processo = self.entries_tccm["processo"].get().strip()
@@ -554,7 +585,8 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
                                   VALUES (%s, %s, %s, %s, %s, 'Ativo', %s)"""
                     db.executar(sql_item, (item["nome"], item["descricao"],
                                            f"{processo}-{item['nome'][:10].upper()}",
-                                           item["unidade"], item["quantidade"], processo))
+                                           item["tipo"], item["justificativa"],
+                                           item["unidade_medida"], item["quantidade"], processo))
 
                 db.commitar()
             except Exception as e:
