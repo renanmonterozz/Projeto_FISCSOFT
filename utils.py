@@ -30,10 +30,19 @@ def registrar_log(usuario: str, acao: str, tabela: str, descricao: str):
             db.commitar()
 
 
-CERTIFICADO_DIR = "D:\\"
 CERTIFICADO_ARQUIVO = "certificado.pfx"
 CERTIFICADO_SENHA = b"admin123"
 SENHAS_TENTATIVA = [b"admin123", b"123456", b"senha", b""]
+
+
+def _encontrar_certificado() -> str | None:
+    import string
+    for letra in string.ascii_uppercase:
+        caminho = f"{letra}:\\{CERTIFICADO_ARQUIVO}"
+        if os.path.exists(caminho):
+            logger.info("Certificado encontrado em: %s", caminho)
+            return caminho
+    return None
 
 
 def _carregar_certificado(cert_path: str, senha: bytes):
@@ -78,9 +87,9 @@ def _extrair_cpf_cnpj(certificate) -> str | None:
 
 
 def validar_certificado_usb() -> tuple[bool, str, str | None]:
-    cert_path = os.path.join(CERTIFICADO_DIR, CERTIFICADO_ARQUIVO)
+    cert_path = _encontrar_certificado()
 
-    if not os.path.exists(cert_path):
+    if cert_path is None:
         return False, "Certificado nao encontrado", None
 
     try:

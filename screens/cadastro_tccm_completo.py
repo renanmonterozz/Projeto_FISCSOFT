@@ -7,6 +7,7 @@ from tkinter import messagebox
 
 from config.styles import COLORS, FONTS
 from database.conexaodb import Database
+from screens.widgets import ComboBoxComSeta
 
 
 class CadastroTCCMCompleto(ctk.CTkFrame):
@@ -218,7 +219,7 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
         agente_row.grid_columnconfigure(0, weight=1)
 
         opcoes = [f"{a[0]} - {a[1]}" for a in self.agentes] if self.agentes else ["Nenhum agente"]
-        combo = ctk.CTkComboBox(agente_row, values=opcoes,
+        combo = ComboBoxComSeta(agente_row, values=opcoes,
                                 height=40, corner_radius=6,
                                 fg_color=COLORS["white"], border_color=COLORS["border"],
                                 button_color=COLORS["primary"],
@@ -266,7 +267,7 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
         infrator_row.grid_columnconfigure(0, weight=1)
 
         opcoes = [f"{i[0]} - {i[1]}" for i in self.infratores] if self.infratores else ["Nenhum infrator"]
-        combo = ctk.CTkComboBox(infrator_row, values=opcoes,
+        combo = ComboBoxComSeta(infrator_row, values=opcoes,
                                 height=40, corner_radius=6,
                                 fg_color=COLORS["white"], border_color=COLORS["border"],
                                 button_color=COLORS["primary"],

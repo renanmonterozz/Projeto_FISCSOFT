@@ -155,7 +155,7 @@ class LoginApp(ctk.CTk):
         self.btn_certificado.place_forget()
 
         self.frame_login = ctk.CTkFrame(self, fg_color="#000001", bg_color="#000001", corner_radius=0)
-        self.frame_login.place(relx=0.5, rely=0.88, anchor="center")
+        self.frame_login.place(relx=0.5, rely=0.90, anchor="center")
         self.frame_login.lift()
         pywinstyles.set_opacity(self.frame_login, color="#000001")
 

@@ -12,6 +12,7 @@ from config.permissoes import pode_acao
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
+from screens.widgets import ComboBoxComSeta
 from utils import registrar_log
 
 
@@ -141,7 +142,7 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
         ).pack(anchor="w", pady=(0, 4))
 
         nomes_locais = [f"{l['instituicao']} - {l['endereco']}" for l in self.locais_catalogo] if self.locais_catalogo else ["Nenhum local cadastrado"]
-        self.combo_local = ctk.CTkComboBox(
+        self.combo_local = ComboBoxComSeta(
             combo_frame, values=nomes_locais,
             height=38, border_width=1, border_color=COLORS["border"],
             corner_radius=4, fg_color=COLORS["white"], text_color=COLORS["text"],
@@ -264,7 +265,7 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
         ).pack(anchor="w")
 
         nomes_itens = [self._item_display(i) for i in self.itens_catalogo] if self.itens_catalogo else (["Nenhum item registrado no TCCM"] if self.processo_tccm else ["Nenhum item ativo"])
-        self.combo_item = ctk.CTkComboBox(
+        self.combo_item = ComboBoxComSeta(
             item_frame, values=nomes_itens,
             height=36, border_width=1, border_color=COLORS["border"],
             corner_radius=4, fg_color=COLORS["white"], text_color=COLORS["text"],
