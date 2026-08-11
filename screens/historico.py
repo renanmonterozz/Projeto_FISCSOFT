@@ -35,6 +35,14 @@ class HistoricoPage(CrudBase, ctk.CTkFrame):
     def build_table(self):
         CrudBase.build_table(self, pad_y=(0, 30))
 
+        self.colunas_place = [
+            (0.00, 0.20, "w"),
+            (0.20, 0.15, "w"),
+            (0.35, 0.15, "w"),
+            (0.50, 0.15, "w"),
+            (0.65, 0.35, "w"),
+        ]
+
         # Container interno com borda
         self.table_container = ctk.CTkFrame(
             self.table_frame, fg_color="transparent",
@@ -49,18 +57,10 @@ class HistoricoPage(CrudBase, ctk.CTkFrame):
         header.pack_propagate(False)
 
         cols = ctk.CTkFrame(header, fg_color="transparent")
-        cols.pack(side="left", fill="x", expand=True, padx=(10, 0))
+        cols.pack(side="left", fill="x", expand=True, padx=(10, 16))
 
         colunas = ["Data/Hora", "Usuario", "Acao", "Tabela", "Descricao"]
-        col_cfg = [
-            (0.0, 0.20, "w"),    # Data/Hora
-            (0.20, 0.15, "w"),   # Usuario
-            (0.35, 0.15, "w"),   # Acao
-            (0.50, 0.15, "w"),   # Tabela
-            (0.65, 0.35, "w"),   # Descricao
-        ]
-
-        for texto, (rx, rw, anchor) in zip(colunas, col_cfg):
+        for texto, (rx, rw, anchor) in zip(colunas, self.colunas_place):
             ctk.CTkLabel(
                 cols, text=texto,
                 font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
@@ -130,14 +130,6 @@ class HistoricoPage(CrudBase, ctk.CTkFrame):
         data.pack(side="left", fill="x", expand=True, padx=(10, 0))
 
         # pesos → relx / relwidth (idêntico ao cabeçalho)
-        col_cfg = [
-            (0.0,  0.20, "w"),      # Data/Hora
-            (0.20, 0.15, "w"),      # Usuario
-            (0.35, 0.15, "w"),      # Acao
-            (0.50, 0.15, "w"),      # Tabela
-            (0.65, 0.35, "w"),      # Descricao
-        ]
-
         data_hora_str = log["data_hora"].strftime("%d/%m/%Y %H:%M") if log["data_hora"] else "--"
 
         acao_cor = COLORS.get("primary", "#1D4D21")
@@ -156,7 +148,7 @@ class HistoricoPage(CrudBase, ctk.CTkFrame):
             (descricao, COLORS["text_muted"]),
         ]
 
-        for (rx, rw, anchor), (texto, cor) in zip(col_cfg, dados):
+        for (rx, rw, anchor), (texto, cor) in zip(self.colunas_place, dados):
             ctk.CTkLabel(
                 data, text=texto,
                 font=ctk.CTkFont(size=FONTS["size_small"]),

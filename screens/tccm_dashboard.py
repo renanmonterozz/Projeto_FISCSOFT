@@ -1,5 +1,6 @@
 import _path  # noqa: F401
 
+import calendar
 import math
 from datetime import datetime as _dt
 
@@ -10,6 +11,22 @@ from config.permissoes import pode_acao
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
 from screens.widgets import ComboBoxComSeta
+
+
+def _calcular_data_validade(data_inicio, semestres):
+    """Retorna a data final ao somar seis meses para cada semestre."""
+    try:
+        if isinstance(data_inicio, str):
+            data_inicio = _dt.strptime(data_inicio, "%Y-%m-%d")
+
+        total_meses = int(semestres) * 6
+        mes_indice = data_inicio.month - 1 + total_meses
+        ano = data_inicio.year + mes_indice // 12
+        mes = mes_indice % 12 + 1
+        dia = min(data_inicio.day, calendar.monthrange(ano, mes)[1])
+        return data_inicio.replace(year=ano, month=mes, day=dia)
+    except (TypeError, ValueError):
+        return None
 
 
 def _fmt_date(val):
@@ -369,6 +386,23 @@ class ModalCadastrarTCCM(ctk.CTkToplevel):
         entry.pack(anchor="w")
         self.entries["semestres"] = entry
 
+        ctk.CTkLabel(left_panel, text="Data de Validade",
+                      font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
+                      text_color=COLORS["text"]).pack(anchor="w", pady=(8, 2))
+        self.entry_data_validade = ctk.CTkEntry(
+            left_panel, height=38, corner_radius=4,
+            border_width=1, border_color=COLORS["border"],
+            fg_color=COLORS["white"], text_color=COLORS["text"],
+            placeholder_text="Calculada automaticamente",
+            state="disabled",
+        )
+        self.entry_data_validade.pack(fill="x")
+
+        self.entries["data_inicio"].bind("<KeyRelease>", self._atualizar_data_validade)
+        self.entries["data_inicio"].bind("<FocusOut>", self._atualizar_data_validade)
+        self.entries["semestres"].bind("<KeyRelease>", self._atualizar_data_validade)
+        self.entries["semestres"].bind("<FocusOut>", self._atualizar_data_validade)
+
         ctk.CTkLabel(left_panel, text="Agente Responsavel*",
                       font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
                       text_color=COLORS["text"]).pack(anchor="w", pady=(8, 2))
@@ -528,6 +562,21 @@ class ModalCadastrarTCCM(ctk.CTkToplevel):
             values=[f"{i[0]} - {i[1]}" for i in self.infratores] if self.infratores else ["Nenhum infrator"]
         )
 
+    def _atualizar_data_validade(self, _event=None):
+        try:
+            data_inicio = _dt.strptime(self.entries["data_inicio"].get().strip(), "%d/%m/%Y")
+            data_validade = _calcular_data_validade(
+                data_inicio, self.entries["semestres"].get().strip()
+            )
+        except ValueError:
+            data_validade = None
+
+        self.entry_data_validade.configure(state="normal")
+        self.entry_data_validade.delete(0, "end")
+        if data_validade:
+            self.entry_data_validade.insert(0, data_validade.strftime("%d/%m/%Y"))
+        self.entry_data_validade.configure(state="disabled")
+
     def _abrir_cadastrar_agente(self):
         ModalCadastrarAgente(self, onSalvar=self._atualizar_combos)
 
@@ -652,6 +701,9 @@ class ModalCadastrarTCCM(ctk.CTkToplevel):
             messagebox.showerror("Erro", "Data invalida! Use o formato DD/MM/AAAA.", parent=self)
             return
 
+        data_validade_dt = _calcular_data_validade(data_inicio_dt, semestres_val)
+        data_validade_db = data_validade_dt.strftime("%Y-%m-%d")
+
         agente_matricula = int(agente_str.split(" - ")[0])
         infrator_id = int(infrator_str.split(" - ")[0])
 
@@ -668,7 +720,7 @@ class ModalCadastrarTCCM(ctk.CTkToplevel):
                     VALUES (%s, %s, %s, %s, 0.00, 0.00, 0.00,
                             NULL, %s, 'pendente', %s, %s)"""
                 db.executar(sql, (processo, documento_sei or None, data_inicio_db,
-                                  semestres_val, semestres_val,
+                                  semestres_val, data_validade_db, semestres_val,
                                   agente_matricula, infrator_id))
 
                 for item in self.itens_lista:
@@ -701,16 +753,11 @@ class TccmDetalhesPage(CrudBase, ctk.CTkFrame):
         self.perfil = perfil
 
         self.tccm_data = None
-        self.notas = []
-        self.itens = []
-
         self._carregar_dados()
 
         self.build_header_detalhes()
         self.build_info_section()
         self.build_pessoas_section()
-        self.build_notas_section()
-        self.build_itens_section()
 
     def build_header_detalhes(self):
         header = ctk.CTkFrame(self, fg_color="transparent")
@@ -718,13 +765,6 @@ class TccmDetalhesPage(CrudBase, ctk.CTkFrame):
 
         left = ctk.CTkFrame(header, fg_color="transparent")
         left.pack(side="left")
-
-        ctk.CTkButton(
-            left, text="\u2190 Voltar", height=36, corner_radius=6,
-            fg_color=COLORS["dark"], hover_color=COLORS["dark_hover"],
-            text_color="white", font=ctk.CTkFont(size=12),
-            command=self._voltar,
-        ).pack(side="left", padx=(0, 15))
 
         ctk.CTkLabel(left, text=f"Detalhes TCCM - {self.processo}",
                       font=ctk.CTkFont(size=FONTS["size_title"], weight="bold"),
@@ -747,7 +787,7 @@ class TccmDetalhesPage(CrudBase, ctk.CTkFrame):
         dot.pack_propagate(False)
 
         ctk.CTkLabel(hdr, text="Informacoes do TCCM",
-                      font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
+                      font=ctk.CTkFont(size=16, weight="bold"),
                       text_color=COLORS["text"]).pack(side="left")
 
         pct = (t["total_pago"] / t["total_devido"] * 100) if t["total_devido"] > 0 else 0
@@ -779,10 +819,8 @@ class TccmDetalhesPage(CrudBase, ctk.CTkFrame):
             ("Data Inicio", t.get("data_inicio", "--")),
             ("Semestres", f"{t.get('semestres', 0)}"),
             ("Data Validade", t["data_validade"]),
-            ("Intervalo", f"{t['intervalo']} meses"),
             ("Total Devido", _fmt_brl(t["total_devido"])),
             ("Total Pago", _fmt_brl(t["total_pago"])),
-            ("Total Validado", _fmt_brl(t["total_validado"])),
             ("Total Pendente", _fmt_brl(max(0, t["total_devido"] - t["total_pago"]))),
         ]
 
@@ -793,7 +831,7 @@ class TccmDetalhesPage(CrudBase, ctk.CTkFrame):
             frame.grid(row=row, column=col, padx=5, pady=4, sticky="w")
 
             ctk.CTkLabel(frame, text=label,
-                          font=ctk.CTkFont(size=10),
+                          font=ctk.CTkFont(size=14),
                           text_color=COLORS["text_muted"]).pack(anchor="w")
             ctk.CTkLabel(frame, text=valor,
                           font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
@@ -816,7 +854,7 @@ class TccmDetalhesPage(CrudBase, ctk.CTkFrame):
         dot.pack_propagate(False)
 
         ctk.CTkLabel(hdr, text="Pessoas Envolvidas",
-                      font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
+                      font=ctk.CTkFont(size=16, weight="bold"),
                       text_color=COLORS["text"]).pack(side="left")
 
         grid = ctk.CTkFrame(section, fg_color="transparent")
@@ -828,7 +866,7 @@ class TccmDetalhesPage(CrudBase, ctk.CTkFrame):
         inf_frame.grid(row=0, column=0, padx=(0, 8), pady=4, sticky="nsew")
 
         ctk.CTkLabel(inf_frame, text="Infrator",
-                      font=ctk.CTkFont(size=10, weight="bold"),
+                      font=ctk.CTkFont(size=16, weight="bold"),
                       text_color=COLORS["primary"]).pack(anchor="w", padx=12, pady=(10, 2))
 
         campos_inf = [
@@ -839,7 +877,7 @@ class TccmDetalhesPage(CrudBase, ctk.CTkFrame):
         ]
         for label, valor in campos_inf:
             ctk.CTkLabel(inf_frame, text=f"{label}: {valor}",
-                          font=ctk.CTkFont(size=FONTS["size_small"]),
+                          font=ctk.CTkFont(size=13),
                           text_color=COLORS["text"]).pack(anchor="w", padx=12, pady=1)
         ctk.CTkFrame(inf_frame, fg_color="transparent").pack(pady=(0, 8))
 
@@ -847,7 +885,7 @@ class TccmDetalhesPage(CrudBase, ctk.CTkFrame):
         age_frame.grid(row=0, column=1, padx=(8, 0), pady=4, sticky="nsew")
 
         ctk.CTkLabel(age_frame, text="Agente IBAMA",
-                      font=ctk.CTkFont(size=10, weight="bold"),
+                      font=ctk.CTkFont(size=16, weight="bold"),
                       text_color=COLORS["primary"]).pack(anchor="w", padx=12, pady=(10, 2))
 
         campos_age = [
@@ -858,153 +896,9 @@ class TccmDetalhesPage(CrudBase, ctk.CTkFrame):
         ]
         for label, valor in campos_age:
             ctk.CTkLabel(age_frame, text=f"{label}: {valor}",
-                          font=ctk.CTkFont(size=FONTS["size_small"]),
+                          font=ctk.CTkFont(size=13),
                           text_color=COLORS["text"]).pack(anchor="w", padx=12, pady=1)
         ctk.CTkFrame(age_frame, fg_color="transparent").pack(pady=(0, 8))
-
-    def build_notas_section(self):
-        section = ctk.CTkFrame(self, fg_color=COLORS["white"], corner_radius=4,
-                                border_width=1, border_color=COLORS["border"])
-        section.pack(fill="x", padx=30, pady=(0, 15))
-
-        hdr = ctk.CTkFrame(section, fg_color="transparent")
-        hdr.pack(fill="x", padx=15, pady=(12, 8))
-
-        dot = ctk.CTkFrame(hdr, fg_color=COLORS["success_dark"], width=10, height=10, corner_radius=5)
-        dot.pack(side="left", padx=(0, 8))
-        dot.pack_propagate(False)
-
-        ctk.CTkLabel(hdr, text=f"Notas Fiscais ({len(self.notas)})",
-                      font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
-                      text_color=COLORS["text"]).pack(side="left")
-
-        if not self.notas:
-            ctk.CTkLabel(section, text="Nenhuma nota fiscal vinculada a este TCCM",
-                          font=ctk.CTkFont(size=FONTS["size_body"]),
-                          text_color=COLORS["text_muted"]).pack(pady=25)
-            return
-
-        table_frame = ctk.CTkFrame(section, fg_color="transparent")
-        table_frame.pack(fill="x", padx=15, pady=(0, 15))
-
-        colunas = ["Nota Fiscal", "Data", "Valor Total", "Status"]
-        col_weights = [3, 2, 2, 2]
-
-        col_header = ctk.CTkFrame(table_frame, fg_color=COLORS["table_header"], height=32, corner_radius=0)
-        col_header.pack(fill="x")
-        col_header.pack_propagate(False)
-
-        cols = ctk.CTkFrame(col_header, fg_color="transparent")
-        cols.pack(side="left", fill="x", expand=True, padx=(8, 0))
-        for i, w in enumerate(col_weights):
-            cols.grid_columnconfigure(i, weight=w)
-
-        for i, col in enumerate(colunas):
-            ctk.CTkLabel(cols, text=col,
-                          font=ctk.CTkFont(size=11, weight="bold"),
-                          text_color=COLORS["text_muted"]).grid(row=0, column=i, sticky="w", padx=8)
-
-        for idx, nota in enumerate(self.notas):
-            row_bg = COLORS["white"] if idx % 2 == 0 else COLORS["bg"]
-            row_frame = ctk.CTkFrame(table_frame, fg_color=row_bg, height=36)
-            row_frame.pack(fill="x")
-            row_frame.pack_propagate(False)
-
-            row_cols = ctk.CTkFrame(row_frame, fg_color="transparent")
-            row_cols.pack(side="left", fill="x", expand=True, padx=(8, 0))
-            for i, w in enumerate(col_weights):
-                row_cols.grid_columnconfigure(i, weight=w)
-
-            st = nota["status"]
-            if st == "Aprovada":
-                st_cor = COLORS["success_dark"]
-            elif st == "Rejeitada":
-                st_cor = COLORS["danger"]
-            else:
-                st_cor = COLORS["warning"]
-
-            dados = [
-                (nota["nota_fiscal"], COLORS["text"]),
-                (nota["data"], COLORS["text_muted"]),
-                (_fmt_brl(nota["valor_total"]), COLORS["text"]),
-            ]
-            for i, (valor, cor) in enumerate(dados):
-                ctk.CTkLabel(row_cols, text=valor,
-                              font=ctk.CTkFont(size=11),
-                              text_color=cor, anchor="w").grid(row=0, column=i, sticky="w", padx=8)
-
-            st_frame = ctk.CTkFrame(row_cols, fg_color="transparent")
-            st_frame.grid(row=0, column=3, sticky="w", padx=8)
-
-            ctk.CTkLabel(st_frame, text=st,
-                          font=ctk.CTkFont(size=11, weight="bold"),
-                          text_color=st_cor).pack(side="left")
-
-    def build_itens_section(self):
-        section = ctk.CTkFrame(self, fg_color=COLORS["white"], corner_radius=4,
-                                border_width=1, border_color=COLORS["border"])
-        section.pack(fill="x", padx=30, pady=(0, 25))
-
-        hdr = ctk.CTkFrame(section, fg_color="transparent")
-        hdr.pack(fill="x", padx=15, pady=(12, 8))
-
-        dot = ctk.CTkFrame(hdr, fg_color=COLORS["warning"], width=10, height=10, corner_radius=5)
-        dot.pack(side="left", padx=(0, 8))
-        dot.pack_propagate(False)
-
-        ctk.CTkLabel(hdr, text=f"Itens ({len(self.itens)})",
-                      font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
-                      text_color=COLORS["text"]).pack(side="left")
-
-        if not self.itens:
-            ctk.CTkLabel(section, text="Nenhum item vinculado a este TCCM",
-                          font=ctk.CTkFont(size=FONTS["size_body"]),
-                          text_color=COLORS["text_muted"]).pack(pady=25)
-            return
-
-        table_frame = ctk.CTkFrame(section, fg_color="transparent")
-        table_frame.pack(fill="x", padx=15, pady=(0, 15))
-
-        colunas = ["Item", "Nota Fiscal", "Qtd.", "Preco Unit.", "Subtotal"]
-        col_weights = [4, 3, 1, 2, 2]
-
-        col_header = ctk.CTkFrame(table_frame, fg_color=COLORS["table_header"], height=32, corner_radius=0)
-        col_header.pack(fill="x")
-        col_header.pack_propagate(False)
-
-        cols = ctk.CTkFrame(col_header, fg_color="transparent")
-        cols.pack(side="left", fill="x", expand=True, padx=(8, 0))
-        for i, w in enumerate(col_weights):
-            cols.grid_columnconfigure(i, weight=w)
-
-        for i, col in enumerate(colunas):
-            ctk.CTkLabel(cols, text=col,
-                          font=ctk.CTkFont(size=11, weight="bold"),
-                          text_color=COLORS["text_muted"]).grid(row=0, column=i, sticky="w", padx=8)
-
-        for idx, item in enumerate(self.itens):
-            row_bg = COLORS["white"] if idx % 2 == 0 else COLORS["bg"]
-            row_frame = ctk.CTkFrame(table_frame, fg_color=row_bg, height=32)
-            row_frame.pack(fill="x")
-            row_frame.pack_propagate(False)
-
-            row_cols = ctk.CTkFrame(row_frame, fg_color="transparent")
-            row_cols.pack(side="left", fill="x", expand=True, padx=(8, 0))
-            for i, w in enumerate(col_weights):
-                row_cols.grid_columnconfigure(i, weight=w)
-
-            subtotal = item["quantidade"] * item["preco_unitario"]
-            dados = [
-                (item["nome_item"], COLORS["text"]),
-                (item["nota_fiscal"], COLORS["text_muted"]),
-                (str(item["quantidade"]), COLORS["text_muted"]),
-                (_fmt_brl(item["preco_unitario"]), COLORS["text_muted"]),
-                (_fmt_brl(subtotal), COLORS["text"]),
-            ]
-            for i, (valor, cor) in enumerate(dados):
-                ctk.CTkLabel(row_cols, text=valor,
-                              font=ctk.CTkFont(size=11),
-                              text_color=cor, anchor="w").grid(row=0, column=i, sticky="w", padx=8)
 
     def _carregar_dados(self):
         with Database() as db:
