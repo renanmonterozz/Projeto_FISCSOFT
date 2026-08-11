@@ -46,14 +46,14 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
 
         ctk.CTkLabel(
             header,
-            text="Cadastro / Edicao de Agente IBAMA",
+            text="Cadastro Agente IBAMA",
             font=ctk.CTkFont(size=FONTS["size_title"], weight="bold"),
             text_color=COLORS["primary"],
         ).pack(anchor="w")
 
         ctk.CTkLabel(
             header,
-            text="Informe os dados do usuario.",
+            text="Informe os dados de acesso.",
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             text_color=COLORS["text"],
         ).pack(anchor="w", pady=(2, 0))
