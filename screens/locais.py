@@ -3,12 +3,8 @@ import _path  # noqa: F401
 import customtkinter as ctk
 from tkinter import messagebox
 
-<<<<<<< HEAD
-from config.styles import get_colors, FONTS
-=======
 from config.styles import COLORS, FONTS
 from config.permissoes import pode_acao
->>>>>>> main
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
@@ -18,7 +14,7 @@ from utils import registrar_log
 class LocaisPage(CrudBase, ctk.CTkFrame):
     def __init__(self, master, usuario_logado=None, perfil="admin", **kwargs):
         super().__init__(master, **kwargs)
-        self.configure(fg_color=get_colors()["bg"])
+        self.configure(fg_color=COLORS["bg"])
         self.usuario_logado = usuario_logado
         self.perfil = perfil
         self.pode_editar = pode_acao(perfil, "gerenciar_locais")
@@ -30,7 +26,6 @@ class LocaisPage(CrudBase, ctk.CTkFrame):
         self.build_table()
 
     def build_filter_bar(self):
-        colors = get_colors()
         inner = self.build_filter_container()
         row = ctk.CTkFrame(inner, fg_color="transparent")
         row.pack(fill="x")
@@ -41,22 +36,14 @@ class LocaisPage(CrudBase, ctk.CTkFrame):
 
         self.build_action_btn(btn_frame, "  Pesquisar", carregar_icone("lupa.png"), self.pesquisar)
         self.build_action_btn(btn_frame, "  Limpar", carregar_icone("apagar.png"), self.limpar_filtros)
-<<<<<<< HEAD
-        self.build_action_btn(btn_frame, "  Novo Local", carregar_icone("mais.png"),
-                              self.novo_local, fg_color=colors["primary"],
-                              hover_color=colors["primary_hover"], text_color="white",
-                              border=False, bold=True)
-=======
 
         if self.pode_editar:
             self.build_action_btn(btn_frame, "  Novo Local", carregar_icone("mais.png"),
                                   self.novo_local, fg_color=COLORS["primary"],
                                   hover_color=COLORS["primary_hover"], text_color="white",
                                   border=False, bold=True)
->>>>>>> main
 
     def build_table(self):
-        colors = get_colors()
         CrudBase.build_table(self, pad_y=(0, 30))
 
         # Container interno com borda
@@ -67,7 +54,7 @@ class LocaisPage(CrudBase, ctk.CTkFrame):
         self.table_container.pack(fill="both", expand=True, padx=10, pady=10)
 
         # --- cabeçalho com PLACE ---
-        header = ctk.CTkFrame(self.table_container, fg_color=colors["table_header"],
+        header = ctk.CTkFrame(self.table_container, fg_color=COLORS["table_header"],
                               height=44, corner_radius=0)
         header.pack(fill="x")
         header.pack_propagate(False)
@@ -88,18 +75,18 @@ class LocaisPage(CrudBase, ctk.CTkFrame):
             ctk.CTkLabel(
                 cols, text=texto,
                 font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                text_color=colors["text_muted"],
+                text_color=COLORS["text_muted"],
                 anchor=anchor,
             ).place(relx=rx, relwidth=rw, rely=0, relheight=1)
 
         ctk.CTkLabel(
             header, text="Ações",
             font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-            text_color=colors["text_muted"], width=120,
+            text_color=COLORS["text_muted"], width=120,
         ).pack(side="right", padx=(0, 15))
 
         self.table_body = ctk.CTkScrollableFrame(
-            self.table_container, fg_color=colors["white"], corner_radius=0
+            self.table_container, fg_color=COLORS["white"], corner_radius=0
         )
         self.table_body.pack(fill="both", expand=True)
 
@@ -134,7 +121,6 @@ class LocaisPage(CrudBase, ctk.CTkFrame):
             self._add_row(local)
 
     def _add_row(self, local):
-        colors = get_colors()
         linha, data, _ = self.add_data_row(has_checkbox=False)
 
         # pesos → relx / relwidth (idêntico ao cabeçalho)
@@ -160,7 +146,7 @@ class LocaisPage(CrudBase, ctk.CTkFrame):
             ctk.CTkLabel(
                 data, text=texto,
                 font=ctk.CTkFont(size=FONTS["size_body"]),
-                text_color=colors["text"] if anchor == "w" else colors["text_muted"],
+                text_color=COLORS["text"] if anchor == "w" else COLORS["text_muted"],
                 anchor=anchor,
             ).place(relx=rx, relwidth=rw, rely=0, relheight=1)
 
@@ -177,11 +163,10 @@ class LocaisPage(CrudBase, ctk.CTkFrame):
         self._abrir_formulario()
 
     def visualizar_local(self, local):
-        colors = get_colors()
         modal = ctk.CTkToplevel(self)
         modal.title(f"Local #{local['id']}")
         modal.geometry("450x350")
-        modal.configure(fg_color=colors["white"])
+        modal.configure(fg_color=COLORS["white"])
         modal.transient(self)
         modal.grab_set()
 
@@ -202,14 +187,14 @@ class LocaisPage(CrudBase, ctk.CTkFrame):
             ).grid(row=i, column=0, sticky="w", pady=3, padx=(0, 10))
             ctk.CTkLabel(
                 frame, text=v,
-                text_color=colors["text_muted"],
+                text_color=COLORS["text_muted"],
                 wraplength=300,
             ).grid(row=i, column=1, sticky="w", pady=3)
 
         ctk.CTkButton(
             modal, text="Fechar", height=34, width=100,
-            fg_color=colors["border"], hover_color="#C0C0C0",
-            text_color=colors["text"], command=modal.destroy,
+            fg_color=COLORS["border"], hover_color="#C0C0C0",
+            text_color=COLORS["text"], command=modal.destroy,
         ).pack(pady=(15, 10))
 
     def editar_local(self, local):
@@ -254,11 +239,10 @@ class LocaisPage(CrudBase, ctk.CTkFrame):
         self.render_rows()
 
     def _abrir_formulario(self):
-        colors = get_colors()
         form = ctk.CTkToplevel(self)
         form.title("Novo Local" if not self.local_edicao else "Editar Local")
         form.geometry("500x400")
-        form.configure(fg_color=colors["bg"])
+        form.configure(fg_color=COLORS["bg"])
         form.transient(self.winfo_toplevel())
         form.grab_set()
 
@@ -269,7 +253,7 @@ class LocaisPage(CrudBase, ctk.CTkFrame):
             container,
             text="Cadastrar Local de Destino" if not self.local_edicao else "Editar Local",
             font=ctk.CTkFont(size=FONTS["size_title"], weight="bold"),
-            text_color=colors["text"],
+            text_color=COLORS["text"],
         ).pack(anchor="w", pady=(0, 20))
 
         fields = [
@@ -285,15 +269,15 @@ class LocaisPage(CrudBase, ctk.CTkFrame):
             ctk.CTkLabel(
                 container, text=label_text,
                 font=ctk.CTkFont(size=FONTS["size_small"]),
-                text_color=colors["text_muted"],
+                text_color=COLORS["text_muted"],
             ).pack(anchor="w", pady=(10, 2))
 
             entry = ctk.CTkEntry(
                 container,
                 placeholder_text=placeholder,
                 height=38, border_width=1,
-                border_color=colors["border"], corner_radius=4,
-                fg_color=colors["white"], text_color=colors["text"],
+                border_color=COLORS["border"], corner_radius=4,
+                fg_color=COLORS["white"], text_color=COLORS["text"],
             )
             entry.pack(fill="x")
             entries[key] = entry
@@ -355,8 +339,8 @@ class LocaisPage(CrudBase, ctk.CTkFrame):
             btn_frame,
             text="Salvar",
             height=40, corner_radius=4,
-            fg_color=colors["primary"],
-            hover_color=colors["primary_hover"],
+            fg_color=COLORS["primary"],
+            hover_color=COLORS["primary_hover"],
             text_color="white",
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             command=salvar,
@@ -366,11 +350,11 @@ class LocaisPage(CrudBase, ctk.CTkFrame):
             btn_frame,
             text="Cancelar",
             height=40, corner_radius=4,
-            fg_color=colors["white"],
-            hover_color=colors["hover"],
-            text_color=colors["text"],
+            fg_color=COLORS["white"],
+            hover_color=COLORS["hover"],
+            text_color=COLORS["text"],
             border_width=1,
-            border_color=colors["border"],
+            border_color=COLORS["border"],
             font=ctk.CTkFont(size=FONTS["size_body"]),
             command=form.destroy,
         ).pack(side="left")
@@ -382,13 +366,8 @@ if __name__ == "__main__":
 
     app = ctk.CTk()
     app.title("FISCSOFT - Locais Cadastrados")
-<<<<<<< HEAD
-    app.geometry("1200x700")
-    app.configure(fg_color=get_colors()["bg"])
-=======
     app.configure(fg_color=COLORS["bg"])
     app.after(0, app.state, "zoomed")
->>>>>>> main
 
     LocaisPage(app).pack(fill="both", expand=True)
     app.mainloop()

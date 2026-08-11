@@ -6,12 +6,8 @@ from tkinter import messagebox
 
 import customtkinter as ctk
 
-<<<<<<< HEAD
-from config.styles import get_colors, FONTS
-=======
 from config.styles import COLORS, FONTS
 from config.permissoes import pode_acao
->>>>>>> main
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
@@ -41,7 +37,7 @@ COL_NF_CFG = [
 class RelatoriosPage(CrudBase, ctk.CTkFrame):
     def __init__(self, master, usuario_logado=None, perfil="admin", **kwargs):
         super().__init__(master, **kwargs)
-        self.configure(fg_color=get_colors()["bg"])
+        self.configure(fg_color=COLORS["bg"])
         self.usuario_logado = usuario_logado
         self.perfil = perfil
         self.pode_aprovar = pode_acao(perfil, "aprovar_nota")
@@ -54,7 +50,6 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
         self.build_main_content()
 
     def build_filter_bar(self):
-        colors = get_colors()
         inner = self.build_filter_container()
         row = ctk.CTkFrame(inner, fg_color="transparent")
         row.pack(fill="x")
@@ -64,12 +59,11 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
 
         btn_frame = self.build_btn_frame(row)
         self.build_action_btn(btn_frame, "  Filtrar", carregar_icone("lupa.png"), self.filtrar,
-                              fg_color=colors["primary"], hover_color=colors["primary_hover"],
+                              fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
                               text_color="white", border=False, bold=True)
         self.build_action_btn(btn_frame, "  Limpar", carregar_icone("apagar.png"), self.limpar_filtros)
 
     def build_stats_cards(self):
-        colors = get_colors()
         cards_frame = ctk.CTkFrame(self, fg_color="transparent")
         cards_frame.pack(fill="x", padx=30, pady=(0, 15))
 
@@ -83,15 +77,15 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
 
         self.stat_labels = {}
         for i, (titulo, valor) in enumerate(card_data):
-            card = ctk.CTkFrame(cards_frame, fg_color=colors["white"], corner_radius=4,
-                                border_width=1, border_color=colors["border"])
+            card = ctk.CTkFrame(cards_frame, fg_color=COLORS["white"], corner_radius=4,
+                                border_width=1, border_color=COLORS["border"])
             card.grid(row=0, column=i, padx=5, sticky="nsew")
             cards_frame.columnconfigure(i, weight=1)
 
             ctk.CTkLabel(card, text=titulo, font=ctk.CTkFont(size=FONTS["size_small"]),
-                         text_color=colors["text_muted"], wraplength=120).pack(pady=(15, 5))
+                         text_color=COLORS["text_muted"], wraplength=120).pack(pady=(15, 5))
             lbl = ctk.CTkLabel(card, text=valor, font=ctk.CTkFont(size=20, weight="bold"),
-                               text_color=colors["text"])
+                               text_color=COLORS["text"])
             lbl.pack(pady=(0, 15))
             self.stat_labels[titulo] = lbl
 
@@ -105,27 +99,17 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
         self.build_detail_panel(content)
 
     def build_table_panel(self, parent):
-        colors = get_colors()
-        table_container = ctk.CTkFrame(parent, fg_color=colors["white"], corner_radius=4,
-                                       border_width=1, border_color=colors["border"])
+        table_container = ctk.CTkFrame(parent, fg_color=COLORS["white"], corner_radius=4,
+                                       border_width=1, border_color=COLORS["border"])
         table_container.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
         parent.rowconfigure(0, weight=1)
 
         ctk.CTkLabel(table_container, text="Lista de Notas Fiscais",
                      font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
-                     text_color=colors["text"]).pack(anchor="w", padx=15, pady=(12, 5))
+                     text_color=COLORS["text"]).pack(anchor="w", padx=15, pady=(12, 5))
 
-<<<<<<< HEAD
-        columns = ("ID", "No. Processo (TCCM)", "Interessado", "CPF/CNPJ",
-                   "No. Nota Fiscal", "Data Envio", "Valor Total (R$)",
-                   "Itens Declarados", "Status", "Acoes")
-
-        header = ctk.CTkFrame(table_container, fg_color=colors["table_header"], height=40, corner_radius=0)
-        header.pack(fill="x", padx=3, pady=(1, 0))
-=======
         header = ctk.CTkFrame(table_container, fg_color=COLORS["table_header"], height=40, corner_radius=0)
         header.pack(fill="x", padx=(10, 26), pady=(1, 0))
->>>>>>> main
         header.pack_propagate(False)
 
         cols_frame = ctk.CTkFrame(header, fg_color="transparent")
@@ -134,16 +118,6 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
         columns = ("ID", "No. Nota Fiscal", "Data Envio", "Valor Total (R$)",
                    "Itens Declarados", "Status")
 
-<<<<<<< HEAD
-        for i, col in enumerate(columns[:-1]):
-            ctk.CTkLabel(cols_frame, text=col,
-                         font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                         text_color=colors["text_muted"]).grid(row=0, column=i, sticky="w", padx=5)
-
-        ctk.CTkLabel(header, text="Acoes",
-                     font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                     text_color=colors["text_muted"], width=100).pack(side="right", padx=(0, 15))
-=======
         for col, (rx, rw, anchor) in zip(columns, COL_NF_CFG):
             ctk.CTkLabel(
                 cols_frame, text=col,
@@ -156,9 +130,8 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
                      font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
                      text_color=COLORS["text_muted"],
                      anchor="w").place(relx=0.84, relwidth=0.16, rely=0, relheight=1)
->>>>>>> main
 
-        self.table_body = ctk.CTkScrollableFrame(table_container, fg_color=colors["white"],
+        self.table_body = ctk.CTkScrollableFrame(table_container, fg_color=COLORS["white"],
                                                  corner_radius=0)
         self.table_body.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
@@ -166,18 +139,17 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
         self.render_rows()
 
     def build_detail_panel(self, parent):
-        colors = get_colors()
-        detail_container = ctk.CTkFrame(parent, fg_color=colors["white"], corner_radius=4,
-                                        border_width=1, border_color=colors["border"])
+        detail_container = ctk.CTkFrame(parent, fg_color=COLORS["white"], corner_radius=4,
+                                        border_width=1, border_color=COLORS["border"])
         detail_container.grid(row=0, column=1, sticky="nsew")
         parent.rowconfigure(0, weight=1)
 
         ctk.CTkLabel(detail_container, text="Detalhes da Nota Fiscal",
                      font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
-                     text_color=colors["text"]).pack(anchor="w", padx=15, pady=(12, 10))
+                     text_color=COLORS["text"]).pack(anchor="w", padx=15, pady=(12, 10))
 
-        self.info_frame = ctk.CTkFrame(detail_container, fg_color=colors["white"],
-                                       corner_radius=4, border_width=1, border_color=colors["border"])
+        self.info_frame = ctk.CTkFrame(detail_container, fg_color=COLORS["white"],
+                                       corner_radius=4, border_width=1, border_color=COLORS["border"])
         self.info_frame.pack(fill="x", padx=10, pady=(0, 10))
 
         info_inner = ctk.CTkFrame(self.info_frame, fg_color="transparent")
@@ -185,7 +157,7 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
 
         ctk.CTkLabel(info_inner, text="Informacoes Gerais",
                      font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                     text_color=colors["text_muted"]).pack(anchor="w", pady=(0, 5))
+                     text_color=COLORS["text_muted"]).pack(anchor="w", pady=(0, 5))
 
         self.info_labels = {}
         campos = ["No. Processo:", "No. Nota Fiscal:", "Interessado:", "CPF/CNPJ:",
@@ -194,14 +166,14 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
             linha = ctk.CTkFrame(info_inner, fg_color="transparent")
             linha.pack(fill="x", pady=2)
             ctk.CTkLabel(linha, text=campo, font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                         text_color=colors["text_muted"], width=100, anchor="w").pack(side="left")
+                         text_color=COLORS["text_muted"], width=100, anchor="w").pack(side="left")
             lbl = ctk.CTkLabel(linha, text="--", font=ctk.CTkFont(size=FONTS["size_small"]),
-                               text_color=colors["text"], anchor="w")
+                               text_color=COLORS["text"], anchor="w")
             lbl.pack(side="left")
             self.info_labels[campo] = lbl
 
-        itens_frame = ctk.CTkFrame(detail_container, fg_color=colors["white"],
-                                   corner_radius=4, border_width=1, border_color=colors["border"])
+        itens_frame = ctk.CTkFrame(detail_container, fg_color=COLORS["white"],
+                                   corner_radius=4, border_width=1, border_color=COLORS["border"])
         itens_frame.pack(fill="x", padx=10, pady=(0, 10))
 
         itens_inner = ctk.CTkFrame(itens_frame, fg_color="transparent")
@@ -209,15 +181,15 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
 
         ctk.CTkLabel(itens_inner, text="Itens Declarados na Nota",
                      font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                     text_color=colors["text_muted"]).pack(anchor="w", pady=(0, 5))
+                     text_color=COLORS["text_muted"]).pack(anchor="w", pady=(0, 5))
 
         self.itens_label = ctk.CTkLabel(itens_inner, text="Nenhum item selecionado",
                                         font=ctk.CTkFont(size=FONTS["size_small"]),
-                                        text_color=colors["text_muted"])
+                                        text_color=COLORS["text_muted"])
         self.itens_label.pack(anchor="w")
 
-        arquivos_frame = ctk.CTkFrame(detail_container, fg_color=colors["white"],
-                                      corner_radius=4, border_width=1, border_color=colors["border"])
+        arquivos_frame = ctk.CTkFrame(detail_container, fg_color=COLORS["white"],
+                                      corner_radius=4, border_width=1, border_color=COLORS["border"])
         arquivos_frame.pack(fill="x", padx=10, pady=(0, 10))
 
         arquivos_inner = ctk.CTkFrame(arquivos_frame, fg_color="transparent")
@@ -225,13 +197,8 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
 
         ctk.CTkLabel(arquivos_inner, text="Arquivos Anexados",
                      font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                     text_color=colors["text_muted"]).pack(anchor="w", pady=(0, 5))
+                     text_color=COLORS["text_muted"]).pack(anchor="w", pady=(0, 5))
 
-<<<<<<< HEAD
-        ctk.CTkLabel(arquivos_inner, text="Nenhum arquivo anexado",
-                     font=ctk.CTkFont(size=FONTS["size_small"]),
-                     text_color=colors["text_muted"]).pack(anchor="w")
-=======
         self.lbl_arquivo_anexado = ctk.CTkLabel(arquivos_inner, text="Nenhum arquivo anexado",
                                                 font=ctk.CTkFont(size=FONTS["size_small"]),
                                                 text_color=COLORS["text_muted"], anchor="w")
@@ -243,28 +210,10 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
                                                     font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
                                                     command=self.visualizar_arquivo)
         self.btn_visualizar_arquivo.pack(anchor="w", pady=(8, 0))
->>>>>>> main
 
         btn_frame = ctk.CTkFrame(detail_container, fg_color="transparent")
         btn_frame.pack(fill="x", padx=10, pady=(10, 15))
 
-<<<<<<< HEAD
-        ctk.CTkButton(btn_frame, text="Aprovar", height=36, corner_radius=4,
-                      fg_color=colors["success_dark"], hover_color=colors["success_dark_hover"], text_color="white",
-                      font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                      command=self.aprovar).pack(side="left", padx=(0, 5))
-
-        ctk.CTkButton(btn_frame, text="Solicitar Correcao", height=36, corner_radius=4,
-                      fg_color=colors["warning"], hover_color=colors["warning_hover"], text_color=colors["text"],
-                      font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                      command=self.solicitar_correcao).pack(side="left", padx=(0, 5))
-
-        ctk.CTkButton(btn_frame, text="Rejeitar", height=36, corner_radius=4,
-                      fg_color=colors["danger"], hover_color=colors["danger_hover"],
-                      text_color="white",
-                      font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                      command=self.rejeitar).pack(side="left")
-=======
         if self.pode_aprovar:
             self.btn_aprovar = ctk.CTkButton(btn_frame, text="Aprovar", height=36, corner_radius=4,
                                              fg_color=COLORS["success_dark"], hover_color=COLORS["success_dark_hover"], text_color="white",
@@ -288,7 +237,6 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
             ctk.CTkLabel(btn_frame, text="Somente leitura — apenas o administrador pode aprovar ou rejeitar notas.",
                          font=ctk.CTkFont(size=FONTS["size_small"]),
                          text_color=COLORS["text_muted"], anchor="w").pack(anchor="w")
->>>>>>> main
 
     def carregar_do_banco(self):
         try:
@@ -359,7 +307,6 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
         self.atualizar_cards()
 
     def adicionar_linha(self, idx, nota):
-        colors = get_colors()
         linha = ctk.CTkFrame(self.table_body, fg_color="transparent", height=48)
         linha.pack(fill="x")
         linha.pack_propagate(False)
@@ -373,22 +320,6 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
                  f"R$ {nota['valor_total']:,.2f}",
                  str(nota["itens"]), nota["status"]]
 
-<<<<<<< HEAD
-        for i, valor in enumerate(dados):
-            cor = colors["text"] if i == 0 else colors["text_muted"]
-            ctk.CTkLabel(cols, text=valor,
-                         font=ctk.CTkFont(size=FONTS["size_small"]),
-                         text_color=cor, anchor="w").grid(row=0, column=i, sticky="w", padx=5)
-
-        btn_frame = ctk.CTkFrame(linha, fg_color="transparent")
-        btn_frame.pack(side="right", padx=(0, 10))
-
-        ctk.CTkButton(btn_frame, text="Ver", width=50, height=28, corner_radius=4,
-                      fg_color=colors["white"], hover_color="#F0F0F0",
-                      text_color=colors["text"], border_width=1, border_color=colors["border"],
-                      font=ctk.CTkFont(size=11),
-                      command=lambda n=nota: self.selecionar_nota(n)).pack(side="left", padx=2)
-=======
         for i, (valor, (rx, rw, anchor)) in enumerate(zip(dados, COL_NF_CFG)):
             cor = COLORS["text"] if i == 0 else COLORS["text_muted"]
             ctk.CTkLabel(
@@ -404,7 +335,6 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
             font=ctk.CTkFont(size=11), cursor="hand2",
             command=lambda n=nota: self.selecionar_nota(n),
         ).place(relx=0.84, rely=0.5, anchor="w")
->>>>>>> main
 
         linha.bind("<Button-1>", lambda e, n=nota: self.selecionar_nota(n))
 
@@ -579,13 +509,8 @@ if __name__ == "__main__":
 
     app = ctk.CTk()
     app.title("FISCSOFT - Monitoramento de Notas Fiscais")
-<<<<<<< HEAD
-    app.geometry("1400x800")
-    app.configure(fg_color=get_colors()["bg"])
-=======
     app.configure(fg_color=COLORS["bg"])
     app.after(0, app.state, "zoomed")
->>>>>>> main
 
     RelatoriosPage(app).pack(fill="both", expand=True)
     app.mainloop()

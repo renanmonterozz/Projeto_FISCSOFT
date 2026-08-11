@@ -5,12 +5,8 @@ from tkinter import messagebox
 from PIL import Image
 import os
 
-<<<<<<< HEAD
-from config.styles import get_colors, FONTS, ASSETS_DIR
-=======
 from config.styles import COLORS, FONTS, ASSETS_DIR
 from config.permissoes import normalizar_perfil
->>>>>>> main
 from database.conexaodb import Database
 from screens.widgets import ComboBoxComSeta
 from utils import hash_password, registrar_log
@@ -26,13 +22,12 @@ PERFIL_DISPLAY = {
 class CadastrarUsuarioWindow(ctk.CTkToplevel):
     def __init__(self, master=None, usuario=None, usuario_logado=None):
         super().__init__(master)
-        colors = get_colors()
         self.usuario_edicao = usuario
         self.usuario_logado = usuario_logado
         self.title("FISCSOFT - Cadastrar Agente IBAMA")
         self.geometry("820x700")
         self.resizable(False, False)
-        self.configure(fg_color=colors["border"])
+        self.configure(fg_color=COLORS["border"])
         self.grab_set()
 
         self.build_ui()
@@ -41,10 +36,9 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
             self.preencher_campos()
 
     def build_ui(self):
-        colors = get_colors()
         container = ctk.CTkFrame(
-            self, fg_color=colors["white"], corner_radius=4,
-            border_width=1, border_color=colors["border"]
+            self, fg_color=COLORS["white"], corner_radius=4,
+            border_width=1, border_color=COLORS["border"]
         )
         container.pack(fill="both", expand=True, padx=20, pady=20)
 
@@ -55,26 +49,26 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
             header,
             text="Cadastro / Edicao de Agente IBAMA",
             font=ctk.CTkFont(size=FONTS["size_title"], weight="bold"),
-            text_color=colors["primary"],
+            text_color=COLORS["primary"],
         ).pack(anchor="w")
 
         ctk.CTkLabel(
             header,
             text="Informe os dados do usuario.",
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
-            text_color=colors["text"],
+            text_color=COLORS["text"],
         ).pack(anchor="w", pady=(2, 0))
 
         form = ctk.CTkFrame(
-            container, fg_color=colors["white"], corner_radius=4,
-            border_width=1, border_color=colors["border"]
+            container, fg_color=COLORS["white"], corner_radius=4,
+            border_width=1, border_color=COLORS["border"]
         )
         form.pack(fill="both", expand=True, padx=25, pady=(15, 30))
 
         ctk.CTkLabel(
             form, text="Dados Pessoais",
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
-            text_color=colors["text"],
+            text_color=COLORS["text"],
         ).pack(anchor="w", padx=20, pady=(18, 8))
 
         row1 = ctk.CTkFrame(form, fg_color="transparent")
@@ -93,7 +87,7 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
         ctk.CTkLabel(
             form, text="Dados de Acesso",
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
-            text_color=colors["text"],
+            text_color=COLORS["text"],
         ).pack(anchor="w", padx=20, pady=(5, 8))
 
         row3 = ctk.CTkFrame(form, fg_color="transparent")
@@ -127,7 +121,7 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
             image=salvar_icon,
             text="  Salvar Usuario",
             height=40, corner_radius=4,
-            fg_color=colors["primary"], hover_color=colors["primary_hover"],
+            fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
             text_color="white", border_width=0,
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             compound="left",
@@ -138,9 +132,9 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
             btn_frame,
             text="Cancelar",
             height=40, corner_radius=4,
-            fg_color=colors["border"], hover_color="#C8C8C8",
-            text_color=colors["text"], border_width=1,
-            border_color=colors["border"],
+            fg_color=COLORS["border"], hover_color="#C8C8C8",
+            text_color=COLORS["text"], border_width=1,
+            border_color=COLORS["border"],
             font=ctk.CTkFont(size=FONTS["size_body"]),
             command=self.destroy,
         ).pack(side="right")
@@ -158,7 +152,6 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
         self.combo_perfil.set(PERFIL_DISPLAY.get(perfil_atual, "Operador"))
 
     def _criar_campo(self, parent, label, col, weight=1, show=None):
-        colors = get_colors()
         parent.grid_columnconfigure(col, weight=weight)
 
         frame = ctk.CTkFrame(parent, fg_color="transparent")
@@ -167,25 +160,20 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
         ctk.CTkLabel(
             frame, text=label,
             font=ctk.CTkFont(size=12),
-            text_color=colors["text"],
+            text_color=COLORS["text"],
         ).pack(anchor="w", pady=(0, 4))
 
         entry = ctk.CTkEntry(
             frame, height=36, corner_radius=4,
-            border_width=1, border_color=colors["border"],
-            fg_color=colors["white"], text_color=colors["text"],
-            placeholder_text_color=colors["text_muted"],
+            border_width=1, border_color=COLORS["border"],
+            fg_color=COLORS["white"], text_color=COLORS["text"],
+            placeholder_text_color=COLORS["text_muted"],
             show=show,
         )
         entry.pack(fill="x")
         return entry
 
-<<<<<<< HEAD
-    def _criar_combobox(self, parent, label, col, values):
-        colors = get_colors()
-=======
     def _criar_combobox(self, parent, label, col, values, default=None):
->>>>>>> main
         parent.grid_columnconfigure(col, weight=1)
 
         frame = ctk.CTkFrame(parent, fg_color="transparent")
@@ -194,17 +182,17 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
         ctk.CTkLabel(
             frame, text=label,
             font=ctk.CTkFont(size=12),
-            text_color=colors["text"],
+            text_color=COLORS["text"],
         ).pack(anchor="w", pady=(0, 4))
 
         combo = ComboBoxComSeta(
             frame, values=values, height=36,
             corner_radius=4, border_width=1,
-            border_color=colors["border"],
-            fg_color=colors["white"], button_color=colors["border"],
-            button_hover_color=colors["hover"],
-            dropdown_fg_color=colors["white"],
-            text_color=colors["text"],
+            border_color=COLORS["border"],
+            fg_color=COLORS["white"], button_color=COLORS["border"],
+            button_hover_color=COLORS["hover"],
+            dropdown_fg_color=COLORS["white"],
+            text_color=COLORS["text"],
         )
         combo.pack(fill="x")
         combo.set(default if default is not None else values[0])

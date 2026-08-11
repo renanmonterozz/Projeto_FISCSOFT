@@ -4,12 +4,8 @@ from tkinter import messagebox
 
 import customtkinter as ctk
 
-<<<<<<< HEAD
-from config.styles import get_colors, FONTS
-=======
 from config.styles import COLORS, FONTS
 from config.permissoes import pode_acao
->>>>>>> main
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
@@ -19,7 +15,7 @@ from utils import registrar_log
 class ItensPage(CrudBase, ctk.CTkFrame):
     def __init__(self, master, on_voltar=None, processo_tccm=None, perfil="admin", **kwargs):
         super().__init__(master, **kwargs)
-        self.configure(fg_color=get_colors()["bg"])
+        self.configure(fg_color=COLORS["bg"])
         self.on_voltar = on_voltar
         self.processo_tccm = processo_tccm
         self.perfil = perfil
@@ -32,7 +28,6 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         self._build_table()
 
     def _build_filter_bar(self):
-        colors = get_colors()
         inner = self.build_filter_container()
         row = ctk.CTkFrame(inner, fg_color="transparent")
         row.pack(fill="x")
@@ -42,33 +37,25 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         btn_frame = self.build_btn_frame(row)
         self.build_action_btn(btn_frame, "  Pesquisar", carregar_icone("lupa.png"), self.pesquisar)
         self.build_action_btn(btn_frame, "  Limpar", carregar_icone("apagar.png"), self.limpar_filtros)
-<<<<<<< HEAD
-        self.build_action_btn(btn_frame, "  Novo Item", carregar_icone("mais.png"),
-                              self.abrir_formulario, fg_color=colors["primary"],
-                              hover_color=colors["primary_hover"], text_color="white",
-                              border=False, bold=True)
-=======
 
         if self.pode_editar:
             self.build_action_btn(btn_frame, "  Novo Item", carregar_icone("mais.png"),
                                   self.abrir_formulario, fg_color=COLORS["primary"],
                                   hover_color=COLORS["primary_hover"], text_color="white",
                                   border=False, bold=True)
->>>>>>> main
 
     def _build_table(self):
-        colors = get_colors()
         CrudBase.build_table(self, pad_y=(0, 30))
 
         # Container interno com borda
         self.table_container = ctk.CTkFrame(
             self.table_frame, fg_color="transparent",
-            border_width=1, border_color=colors["border"], corner_radius=4
+            border_width=1, border_color="#999999", corner_radius=4
         )
         self.table_container.pack(fill="both", expand=True, padx=10, pady=10)
 
         # --- cabeçalho com PLACE ---
-        header = ctk.CTkFrame(self.table_container, fg_color=colors["table_header"],
+        header = ctk.CTkFrame(self.table_container, fg_color=COLORS["table_header"],
                               height=44, corner_radius=0)
         header.pack(fill="x")
         header.pack_propagate(False)
@@ -89,18 +76,18 @@ class ItensPage(CrudBase, ctk.CTkFrame):
             ctk.CTkLabel(
                 cols, text=texto,
                 font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                text_color=colors["text_muted"],
+                text_color=COLORS["text_muted"],
                 anchor=anchor,
             ).place(relx=rx, relwidth=rw, rely=0, relheight=1)
 
         ctk.CTkLabel(
             header, text="Ações",
             font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-            text_color=colors["text_muted"], width=120,
+            text_color=COLORS["text_muted"], width=120,
         ).pack(side="right", padx=(0, 15))
 
         self.table_body = ctk.CTkScrollableFrame(
-            self.table_container, fg_color=colors["white"], corner_radius=0
+            self.table_container, fg_color=COLORS["white"], corner_radius=0
         )
         self.table_body.pack(fill="both", expand=True)
 
@@ -167,7 +154,6 @@ class ItensPage(CrudBase, ctk.CTkFrame):
             self._add_row(item)
 
     def _add_row(self, item):
-        colors = get_colors()
         linha, data, _ = self.add_data_row(has_checkbox=False)
 
         # pesos [3, 2, 3, 2] → relx / relwidth (idêntico ao cabeçalho)
@@ -192,7 +178,7 @@ class ItensPage(CrudBase, ctk.CTkFrame):
             ctk.CTkLabel(
                 data, text=texto,
                 font=ctk.CTkFont(size=FONTS["size_body"]),
-                text_color=colors["text"] if anchor == "w" else colors["text_muted"],
+                text_color=COLORS["text"] if anchor == "w" else COLORS["text_muted"],
                 anchor=anchor,
             ).place(relx=rx, relwidth=rw, rely=0, relheight=1)
 
@@ -270,12 +256,11 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         return True
 
     def abrir_formulario(self, item=None):
-        colors = get_colors()
         editando = item is not None
         modal = ctk.CTkToplevel(self)
         modal.title(f"{'Editar' if editando else 'Novo'} Item")
         modal.geometry("550x520")
-        modal.configure(fg_color=colors["white"])
+        modal.configure(fg_color=COLORS["white"])
         modal.transient(self)
         modal.grab_set()
 
@@ -283,62 +268,32 @@ class ItensPage(CrudBase, ctk.CTkFrame):
             modal,
             text=f"{'Editar' if editando else 'Cadastrar Novo'} Item",
             font=ctk.CTkFont(size=FONTS["size_title"], weight="bold"),
-            text_color=colors["primary"],
+            text_color=COLORS["primary"],
         ).pack(pady=(20, 15))
 
         frame = ctk.CTkFrame(modal, fg_color="transparent")
         frame.pack(padx=30, fill="x")
 
-        campos_texto = ["Nome do Item", "Descricao", "Justificativa"]
+        campos = ["Nome do Item", "Descricao", "Tipo de Material", "Justificativa", "Unidade de Medida"]
         entries = {}
-        for label in campos_texto:
+        for label in campos:
             ctk.CTkLabel(
                 frame, text=label,
                 font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             ).pack(fill="x", pady=(8, 2))
             e = ctk.CTkEntry(
                 frame, height=36, corner_radius=4,
-                fg_color=colors["white"], border_width=1, border_color=colors["border"],
+                fg_color=COLORS["white"], border_width=1, border_color=COLORS["border"],
             )
             e.pack(fill="x")
             entries[label] = e
 
-        # Tipo de Material como ComboBox
-        ctk.CTkLabel(
-            frame, text="Tipo de Material",
-            font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
-        ).pack(fill="x", pady=(8, 2))
-        combo_tipo = ctk.CTkComboBox(
-            frame, values=["CONSUMO", "PERMANENTE"],
-            height=36, corner_radius=4,
-            fg_color=colors["white"], border_color=colors["border"],
-            button_color=colors["primary"], button_hover_color=colors["primary_hover"],
-            dropdown_fg_color=colors["white"],
-        )
-        combo_tipo.pack(fill="x")
-        entries["Tipo de Material"] = combo_tipo
-
-        # Unidade de Medida como ComboBox
-        ctk.CTkLabel(
-            frame, text="Unidade de Medida",
-            font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
-        ).pack(fill="x", pady=(8, 2))
-        combo_unidade = ctk.CTkComboBox(
-            frame, values=["Unidade", "Litro", "Caixa", "KG"],
-            height=36, corner_radius=4,
-            fg_color=colors["white"], border_color=colors["border"],
-            button_color=colors["primary"], button_hover_color=colors["primary_hover"],
-            dropdown_fg_color=colors["white"],
-        )
-        combo_unidade.pack(fill="x")
-        entries["Unidade de Medida"] = combo_unidade
-
         if editando:
             entries["Nome do Item"].insert(0, item.get("nome", ""))
             entries["Descricao"].insert(0, item.get("descricao", ""))
-            combo_tipo.set(item.get("tipo", ""))
+            entries["Tipo de Material"].insert(0, item.get("tipo", ""))
             entries["Justificativa"].insert(0, item.get("justificativa", ""))
-            combo_unidade.set(item.get("unidade_medida", ""))
+            entries["Unidade de Medida"].insert(0, item.get("unidade_medida", ""))
 
         def salvar():
             nome = entries["Nome do Item"].get().strip()
@@ -353,10 +308,8 @@ class ItensPage(CrudBase, ctk.CTkFrame):
             )
             if editando:
                 self._atualizar_item(item["id"], data)
-                registrar_log("Sistema", "edicao", "itens", f"Item '{item['nome']}' (ID: {item['id']}) atualizado")
             else:
                 self._inserir_item(data)
-                registrar_log("Sistema", "insercao", "itens", f"Item '{data['nome']}' cadastrado")
             modal.destroy()
             self.itens = self.carregar_do_banco()
             self.render_rows()
@@ -366,7 +319,7 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         ctk.CTkButton(
             btn_frame, text="Salvar",
             height=40, corner_radius=4,
-            fg_color=colors["primary"], hover_color=colors["primary_hover"],
+            fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
             text_color="white", border_width=0,
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             command=salvar,
@@ -374,17 +327,16 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         ctk.CTkButton(
             btn_frame, text="Cancelar",
             height=40, corner_radius=4,
-            fg_color=colors["white"], hover_color="#F0F0F0",
-            text_color=colors["text_muted"], border_width=1, border_color=colors["border"],
+            fg_color=COLORS["white"], hover_color="#F0F0F0",
+            text_color=COLORS["text_muted"], border_width=1, border_color=COLORS["border"],
             command=modal.destroy,
         ).pack(side="left", fill="x", expand=True, padx=(5, 0))
 
     def visualizar(self, item):
-        colors = get_colors()
         modal = ctk.CTkToplevel(self)
         modal.title(f"Item #{item['id']}")
         modal.geometry("550x400")
-        modal.configure(fg_color=colors["white"])
+        modal.configure(fg_color=COLORS["white"])
         modal.transient(self)
         modal.grab_set()
 
@@ -406,14 +358,14 @@ class ItensPage(CrudBase, ctk.CTkFrame):
             ).grid(row=i, column=0, sticky="w", pady=3, padx=(0, 10))
             ctk.CTkLabel(
                 frame, text=v,
-                text_color=colors["text_muted"],
+                text_color=COLORS["text_muted"],
                 wraplength=380,
             ).grid(row=i, column=1, sticky="w", pady=3)
 
         ctk.CTkButton(
             modal, text="Fechar", height=34, width=100,
-            fg_color=colors["border"], hover_color="#C0C0C0",
-            text_color=colors["text"], command=modal.destroy,
+            fg_color=COLORS["border"], hover_color="#C0C0C0",
+            text_color=COLORS["text"], command=modal.destroy,
         ).pack(pady=(15, 10))
 
     def editar(self, item):
@@ -440,12 +392,7 @@ if __name__ == "__main__":
     ctk.set_default_color_theme("blue")
     app = ctk.CTk()
     app.title("FISCSOFT - Itens")
-<<<<<<< HEAD
-    app.geometry("1200x700")
-    app.configure(fg_color=get_colors()["bg"])
-=======
     app.configure(fg_color=COLORS["bg"])
     app.after(0, app.state, "zoomed")
->>>>>>> main
     ItensPage(app).pack(fill="both", expand=True)
     app.mainloop()

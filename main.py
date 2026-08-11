@@ -11,12 +11,8 @@ from PIL import Image
 
 import customtkinter as ctk
 
-<<<<<<< HEAD
-from config.styles import ASSETS_DIR, get_colors, FONTS
-=======
 from config.styles import ASSETS_DIR, COLORS, FONTS
 from config.permissoes import PAGINAS_EXTERNO, normalizar_perfil, paginas_do_perfil, pode_acao
->>>>>>> main
 from database.conexaodb import Database
 from screens.sidebar import Sidebar
 from screens.menu_inicial import MenuInicialPage
@@ -66,7 +62,7 @@ class LoginApp(ctk.CTk):
         super().__init__()
 
         self.title("FISCSOFT - Login")
-        self.configure(fg_color=get_colors()["white"])
+        self.configure(fg_color=COLORS["white"])
         self.after(0, self.state, "zoomed")
 
         # --- Imagem de fundo ---
@@ -444,13 +440,8 @@ class LoginApp(ctk.CTk):
 
         welcome_app = ctk.CTk()
         welcome_app.title("FISCSOFT - Bem-vindo")
-<<<<<<< HEAD
-        welcome_app.geometry("1200x700")
-        welcome_app.configure(fg_color=get_colors()["bg"])
-=======
         welcome_app.configure(fg_color=COLORS["bg"])
         welcome_app.after(0, welcome_app.state, "zoomed")
->>>>>>> main
         welcome_app.usuario_logado = self.usuario_logado
         welcome_app.perfil = perfil
         welcome_app.processo_tccm = processo_tccm
@@ -462,7 +453,7 @@ class LoginApp(ctk.CTk):
             header,
             text=f"Bem-vindo, {self.usuario_logado}",
             font=ctk.CTkFont(size=FONTS["size_title"], weight="bold"),
-            text_color=get_colors()["text"],
+            text_color=COLORS["text"],
         ).pack(side="left")
 
         content = ctk.CTkFrame(welcome_app, fg_color="transparent")
@@ -485,7 +476,7 @@ class LoginApp(ctk.CTk):
             win = ctk.CTkToplevel(welcome_app)
             win.title("Cadastro de TCCM")
             win.geometry("900x650")
-            win.configure(fg_color=get_colors()["bg"])
+            win.configure(fg_color=COLORS["bg"])
             win.transient(welcome_app)
             win.grab_set()
             CadastroTCCMCompleto(
@@ -522,13 +513,8 @@ class LoginApp(ctk.CTk):
 
         main_app = ctk.CTk()
         main_app.title("FISCSOFT" if perfil == "admin" else "FISCSOFT - Usuario")
-<<<<<<< HEAD
-        main_app.geometry("1200x700")
-        main_app.configure(fg_color=get_colors()["white"])
-=======
         main_app.configure(fg_color=COLORS["white"])
         main_app.after(0, main_app.state, "zoomed")
->>>>>>> main
         main_app.usuario_logado = self.usuario_logado
         main_app.perfil = perfil
 
@@ -543,8 +529,6 @@ class LoginApp(ctk.CTk):
             if pagina not in permissoes:
                 messagebox.showwarning("Acesso Negado", "Voce nao tem permissao para acessar esta pagina.")
                 return
-
-            main_app._pagina_atual = pagina
 
             for w in content_frame.winfo_children():
                 w.destroy()
@@ -594,14 +578,8 @@ class LoginApp(ctk.CTk):
                     content_frame,
                     text=pagina,
                     font=ctk.CTkFont(size=24, weight="bold"),
-                    text_color=get_colors()["text"],
+                    text_color=COLORS["text"],
                 ).pack(expand=True)
-
-        def toggle_theme_callback():
-            sidebar.rebuild()
-            for w in content_frame.winfo_children():
-                w.destroy()
-            navegar(main_app._pagina_atual)
 
         def logout():
             try:
@@ -613,28 +591,14 @@ class LoginApp(ctk.CTk):
             _suprimir_erro_tcl()
             app.mainloop()
 
-<<<<<<< HEAD
-        sidebar = Sidebar(main_app, width=210, on_navigate=navegar, on_sair=logout, on_toggle_theme=toggle_theme_callback)
-=======
         sidebar = Sidebar(main_app, width=210, on_navigate=navegar, on_sair=logout, perfil=perfil)
->>>>>>> main
         sidebar.pack(side="left", fill="y")
 
-        content_frame = ctk.CTkFrame(main_app, fg_color=get_colors()["bg"])
+        content_frame = ctk.CTkFrame(main_app, fg_color=COLORS["bg"])
         content_frame.pack(side="right", fill="both", expand=True)
 
-<<<<<<< HEAD
-        main_app._sidebar = sidebar
-        main_app._content_frame = content_frame
-        main_app._navegar = navegar
-        main_app._pagina_atual = "Menu Principal"
-
-        pagina_inicial = "Menu Principal"
-        navegar(pagina_inicial)
-=======
         navegar("Menu Principal")
         _suprimir_erro_tcl()
->>>>>>> main
         main_app.mainloop()
 
 
