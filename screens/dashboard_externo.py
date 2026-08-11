@@ -200,22 +200,22 @@ class DashboardExterno(CrudBase, ctk.CTkFrame):
 
             sql = """SELECT processo, total_devido, total_pago, status
                      FROM tccm
-                     WHERE "infrator_id_infrator" = ?
+                     WHERE `infrator_id_infrator` = %s
                      LIMIT 1"""
             try:
                 resultado = db.executar(sql, (self.id_infrator,))
                 row = resultado.fetchone() if resultado else None
                 if row:
-                    self.tccm_labels["processo"].configure(text=row[0] or "--")
-                    valor_devido = float(row[1]) if row[1] else 0
+                    self.tccm_labels["processo"].configure(text=row['processo'] or "--")
+                    valor_devido = float(row['total_devido']) if row['total_devido'] else 0
                     self.tccm_labels["total_devido"].configure(
                         text=f"R$ {valor_devido:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
                     )
-                    valor_pago = float(row[2]) if row[2] else 0
+                    valor_pago = float(row['total_pago']) if row['total_pago'] else 0
                     self.tccm_labels["total_pago"].configure(
                         text=f"R$ {valor_pago:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
                     )
-                    self.tccm_labels["status"].configure(text=row[3] or "--")
+                    self.tccm_labels["status"].configure(text=row['status'] or "--")
             except Exception:
                 pass
 
@@ -236,9 +236,9 @@ class DashboardExterno(CrudBase, ctk.CTkFrame):
                 return
 
             sql = """SELECT nf.nota_fiscal, nf.data, nf.valor_total, nf.status_nota
-                     FROM "nota fiscal" nf
+                     FROM `nota fiscal` nf
                      JOIN tccm t ON nf.processo = t.processo
-                     WHERE t."infrator_id_infrator" = ?
+                     WHERE t.`infrator_id_infrator` = %s
                      GROUP BY nf.nota_fiscal, nf.data, nf.valor_total, nf.status_nota
                      ORDER BY nf.data DESC"""
             try:
@@ -246,7 +246,7 @@ class DashboardExterno(CrudBase, ctk.CTkFrame):
                 notas = []
                 if resultado:
                     for row in resultado.fetchall():
-                        raw_data = row[1]
+                        raw_data = row['data']
                         if hasattr(raw_data, "strftime"):
                             data_fmt = raw_data.strftime("%d/%m/%Y")
                         elif raw_data:
@@ -258,10 +258,10 @@ class DashboardExterno(CrudBase, ctk.CTkFrame):
                         else:
                             data_fmt = "--"
                         notas.append({
-                            "nota_fiscal": row[0] or "--",
+                            "nota_fiscal": row['nota_fiscal'] or "--",
                             "data": data_fmt,
-                            "valor_total": float(row[2]) if row[2] else 0,
-                            "status": row[3] or "Pendente",
+                            "valor_total": float(row['valor_total']) if row['valor_total'] else 0,
+                            "status": row['status_nota'] or "Pendente",
                         })
             except Exception:
                 notas = []
@@ -330,16 +330,16 @@ class DashboardExterno(CrudBase, ctk.CTkFrame):
             if not db.conexao:
                 return
 
-            base = '''FROM "nota fiscal" nf
+            base = '''FROM `nota fiscal` nf
                       JOIN tccm t ON nf.processo = t.processo
-                      WHERE t."infrator_id_infrator" = ?'''
+                      WHERE t.`infrator_id_infrator` = %s'''
 
             try:
                 r = db.executar(
-                    'SELECT COUNT(*) FROM tccm WHERE "infrator_id_infrator" = ?',
+                    'SELECT COUNT(*) FROM tccm WHERE `infrator_id_infrator` = %s',
                     (self.id_infrator,)
                 ).fetchone()
-                total_tccm = r[0] if r else 0
+                total_tccm = r['COUNT(*)'] if r else 0
             except Exception:
                 total_tccm = 0
 
@@ -348,7 +348,7 @@ class DashboardExterno(CrudBase, ctk.CTkFrame):
                     f'SELECT COUNT(DISTINCT nf.nota_fiscal) {base}',
                     (self.id_infrator,)
                 ).fetchone()
-                total_nf = r[0] if r else 0
+                total_nf = r['COUNT(DISTINCT nf.nota_fiscal)'] if r else 0
             except Exception:
                 total_nf = 0
 
@@ -357,7 +357,7 @@ class DashboardExterno(CrudBase, ctk.CTkFrame):
                     f'''SELECT COALESCE(SUM(nf.valor_total), 0) {base}''',
                     (self.id_infrator,)
                 ).fetchone()
-                valor_total = float(r[0]) if r else 0
+                valor_total = float(r['COALESCE(SUM(nf.valor_total), 0)']) if r else 0
             except Exception:
                 valor_total = 0
 
@@ -367,7 +367,7 @@ class DashboardExterno(CrudBase, ctk.CTkFrame):
                         AND nf.status_nota = 'Pendente'""",
                     (self.id_infrator,)
                 ).fetchone()
-                total_pendentes = r[0] if r else 0
+                total_pendentes = r['COUNT(DISTINCT nf.nota_fiscal)'] if r else 0
             except Exception:
                 total_pendentes = 0
 

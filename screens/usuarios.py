@@ -97,20 +97,20 @@ class UsuariosPage(CrudBase, ctk.CTkFrame):
             if not db.conexao:
                 return []
             sql = """SELECT matricula, nome_agente, cpf, email, telefone, login, perfil, status
-                     FROM "agente ibama" """
+                     FROM `agente ibama` """
             resultados = db.executar(sql)
             usuarios = []
             if resultados:
                 for row in resultados.fetchall():
                     usuarios.append({
-                        "matricula": row[0],
-                        "nome": row[1],
-                        "cpf": row[2],
-                        "email": row[3],
-                        "telefone": row[4],
-                        "login": row[5],
-                        "perfil": row[6].capitalize() if row[6] else "Agente",
-                        "status": "Ativo" if row[7] == "ativo" else "Inativo",
+                        "matricula": row['matricula'],
+                        "nome": row['nome_agente'],
+                        "cpf": row['cpf'],
+                        "email": row['email'],
+                        "telefone": row['telefone'],
+                        "login": row['login'],
+                        "perfil": row['perfil'].capitalize() if row['perfil'] else "Agente",
+                        "status": "Ativo" if row['status'] == "ativo" else "Inativo",
                     })
             return usuarios
 
@@ -201,7 +201,7 @@ class UsuariosPage(CrudBase, ctk.CTkFrame):
             with Database() as db:
                 if db.conexao:
                     db.executar(
-                        "DELETE FROM \"agente ibama\" WHERE matricula = ?",
+                        "DELETE FROM `agente ibama` WHERE matricula = %s",
                         (usuario["matricula"],)
                     )
                     db.commitar()

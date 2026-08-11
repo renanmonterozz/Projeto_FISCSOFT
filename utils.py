@@ -25,7 +25,7 @@ def registrar_log(usuario: str, acao: str, tabela: str, descricao: str):
     with Database() as db:
         if db.conexao:
             sql = """INSERT INTO logs (usuario, acao, tabela, descricao)
-                     VALUES (?, ?, ?, ?)"""
+                     VALUES (%s, %s, %s, %s)"""
             db.executar(sql, (usuario, acao, tabela, descricao))
             db.commitar()
 
@@ -122,13 +122,17 @@ def login_por_certificado() -> tuple[bool, str, dict | None]:
         sql = """
             SELECT nome_agente, cpf, status, perfil, login
             FROM "agente ibama"
-            WHERE cpf = ?
+            WHERE cpf = %s
         """
         resultado = db.executar(sql, (identificador,))
         registro = resultado.fetchone() if resultado else None
     if registro is None:
         return False, f"CPF {identificador} nao encontrado no sistema", None
-    nome, cpf, status, perfil, login = registro
+    nome = registro["nome_agente"]
+    cpf = registro["cpf"]
+    status = registro["status"]
+    perfil = registro["perfil"]
+    login = registro["login"]
     if status != "ativo":
         return False, "Usuario inativo! Contate o administrador.", None
     return True, "Login realizado com sucesso", {

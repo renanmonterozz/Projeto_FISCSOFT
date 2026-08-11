@@ -245,28 +245,28 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
                     return []
                 sql = """SELECT nf.nota_fiscal, nf.data, nf.valor_total,
                                 i.nome_infrator, i.cpf,
-                                nf.processo, nf."agente ibama_matricula", nf.status_nota,
+                                nf.processo, nf.`agente ibama_matricula`, nf.status_nota,
                                 t.total_devido, t.total_pago,
                                 COUNT(p.lote) as qtd_itens,
                                 nf.arquivo
-                         FROM "nota fiscal" nf
+                         FROM `nota fiscal` nf
                          JOIN tccm t ON nf.processo = t.processo
-                         JOIN infrator i ON i.id_infrator = t."infrator_id_infrator"
-                         LEFT JOIN produtos p ON p."nota fiscal_nota_fiscal" = nf.nota_fiscal
-                            AND p."nota fiscal_agente ibama_matricula" = nf."agente ibama_matricula"
+                         JOIN infrator i ON i.id_infrator = t.`infrator_id_infrator`
+                         LEFT JOIN produtos p ON p.`nota fiscal_nota_fiscal` = nf.nota_fiscal
+                            AND p.`nota fiscal_agente ibama_matricula` = nf.`agente ibama_matricula`
                          GROUP BY nf.nota_fiscal, nf.data, nf.valor_total,
                                 i.nome_infrator, i.cpf, nf.processo,
-                                nf."agente ibama_matricula", nf.status_nota,
+                                nf.`agente ibama_matricula`, nf.status_nota,
                                 t.total_devido, t.total_pago, nf.arquivo"""
                 try:
                     resultados = db.executar(sql)
                 except Exception:
                     sql = """SELECT nf.nota_fiscal, nf.data, nf.valor_total,
                                     i.nome_infrator, i.cpf,
-                                    nf.processo, nf."agente ibama_matricula", nf.status_nota
-                             FROM "nota fiscal" nf
+                                    nf.processo, nf.`agente ibama_matricula`, nf.status_nota
+                             FROM `nota fiscal` nf
                              JOIN tccm t ON nf.processo = t.processo
-                             JOIN infrator i ON i.id_infrator = t."infrator_id_infrator" """
+                             JOIN infrator i ON i.id_infrator = t.`infrator_id_infrator` """
                     try:
                         resultados = db.executar(sql)
                     except Exception:
@@ -275,23 +275,23 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
                 notas = []
                 if resultados:
                     for row in resultados.fetchall():
-                        status = row[7] if len(row) > 7 and row[7] else "Pendente"
-                        qtd_itens = row[10] if len(row) > 10 else 0
-                        total_devido = float(row[8]) if len(row) > 8 and row[8] else 0
-                        total_pago = float(row[9]) if len(row) > 9 and row[9] else 0
+                        status = row['status_nota'] if row['status_nota'] else "Pendente"
+                        qtd_itens = row['qtd_itens'] if row['qtd_itens'] else 0
+                        total_devido = float(row['total_devido']) if row['total_devido'] else 0
+                        total_pago = float(row['total_pago']) if row['total_pago'] else 0
                         notas.append({
-                            "nota_fiscal": row[0],
-                            "data": _fmt_date(row[1]),
-                            "valor_total": float(row[2]) if row[2] else 0,
-                            "interessado": row[3],
-                            "cpf": row[4],
-                            "processo": row[5],
-                            "matricula": row[6],
+                            "nota_fiscal": row['nota_fiscal'],
+                            "data": _fmt_date(row['data']),
+                            "valor_total": float(row['valor_total']) if row['valor_total'] else 0,
+                            "interessado": row['nome_infrator'],
+                            "cpf": row['cpf'],
+                            "processo": row['processo'],
+                            "matricula": row['agente ibama_matricula'],
                             "status": status,
                             "itens": qtd_itens,
                             "total_devido": total_devido,
                             "total_pago": total_pago,
-                            "arquivo": row[11] if len(row) > 11 else None,
+                            "arquivo": row['arquivo'],
                         })
                 return notas
         except Exception:
@@ -427,31 +427,31 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
 
                     sql_soma = """SELECT COALESCE(SUM(quantidade * preco_unitario), 0)
                                  FROM produtos
-                                 WHERE "nota fiscal_nota_fiscal" = ?
-                                   AND "nota fiscal_agente ibama_matricula" = ?"""
+                                 WHERE `nota fiscal_nota_fiscal` = %s
+                                   AND `nota fiscal_agente ibama_matricula` = %s"""
                     r = db.executar(sql_soma, (nota_fiscal, matricula))
-                    soma_produtos = float(r.fetchone()[0]) if r else 0
+                    soma_produtos = float(r.fetchone()['COALESCE(SUM(quantidade * preco_unitario), 0)']) if r else 0
 
                     if soma_produtos > 0:
                         db.executar(
-                            'UPDATE "nota fiscal" SET valor_total = ? WHERE nota_fiscal = ?',
+                            'UPDATE `nota fiscal` SET valor_total = %s WHERE nota_fiscal = %s',
                             (soma_produtos, nota_fiscal)
                         )
 
                     db.executar(
-                        'UPDATE "nota fiscal" SET status_nota = ? WHERE nota_fiscal = ?',
+                        'UPDATE `nota fiscal` SET status_nota = %s WHERE nota_fiscal = %s',
                         (novo_status, nota_fiscal)
                     )
 
                     if novo_status == "Aprovada" and processo:
                         valor_adicionar = soma_produtos if soma_produtos > 0 else self.nf_selecionada["valor_total"]
                         sql_tccm = """UPDATE tccm
-                                      SET total_pago = total_pago + ?,
+                                      SET total_pago = total_pago + %s,
                                           status = CASE
-                                              WHEN (total_pago + ?) >= total_devido THEN 'concluido'
+                                              WHEN (total_pago + %s) >= total_devido THEN 'concluido'
                                               ELSE 'pendente'
                                           END
-                                      WHERE processo = ?"""
+                                      WHERE processo = %s"""
                         db.executar(sql_tccm, (valor_adicionar, valor_adicionar, processo))
 
                     db.commitar()

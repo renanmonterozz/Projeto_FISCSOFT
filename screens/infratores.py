@@ -102,11 +102,11 @@ class InfratoresPage(CrudBase, ctk.CTkFrame):
             if resultados:
                 for row in resultados.fetchall():
                     infratores.append({
-                        "id": row[0],
-                        "nome": row[1],
-                        "cpf": row[2],
-                        "email": row[3],
-                        "telefone": row[4] or "-",
+                        "id": row['id_infrator'],
+                        "nome": row['nome_infrator'],
+                        "cpf": row['cpf'],
+                        "email": row['email'],
+                        "telefone": row['telefone_infrator'] or "-",
                     })
             return infratores
 
@@ -195,7 +195,7 @@ class InfratoresPage(CrudBase, ctk.CTkFrame):
             with Database() as db:
                 if db.conexao:
                     db.executar(
-                        "DELETE FROM infrator WHERE id_infrator = ?",
+                        "DELETE FROM infrator WHERE id_infrator = %s",
                         (infrator["id"],)
                     )
                     db.commitar()

@@ -235,25 +235,25 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
             if self.usuario_edicao:
                 if senha and confirmar and senha == confirmar:
                     senha_hash = hash_password(senha)
-                    sql = """UPDATE "agente ibama" SET
-                             nome_agente=?, cpf=?, email=?, telefone=?,
-                             login=?, senha=?, perfil=?, atualizado_por=?
-                             WHERE matricula=?"""
+                    sql = """UPDATE `agente ibama` SET
+                             nome_agente=%s, cpf=%s, email=%s, telefone=%s,
+                             login=%s, senha=%s, perfil=%s, atualizado_por=%s
+                             WHERE matricula=%s"""
                     params = (nome, cpf, email, telefone, login, senha_hash, perfil,
                               self.usuario_logado or "", matricula_int)
                 else:
-                    sql = """UPDATE "agente ibama" SET
-                             nome_agente=?, cpf=?, email=?, telefone=?,
-                             login=?, perfil=?, atualizado_por=?
-                             WHERE matricula=?"""
+                    sql = """UPDATE `agente ibama` SET
+                             nome_agente=%s, cpf=%s, email=%s, telefone=%s,
+                             login=%s, perfil=%s, atualizado_por=%s
+                             WHERE matricula=%s"""
                     params = (nome, cpf, email, telefone, login, perfil,
                               self.usuario_logado or "", matricula_int)
                 mensagem = f"Usuario '{nome}' atualizado com sucesso!"
             else:
                 senha_hash = hash_password(senha)
-                sql = """INSERT INTO "agente ibama"
+                sql = """INSERT INTO `agente ibama`
                          (matricula, nome_agente, cpf, email, telefone, login, senha, perfil, status, cadastrado_por)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ativo', ?)"""
+                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'ativo', %s)"""
                 params = (matricula_int, nome, cpf, email, telefone, login, senha_hash, perfil,
                           self.usuario_logado or "")
                 mensagem = f"Usuario '{nome}' cadastrado com sucesso!"

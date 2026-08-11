@@ -261,12 +261,15 @@ class LoginApp(ctk.CTk):
             if not db.conexao:
                 messagebox.showerror("Erro", "Nao foi possivel conectar ao banco de dados!")
                 return
-            sql = "SELECT nome_agente, senha, status, perfil FROM \"agente ibama\" WHERE login = ?"
+            sql = "SELECT nome_agente, senha, status, perfil FROM `agente ibama` WHERE login = %s"
             resultado = db.executar(sql, (usuario,))
             registro = resultado.fetchone() if resultado else None
 
         if registro:
-            nome, hash_bd, status, perfil = registro
+            nome = registro["nome_agente"]
+            hash_bd = registro["senha"]
+            status = registro["status"]
+            perfil = registro["perfil"]
 
             if not verify_password(senha, hash_bd):
                 messagebox.showerror("Erro", "Usuario ou senha incorretos!")
@@ -287,7 +290,7 @@ class LoginApp(ctk.CTk):
                 messagebox.showerror("Erro", "Nao foi possivel conectar ao banco de dados!")
                 return
 
-            sql_inf = "SELECT id_infrator, nome_infrator, senha FROM infrator WHERE cpf = ?"
+            sql_inf = "SELECT id_infrator, nome_infrator, senha FROM infrator WHERE cpf = %s"
             resultado_inf = db.executar(sql_inf, (usuario,))
             registro_inf = resultado_inf.fetchone() if resultado_inf else None
 
@@ -295,7 +298,9 @@ class LoginApp(ctk.CTk):
             messagebox.showerror("Erro", "Usuario ou senha incorretos!")
             return
 
-        id_infrator, nome_inf, hash_bd_inf = registro_inf
+        id_infrator = registro_inf["id_infrator"]
+        nome_inf = registro_inf["nome_infrator"]
+        hash_bd_inf = registro_inf["senha"]
 
         if not verify_password(senha, hash_bd_inf):
             messagebox.showerror("Erro", "Usuario ou senha incorretos!")
@@ -310,7 +315,7 @@ class LoginApp(ctk.CTk):
             if not db.conexao:
                 messagebox.showerror("Erro", "Nao foi possivel conectar ao banco de dados!")
                 return
-            sql = "SELECT id_infrator, nome_infrator, senha FROM infrator WHERE cpf = ?"
+            sql = "SELECT id_infrator, nome_infrator, senha FROM infrator WHERE cpf = %s"
             resultado = db.executar(sql, (cpf,))
             registro = resultado.fetchone() if resultado else None
 
@@ -318,7 +323,9 @@ class LoginApp(ctk.CTk):
             messagebox.showerror("Erro", "CPF ou senha incorretos!")
             return
 
-        id_infrator, nome, hash_bd = registro
+        id_infrator = registro["id_infrator"]
+        nome = registro["nome_infrator"]
+        hash_bd = registro["senha"]
 
         if not verify_password(senha, hash_bd):
             messagebox.showerror("Erro", "CPF ou senha incorretos!")

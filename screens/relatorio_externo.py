@@ -452,15 +452,15 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
 
             sql = """SELECT nf.nota_fiscal, nf.data, nf.valor_total, nf.status_nota,
                             COUNT(p.lote) as qtd_itens
-                     FROM "nota fiscal" nf
+                     FROM `nota fiscal` nf
                      JOIN tccm t ON nf.processo = t.processo
-                     LEFT JOIN produtos p ON p."nota fiscal_nota_fiscal" = nf.nota_fiscal
-                        AND p."nota fiscal_agente ibama_matricula" = nf."agente ibama_matricula"
-                     WHERE t."infrator_id_infrator" = ?"""
+                     LEFT JOIN produtos p ON p.`nota fiscal_nota_fiscal` = nf.nota_fiscal
+                        AND p.`nota fiscal_agente ibama_matricula` = nf.`agente ibama_matricula`
+                     WHERE t.`infrator_id_infrator` = %s"""
             params = [self.id_infrator]
 
             if self.data_inicio and self.data_fim:
-                sql += " AND nf.data >= ? AND nf.data <= ?"
+                sql += " AND nf.data >= %s AND nf.data <= %s"
                 params.append(self.data_inicio.strftime("%Y-%m-%d"))
                 params.append(self.data_fim.strftime("%Y-%m-%d"))
 
@@ -470,7 +470,7 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
                 dados = []
                 if resultado:
                     for row in resultado.fetchall():
-                        raw_data = row[1]
+                        raw_data = row['data']
                         if hasattr(raw_data, "strftime"):
                             data_fmt = raw_data.strftime("%d/%m/%Y")
                         elif raw_data:
@@ -482,11 +482,11 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
                         else:
                             data_fmt = "--"
                         dados.append({
-                            "nota_fiscal": row[0] or "--",
+                            "nota_fiscal": row['nota_fiscal'] or "--",
                             "data": data_fmt,
-                            "valor_total": float(row[2]) if row[2] else 0,
-                            "status": row[3] or "Pendente",
-                            "qtd_itens": row[4] if row[4] else 0,
+                            "valor_total": float(row['valor_total']) if row['valor_total'] else 0,
+                            "status": row['status_nota'] or "Pendente",
+                            "qtd_itens": row['qtd_itens'] if row['qtd_itens'] else 0,
                         })
             except Exception:
                 dados = []
@@ -566,16 +566,16 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
             if not db.conexao:
                 return
 
-            base = '''FROM "nota fiscal" nf
+            base = '''FROM `nota fiscal` nf
                       JOIN tccm t ON nf.processo = t.processo
-                      WHERE t."infrator_id_infrator" = ?'''
+                      WHERE t.`infrator_id_infrator` = %s'''
 
             try:
                 r = db.executar(
                     f'SELECT COUNT(DISTINCT nf.nota_fiscal) {base}',
                     (self.id_infrator,)
                 ).fetchone()
-                total = r[0] if r else 0
+                total = r['COUNT(DISTINCT nf.nota_fiscal)'] if r else 0
             except Exception:
                 total = 0
 
@@ -584,7 +584,7 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
                     f"SELECT COUNT(DISTINCT nf.nota_fiscal) {base} AND nf.status_nota = 'Aprovada'",
                     (self.id_infrator,)
                 ).fetchone()
-                aprovadas = r[0] if r else 0
+                aprovadas = r['COUNT(DISTINCT nf.nota_fiscal)'] if r else 0
             except Exception:
                 aprovadas = 0
 
@@ -593,7 +593,7 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
                     f"SELECT COUNT(DISTINCT nf.nota_fiscal) {base} AND nf.status_nota = 'Pendente'",
                     (self.id_infrator,)
                 ).fetchone()
-                pendentes = r[0] if r else 0
+                pendentes = r['COUNT(DISTINCT nf.nota_fiscal)'] if r else 0
             except Exception:
                 pendentes = 0
 
@@ -602,7 +602,7 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
                     f'''SELECT COALESCE(SUM(nf.valor_total), 0) {base}''',
                     (self.id_infrator,)
                 ).fetchone()
-                valor_total = float(r[0]) if r else 0
+                valor_total = float(r['COALESCE(SUM(nf.valor_total), 0)']) if r else 0
             except Exception:
                 valor_total = 0
 
@@ -630,10 +630,10 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
                 return
 
             sql_nf = """SELECT nf.nota_fiscal, nf.data, nf.valor_total, nf.status_nota, nf.processo
-                        FROM "nota fiscal" nf
+                        FROM `nota fiscal` nf
                         JOIN tccm t ON nf.processo = t.processo
-                        WHERE t."infrator_id_infrator" = ?
-                          AND nf.data >= ? AND nf.data <= ?
+                        WHERE t.`infrator_id_infrator` = %s
+                          AND nf.data >= %s AND nf.data <= %s
                         ORDER BY nf.data DESC"""
             try:
                 resultado = db.executar(sql_nf, (
@@ -643,7 +643,7 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
                 ))
                 if resultado:
                     for row in resultado.fetchall():
-                        raw_data = row[1]
+                        raw_data = row['data']
                         if hasattr(raw_data, "strftime"):
                             data_fmt = raw_data.strftime("%d/%m/%Y")
                         elif raw_data:
@@ -655,31 +655,31 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
                         else:
                             data_fmt = "--"
                         nf_info = {
-                            "nota_fiscal": row[0] or "--",
+                            "nota_fiscal": row['nota_fiscal'] or "--",
                             "data": data_fmt,
-                            "valor_total": float(row[2]) if row[2] else 0,
-                            "status": row[3] or "Pendente",
-                            "processo": row[4] or "--",
+                            "valor_total": float(row['valor_total']) if row['valor_total'] else 0,
+                            "status": row['status_nota'] or "Pendente",
+                            "processo": row['processo'] or "--",
                         }
                         dados_nf.append(nf_info)
 
                         sql_itens = """SELECT p.nome_item, p.quantidade, p.preco_unitario
                                        FROM produtos p
-                                       WHERE p."nota fiscal_nota_fiscal" = ?
+                                       WHERE p.`nota fiscal_nota_fiscal` = %s
                                        ORDER BY p.lote"""
-                        res_itens = db.executar(sql_itens, (row[0],))
+                        res_itens = db.executar(sql_itens, (row['nota_fiscal'],))
                         itens = []
                         if res_itens:
                             for ir in res_itens.fetchall():
-                                qtd = int(ir[1]) if ir[1] else 0
-                                preco = float(ir[2]) if ir[2] else 0
+                                qtd = int(ir['quantidade']) if ir['quantidade'] else 0
+                                preco = float(ir['preco_unitario']) if ir['preco_unitario'] else 0
                                 itens.append({
-                                    "nome": ir[0] or "--",
+                                    "nome": ir['nome_item'] or "--",
                                     "quantidade": qtd,
                                     "preco_unitario": preco,
                                     "subtotal": qtd * preco,
                                 })
-                        itens_por_nf[row[0]] = itens
+                        itens_por_nf[row['nota_fiscal']] = itens
             except Exception:
                 pass
 
@@ -904,15 +904,15 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
             try:
                 sql = """SELECT nf.nota_fiscal, nf.data, nf.chave_de_acesso,
                                 nf.valor_total, nf.status_nota, nf.processo
-                         FROM "nota fiscal" nf
+                         FROM `nota fiscal` nf
                          JOIN tccm t ON nf.processo = t.processo
-                         WHERE nf.nota_fiscal = ?
-                           AND t."infrator_id_infrator" = ?
+                         WHERE nf.nota_fiscal = %s
+                           AND t.`infrator_id_infrator` = %s
                          LIMIT 1"""
                 resultado = db.executar(sql, (nota_fiscal, self.id_infrator,))
                 row = resultado.fetchone() if resultado else None
                 if row:
-                    raw_data = row[1]
+                    raw_data = row['data']
                     if hasattr(raw_data, "strftime"):
                         data_fmt = raw_data.strftime("%d/%m/%Y")
                     elif raw_data:
@@ -924,17 +924,17 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
                     else:
                         data_fmt = "--"
 
-                    valor = float(row[3]) if row[3] else 0
+                    valor = float(row['valor_total']) if row['valor_total'] else 0
                     valor_fmt = f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
                     dados = {
-                        "nota_fiscal": row[0] or "--",
+                        "nota_fiscal": row['nota_fiscal'] or "--",
                         "data": data_fmt,
-                        "chave": row[2] or "--",
+                        "chave": row['chave_de_acesso'] or "--",
                         "valor_total": valor,
                         "valor_total_fmt": valor_fmt,
-                        "status": row[4] or "Pendente",
-                        "processo": row[5] or "--",
+                        "status": row['status_nota'] or "Pendente",
+                        "processo": row['processo'] or "--",
                     }
             except Exception:
                 pass
@@ -942,16 +942,16 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
             try:
                 sql_itens = """SELECT p.nome_item, p.quantidade, p.preco_unitario
                                FROM produtos p
-                               WHERE p."nota fiscal_nota_fiscal" = ?
+                               WHERE p.`nota fiscal_nota_fiscal` = %s
                                ORDER BY p.lote"""
                 resultado_itens = db.executar(sql_itens, (nota_fiscal,))
                 itens = []
                 if resultado_itens:
                     for item_row in resultado_itens.fetchall():
-                        qtd = int(item_row[1]) if item_row[1] else 0
-                        preco = float(item_row[2]) if item_row[2] else 0
+                        qtd = int(item_row['quantidade']) if item_row['quantidade'] else 0
+                        preco = float(item_row['preco_unitario']) if item_row['preco_unitario'] else 0
                         itens.append({
-                            "nome": item_row[0] or "--",
+                            "nome": item_row['nome_item'] or "--",
                             "quantidade": qtd,
                             "preco_unitario": preco,
                             "subtotal": qtd * preco,

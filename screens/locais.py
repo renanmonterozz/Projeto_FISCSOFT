@@ -104,12 +104,12 @@ class LocaisPage(CrudBase, ctk.CTkFrame):
             if resultados:
                 for row in resultados.fetchall():
                     locais.append({
-                        "id": row[0],
-                        "cep": row[1],
-                        "endereco": row[2],
-                        "instituicao": row[3],
-                        "responsavel": row[4],
-                        "telefone": row[5] or "-",
+                        "id": row['id'],
+                        "cep": row['cep'],
+                        "endereco": row['endereco'],
+                        "instituicao": row['instituicao'],
+                        "responsavel": row['responsavel'],
+                        "telefone": row['telefone'] or "-",
                     })
             return locais
 
@@ -206,7 +206,7 @@ class LocaisPage(CrudBase, ctk.CTkFrame):
             with Database() as db:
                 if db.conexao:
                     db.executar(
-                        "DELETE FROM locais WHERE id = ?",
+                        "DELETE FROM locais WHERE id = %s",
                         (local["id"],)
                     )
                     db.commitar()
@@ -310,13 +310,13 @@ class LocaisPage(CrudBase, ctk.CTkFrame):
                     return
 
                 if self.local_edicao:
-                    sql = """UPDATE locais SET cep=?, endereco=?, instituicao=?, responsavel=?, telefone=?
-                             WHERE id=?"""
+                    sql = """UPDATE locais SET cep=%s, endereco=%s, instituicao=%s, responsavel=%s, telefone=%s
+                             WHERE id=%s"""
                     params = (cep, endereco, instituicao, responsavel, telefone or None, self.local_edicao["id"])
                     mensagem = "Local atualizado com sucesso!"
                 else:
                     sql = """INSERT INTO locais (cep, endereco, instituicao, responsavel, telefone)
-                             VALUES (?, ?, ?, ?, ?)"""
+                             VALUES (%s, %s, %s, %s, %s)"""
                     params = (cep, endereco, instituicao, responsavel, telefone or None)
                     mensagem = "Local cadastrado com sucesso!"
 

@@ -161,15 +161,15 @@ class CadastrarInfratorWindow(ctk.CTkToplevel):
             senha_hash = hash_password(senha)
             if self.infrator_edicao:
                 db.executar(
-                    "UPDATE infrator SET nome_infrator=?, cpf=?, email=?, "
-                    "telefone_infrator=?, senha=? WHERE id_infrator=?",
+                    "UPDATE infrator SET nome_infrator=%s, cpf=%s, email=%s, "
+                    "telefone_infrator=%s, senha=%s WHERE id_infrator=%s",
                     (nome, cpf, email, telefone, senha_hash, self.infrator_edicao["id"])
                 )
                 mensagem = f"Infrator '{nome}' atualizado com sucesso!"
             else:
                 db.executar(
                     "INSERT INTO infrator (nome_infrator, cpf, email, telefone_infrator, senha) "
-                    "VALUES (?, ?, ?, ?, ?)",
+                    "VALUES (%s, %s, %s, %s, %s)",
                     (nome, cpf, email, telefone, senha_hash)
                 )
                 mensagem = f"Infrator '{nome}' cadastrado com sucesso!"

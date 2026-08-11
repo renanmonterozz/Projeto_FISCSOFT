@@ -154,7 +154,7 @@ class ModalCadastrarInfrator(ctk.CTkToplevel):
                 return
             try:
                 db.executar(
-                    "INSERT INTO infrator (cpf, email, senha, nome_infrator, telefone_infrator) VALUES (?, ?, '', ?, ?)",
+                    "INSERT INTO infrator (cpf, email, senha, nome_infrator, telefone_infrator) VALUES (%s, %s, '', %s, %s)",
                     (cpf, email, nome, telefone or None),
                 )
                 db.commitar()
@@ -260,9 +260,9 @@ class ModalCadastrarAgente(ctk.CTkToplevel):
                 return
             try:
                 db.executar(
-                    """INSERT INTO "agente ibama"
+                    """INSERT INTO `agente ibama`
                        (matricula, login, senha, email, nome_agente, cpf, perfil, status)
-                       VALUES (?, ?, ?, ?, ?, ?, 'agente', 'ativo')""",
+                       VALUES (%s, %s, %s, %s, %s, %s, 'agente', 'ativo')""",
                     (matricula_val, login, senha_hash, email, nome, cpf),
                 )
                 db.commitar()
@@ -507,15 +507,15 @@ class ModalCadastrarTCCM(ctk.CTkToplevel):
             if not db.conexao:
                 return
             try:
-                r = db.executar("SELECT matricula, nome_agente FROM \"agente ibama\" WHERE status = 'ativo'")
+                r = db.executar("SELECT matricula, nome_agente FROM `agente ibama` WHERE status = 'ativo'")
                 if r:
-                    self.agentes = [(row[0], row[1]) for row in r.fetchall()]
+                    self.agentes = [(row['matricula'], row['nome_agente']) for row in r.fetchall()]
             except Exception:
                 self.agentes = []
             try:
                 r = db.executar("SELECT id_infrator, nome_infrator FROM infrator")
                 if r:
-                    self.infratores = [(row[0], row[1]) for row in r.fetchall()]
+                    self.infratores = [(row['id_infrator'], row['nome_infrator']) for row in r.fetchall()]
             except Exception:
                 self.infratores = []
 
@@ -664,9 +664,9 @@ class ModalCadastrarTCCM(ctk.CTkToplevel):
                     (processo, documento_sei, data_inicio, semestres,
                      total_pago, total_validado, total_devido,
                      data_validade, intervalo, status,
-                     "agente ibama_matricula", "infrator_id_infrator")
-                    VALUES (?, ?, ?, ?, 0.00, 0.00, 0.00,
-                            NULL, ?, 'pendente', ?, ?)"""
+                     `agente ibama_matricula`, `infrator_id_infrator`)
+                    VALUES (%s, %s, %s, %s, 0.00, 0.00, 0.00,
+                            NULL, %s, 'pendente', %s, %s)"""
                 db.executar(sql, (processo, documento_sei or None, data_inicio_db,
                                   semestres_val, semestres_val,
                                   agente_matricula, infrator_id))
@@ -674,7 +674,7 @@ class ModalCadastrarTCCM(ctk.CTkToplevel):
                 for item in self.itens_lista:
                     sql_item = """INSERT INTO itens (nome, descricao, codigo_interno, unidade_medida,
                                                     quantidade_prevista, status, processo)
-                                  VALUES (?, ?, ?, ?, ?, 'Ativo', ?)"""
+                                  VALUES (%s, %s, %s, %s, %s, 'Ativo', %s)"""
                     db.executar(sql_item, (item["nome"], item["descricao"],
                                            f"{processo}-{item['nome'][:10].upper()}",
                                            item["unidade"], item["quantidade"], processo))
@@ -1014,48 +1014,48 @@ class TccmDetalhesPage(CrudBase, ctk.CTkFrame):
                 sql = """SELECT t.processo, t.documento_sei, t.data_inicio, t.semestres,
                                 t.total_pago, t.total_validado, t.data_validade,
                                 t.intervalo, t.total_devido, t.status,
-                                t."agente ibama_matricula", t."infrator_id_infrator"
-                         FROM tccm t WHERE t.processo = ?"""
+                                t.`agente ibama_matricula`, t.`infrator_id_infrator`
+                         FROM tccm t WHERE t.processo = %s"""
                 r = db.executar(sql, (self.processo,))
                 row = r.fetchone() if r else None
                 if not row:
                     return
 
                 self.tccm_data = {
-                    "processo": row[0],
-                    "documento_sei": row[1] or "--",
-                    "data_inicio": _fmt_date(row[2]),
-                    "semestres": row[3] or 0,
-                    "total_pago": float(row[4]) if row[4] else 0,
-                    "total_validado": float(row[5]) if row[5] else 0,
-                    "data_validade": _fmt_date(row[6]),
-                    "intervalo": row[7] or 0,
-                    "total_devido": float(row[8]) if row[8] else 0,
-                    "status": row[9] or "pendente",
-                    "agente_matricula": row[10],
-                    "infrator_id": row[11],
+                    "processo": row['processo'],
+                    "documento_sei": row['documento_sei'] or "--",
+                    "data_inicio": _fmt_date(row['data_inicio']),
+                    "semestres": row['semestres'] or 0,
+                    "total_pago": float(row['total_pago']) if row['total_pago'] else 0,
+                    "total_validado": float(row['total_validado']) if row['total_validado'] else 0,
+                    "data_validade": _fmt_date(row['data_validade']),
+                    "intervalo": row['intervalo'] or 0,
+                    "total_devido": float(row['total_devido']) if row['total_devido'] else 0,
+                    "status": row['status'] or "pendente",
+                    "agente_matricula": row['agente ibama_matricula'],
+                    "infrator_id": row['infrator_id_infrator'],
                 }
 
                 try:
-                    r = db.executar('SELECT nome_infrator, cpf, email, telefone_infrator FROM infrator WHERE id_infrator = ?',
+                    r = db.executar('SELECT nome_infrator, cpf, email, telefone_infrator FROM infrator WHERE id_infrator = %s',
                                     (self.tccm_data["infrator_id"],))
                     inf = r.fetchone() if r else None
                     if inf:
-                        self.tccm_data["infrator_nome"] = inf[0] or "--"
-                        self.tccm_data["infrator_cpf"] = inf[1] or "--"
-                        self.tccm_data["infrator_email"] = inf[2] or "--"
-                        self.tccm_data["infrator_telefone"] = inf[3] or "--"
+                        self.tccm_data["infrator_nome"] = inf['nome_infrator'] or "--"
+                        self.tccm_data["infrator_cpf"] = inf['cpf'] or "--"
+                        self.tccm_data["infrator_email"] = inf['email'] or "--"
+                        self.tccm_data["infrator_telefone"] = inf['telefone_infrator'] or "--"
                 except Exception:
                     self.tccm_data["infrator_nome"] = "--"
 
                 try:
-                    r = db.executar('SELECT nome_agente, cpf, email FROM "agente ibama" WHERE matricula = ?',
+                    r = db.executar('SELECT nome_agente, cpf, email FROM `agente ibama` WHERE matricula = %s',
                                     (self.tccm_data["agente_matricula"],))
                     age = r.fetchone() if r else None
                     if age:
-                        self.tccm_data["agente_nome"] = age[0] or "--"
-                        self.tccm_data["agente_cpf"] = age[1] or "--"
-                        self.tccm_data["agente_email"] = age[2] or "--"
+                        self.tccm_data["agente_nome"] = age['nome_agente'] or "--"
+                        self.tccm_data["agente_cpf"] = age['cpf'] or "--"
+                        self.tccm_data["agente_email"] = age['email'] or "--"
                 except Exception:
                     self.tccm_data["agente_nome"] = "--"
 
@@ -1065,37 +1065,37 @@ class TccmDetalhesPage(CrudBase, ctk.CTkFrame):
             try:
                 sql = """SELECT nf.nota_fiscal, nf.data, nf.chave_de_acesso,
                                 nf.valor_total, nf.status_nota
-                         FROM "nota fiscal" nf
-                         WHERE nf.processo = ?
+                         FROM `nota fiscal` nf
+                         WHERE nf.processo = %s
                          ORDER BY nf.data DESC"""
                 r = db.executar(sql, (self.processo,))
                 if r:
                     for row in r.fetchall():
                         self.notas.append({
-                            "nota_fiscal": row[0] or "--",
-                            "data": _fmt_date(row[1]),
-                            "chave_acesso": row[2] or "--",
-                            "valor_total": float(row[3]) if row[3] else 0,
-                            "status": row[4] or "Pendente",
+                            "nota_fiscal": row['nota_fiscal'] or "--",
+                            "data": _fmt_date(row['data']),
+                            "chave_acesso": row['chave_de_acesso'] or "--",
+                            "valor_total": float(row['valor_total']) if row['valor_total'] else 0,
+                            "status": row['status_nota'] or "Pendente",
                         })
             except Exception:
                 pass
 
             try:
                 sql = """SELECT p.nome_item, p.quantidade, p.preco_unitario,
-                                p."nota fiscal_nota_fiscal"
+                                p.`nota fiscal_nota_fiscal`
                          FROM produtos p
-                         WHERE p."nota fiscal_nota_fiscal" IN (
-                             SELECT nf.nota_fiscal FROM "nota fiscal" nf WHERE nf.processo = ?
+                         WHERE p.`nota fiscal_nota_fiscal` IN (
+                             SELECT nf.nota_fiscal FROM `nota fiscal` nf WHERE nf.processo = %s
                          )"""
                 r = db.executar(sql, (self.processo,))
                 if r:
                     for row in r.fetchall():
                         self.itens.append({
-                            "nome_item": row[0] or "--",
-                            "quantidade": row[1] or 0,
-                            "preco_unitario": float(row[2]) if row[2] else 0,
-                            "nota_fiscal": row[3] or "--",
+                            "nome_item": row['nome_item'] or "--",
+                            "quantidade": row['quantidade'] or 0,
+                            "preco_unitario": float(row['preco_unitario']) if row['preco_unitario'] else 0,
+                            "nota_fiscal": row['nota fiscal_nota_fiscal'] or "--",
                         })
             except Exception:
                 pass
@@ -1315,14 +1315,14 @@ class TccmDashboardPage(CrudBase, ctk.CTkFrame):
                                 t.data_validade, t.intervalo,
                                 i.nome_infrator, i.cpf
                          FROM tccm t
-                         LEFT JOIN infrator i ON i.id_infrator = t."infrator_id_infrator"
+                         LEFT JOIN infrator i ON i.id_infrator = t.`infrator_id_infrator`
                          ORDER BY t.processo"""
                 r = db.executar(sql)
                 if r:
                     for row in r.fetchall():
-                        status = row[3] or "pendente"
-                        td = float(row[2]) if row[2] else 0
-                        tp = float(row[1]) if row[1] else 0
+                        status = row['status'] or "pendente"
+                        td = float(row['total_devido']) if row['total_devido'] else 0
+                        tp = float(row['total_pago']) if row['total_pago'] else 0
 
                         if status == "concluido":
                             qtd_concluidos += 1
@@ -1330,14 +1330,14 @@ class TccmDashboardPage(CrudBase, ctk.CTkFrame):
                             qtd_pendentes += 1
 
                         tccms.append({
-                            "processo": row[0] or "--",
+                            "processo": row['processo'] or "--",
                             "total_pago": tp,
                             "total_devido": td,
                             "status": status,
-                            "data_validade": _fmt_date(row[4]),
-                            "intervalo": row[5] or 0,
-                            "infrator": row[6] or "--",
-                            "cpf": row[7] or "--",
+                            "data_validade": _fmt_date(row['data_validade']),
+                            "intervalo": row['intervalo'] or 0,
+                            "infrator": row['nome_infrator'] or "--",
+                            "cpf": row['cpf'] or "--",
                         })
             except Exception:
                 pass

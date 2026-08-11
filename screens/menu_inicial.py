@@ -187,11 +187,11 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
                                 nf.valor_total, nf.status_nota,
                                 a.nome_agente,
                                 COUNT(p.lote) as qtd_itens
-                         FROM "nota fiscal" nf
-                         LEFT JOIN "agente ibama" a ON a.matricula = nf."agente ibama_matricula"
-                         LEFT JOIN produtos p ON p."nota fiscal_nota_fiscal" = nf.nota_fiscal
-                            AND p."nota fiscal_agente ibama_matricula" = nf."agente ibama_matricula"
-                         WHERE nf.processo = ?
+                         FROM `nota fiscal` nf
+                         LEFT JOIN `agente ibama` a ON a.matricula = nf.`agente ibama_matricula`
+                         LEFT JOIN produtos p ON p.`nota fiscal_nota_fiscal` = nf.nota_fiscal
+                            AND p.`nota fiscal_agente ibama_matricula` = nf.`agente ibama_matricula`
+                         WHERE nf.processo = %s
                          GROUP BY nf.nota_fiscal, nf.chave_de_acesso, nf.data,
                                 nf.valor_total, nf.status_nota, a.nome_agente
                          ORDER BY nf.data DESC"""
@@ -201,10 +201,10 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
                                 nf.valor_total, nf.status_nota,
                                 a.nome_agente,
                                 COUNT(p.lote) as qtd_itens
-                         FROM "nota fiscal" nf
-                         LEFT JOIN "agente ibama" a ON a.matricula = nf."agente ibama_matricula"
-                         LEFT JOIN produtos p ON p."nota fiscal_nota_fiscal" = nf.nota_fiscal
-                            AND p."nota fiscal_agente ibama_matricula" = nf."agente ibama_matricula"
+                         FROM `nota fiscal` nf
+                         LEFT JOIN `agente ibama` a ON a.matricula = nf.`agente ibama_matricula`
+                         LEFT JOIN produtos p ON p.`nota fiscal_nota_fiscal` = nf.nota_fiscal
+                            AND p.`nota fiscal_agente ibama_matricula` = nf.`agente ibama_matricula`
                          GROUP BY nf.nota_fiscal, nf.chave_de_acesso, nf.data,
                                 nf.valor_total, nf.status_nota, a.nome_agente
                          ORDER BY nf.data DESC"""
@@ -216,13 +216,13 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
                 if resultados:
                     for row in resultados.fetchall():
                         notas.append({
-                            "nota_fiscal": row[0] or "--",
-                            "chave_de_acesso": row[1] or "--",
-                            "data": _fmt_date(row[2]),
-                            "valor_total": float(row[3]) if row[3] else 0,
-                            "status": row[4] or "Pendente",
-                            "usuario": row[5] or "--",
-                            "qtd_itens": row[6] if row[6] else 0,
+                            "nota_fiscal": row['nota_fiscal'] or "--",
+                            "chave_de_acesso": row['chave_de_acesso'] or "--",
+                            "data": _fmt_date(row['data']),
+                            "valor_total": float(row['valor_total']) if row['valor_total'] else 0,
+                            "status": row['status_nota'] or "Pendente",
+                            "usuario": row['nome_agente'] or "--",
+                            "qtd_itens": row['qtd_itens'] if row['qtd_itens'] else 0,
                         })
                 return notas
             except Exception:
@@ -302,54 +302,54 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
 
             if self.processo_tccm:
                 try:
-                    r = db.executar('SELECT COUNT(DISTINCT nota_fiscal) FROM "nota fiscal" WHERE processo = ?',
+                    r = db.executar('SELECT COUNT(DISTINCT nota_fiscal) FROM `nota fiscal` WHERE processo = %s',
                                     (self.processo_tccm,)).fetchone()
-                    total_nf = r[0] if r else 0
+                    total_nf = r['COUNT(DISTINCT nota_fiscal)'] if r else 0
                 except Exception:
                     total_nf = 0
 
                 try:
                     r = db.executar(
                         'SELECT COUNT(p.lote) FROM produtos p '
-                        'JOIN "nota fiscal" nf ON p."nota fiscal_nota_fiscal" = nf.nota_fiscal '
-                        'AND p."nota fiscal_agente ibama_matricula" = nf."agente ibama_matricula" '
-                        'WHERE nf.processo = ?',
+                        'JOIN `nota fiscal` nf ON p.`nota fiscal_nota_fiscal` = nf.nota_fiscal '
+                        'AND p.`nota fiscal_agente ibama_matricula` = nf.`agente ibama_matricula` '
+                        'WHERE nf.processo = %s',
                         (self.processo_tccm,)
                     ).fetchone()
-                    total_itens = r[0] if r else 0
+                    total_itens = r['COUNT(p.lote)'] if r else 0
                 except Exception:
                     total_itens = 0
 
                 try:
-                    r = db.executar('SELECT COALESCE(SUM(valor_total), 0) FROM "nota fiscal" WHERE processo = ?',
+                    r = db.executar('SELECT COALESCE(SUM(valor_total), 0) FROM `nota fiscal` WHERE processo = %s',
                                     (self.processo_tccm,)).fetchone()
-                    valor_total = float(r[0]) if r else 0
+                    valor_total = float(r['COALESCE(SUM(valor_total), 0)']) if r else 0
                 except Exception:
                     valor_total = 0
 
                 total_tccm = 1
             else:
                 try:
-                    r = db.executar('SELECT COUNT(DISTINCT nota_fiscal) FROM "nota fiscal"').fetchone()
-                    total_nf = r[0] if r else 0
+                    r = db.executar('SELECT COUNT(DISTINCT nota_fiscal) FROM `nota fiscal`').fetchone()
+                    total_nf = r['COUNT(DISTINCT nota_fiscal)'] if r else 0
                 except Exception:
                     total_nf = 0
 
                 try:
                     r = db.executar('SELECT COUNT(lote) FROM produtos').fetchone()
-                    total_itens = r[0] if r else 0
+                    total_itens = r['COUNT(lote)'] if r else 0
                 except Exception:
                     total_itens = 0
 
                 try:
-                    r = db.executar('SELECT COALESCE(SUM(valor_total), 0) FROM "nota fiscal"').fetchone()
-                    valor_total = float(r[0]) if r else 0
+                    r = db.executar('SELECT COALESCE(SUM(valor_total), 0) FROM `nota fiscal`').fetchone()
+                    valor_total = float(r['COALESCE(SUM(valor_total), 0)']) if r else 0
                 except Exception:
                     valor_total = 0
 
                 try:
                     r = db.executar("SELECT COUNT(DISTINCT processo) FROM tccm").fetchone()
-                    total_tccm = r[0] if r else 0
+                    total_tccm = r['COUNT(DISTINCT processo)'] if r else 0
                 except Exception:
                     total_tccm = 0
 

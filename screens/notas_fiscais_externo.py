@@ -128,8 +128,8 @@ class NotasFiscaisExterno(ctk.CTkFrame):
                     return
                 sql = """SELECT t.processo, i.nome_infrator
                          FROM tccm t
-                         JOIN infrator i ON t."infrator_id_infrator" = i.id_infrator
-                         WHERE t."infrator_id_infrator" = ?
+                         JOIN infrator i ON t.`infrator_id_infrator` = i.id_infrator
+                         WHERE t.`infrator_id_infrator` = %s
                          ORDER BY t.processo"""
                 resultado = db.executar(sql, (self.id_infrator,))
                 if resultado:
@@ -138,8 +138,8 @@ class NotasFiscaisExterno(ctk.CTkFrame):
                         self._processo_map = {}
                         opcoes = []
                         for row in rows:
-                            processo = row[0]
-                            nome_infrator = row[1]
+                            processo = row['processo']
+                            nome_infrator = row['nome_infrator']
                             display = f"{processo} - {nome_infrator}"
                             self._processo_map[display] = processo
                             opcoes.append(display)
@@ -174,13 +174,13 @@ class NotasFiscaisExterno(ctk.CTkFrame):
                     return
                 sql = """SELECT id, nome, descricao, unidade_medida
                          FROM itens
-                         WHERE processo = ? AND status = 'Ativo'
+                         WHERE processo = %s AND status = 'Ativo'
                          ORDER BY nome"""
                 resultado = db.executar(sql, (processo,))
                 if resultado:
                     rows = resultado.fetchall()
                     self.itens_tccm = [
-                        {"id": row[0], "nome": row[1], "descricao": row[2], "unidade": row[3]}
+                        {"id": row['id'], "nome": row['nome'], "descricao": row['descricao'], "unidade": row['unidade_medida']}
                         for row in rows
                     ]
                     if self.itens_tccm:
@@ -747,27 +747,27 @@ class NotasFiscaisExterno(ctk.CTkFrame):
                 return
 
             try:
-                sql_mat = '''SELECT "agente ibama_matricula"
-                             FROM tccm WHERE processo = ?
+                sql_mat = '''SELECT `agente ibama_matricula`
+                             FROM tccm WHERE processo = %s
                              LIMIT 1'''
                 resultado = db.executar(sql_mat, (processo,))
                 row = resultado.fetchone() if resultado else None
-                matricula = row[0] if row else 0
+                matricula = row['agente ibama_matricula'] if row else 0
 
-                sql = """INSERT INTO "nota fiscal"
+                sql = """INSERT INTO `nota fiscal`
                          (nota_fiscal, semestre, data, chave_de_acesso, valor_total,
-                          "agente ibama_matricula", status_nota, processo, arquivo)
-                         VALUES (?, ?, ?, ?, ?, ?, 'Pendente', ?, ?)"""
+                          `agente ibama_matricula`, status_nota, processo, arquivo)
+                         VALUES (%s, %s, %s, %s, %s, %s, 'Pendente', %s, %s)"""
                 db.executar(sql, (numero, 1, data, chave, valor_total, matricula, processo, arquivo_path))
 
                 for idx, item in enumerate(self.itens_lista):
                     lote = f"{numero}-ITEM-{idx+1}"
                     sql_produto = """INSERT INTO produtos
                                     (lote, quantidade, preco_unitario,
-                                     "nota fiscal_nota_fiscal",
-                                     "nota fiscal_agente ibama_matricula",
+                                     `nota fiscal_nota_fiscal`,
+                                     `nota fiscal_agente ibama_matricula`,
                                      itens_id, nome_item)
-                                    VALUES (?, ?, ?, ?, ?, ?, ?)"""
+                                    VALUES (%s, %s, %s, %s, %s, %s, %s)"""
                     db.executar(sql_produto, (
                         lote, item["quantidade"], item["preco_unitario"],
                         numero, matricula, item["item_id"], item["nome"],

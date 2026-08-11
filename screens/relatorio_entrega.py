@@ -66,8 +66,8 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
                 resultado = db.executar(sql)
                 if resultado:
                     self.locais_catalogo = [
-                        {"id": row[0], "cep": row[1], "endereco": row[2],
-                         "instituicao": row[3], "responsavel": row[4], "telefone": row[5]}
+                        {"id": row['id'], "cep": row['cep'], "endereco": row['endereco'],
+                         "instituicao": row['instituicao'], "responsavel": row['responsavel'], "telefone": row['telefone']}
                         for row in resultado.fetchall()
                     ]
         except Exception:
@@ -189,19 +189,19 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
                     sql = """SELECT p.itens_id, p.nome_item, i.descricao, i.unidade_medida,
                                     COALESCE(SUM(p.quantidade), 0)
                              FROM produtos p
-                             JOIN "nota fiscal" nf
-                               ON nf.nota_fiscal = p."nota fiscal_nota_fiscal"
-                              AND nf."agente ibama_matricula" = p."nota fiscal_agente ibama_matricula"
+                             JOIN `nota fiscal` nf
+                               ON nf.nota_fiscal = p.`nota fiscal_nota_fiscal`
+                              AND nf.`agente ibama_matricula` = p.`nota fiscal_agente ibama_matricula`
                              LEFT JOIN itens i ON i.id = p.itens_id
-                             WHERE nf.processo = ?
+                             WHERE nf.processo = %s
                              GROUP BY p.itens_id, p.nome_item, i.descricao, i.unidade_medida
                              ORDER BY p.nome_item"""
                     resultado = db.executar(sql, (self.processo_tccm,))
                     if resultado:
                         self.itens_catalogo = [
-                            {"id": row[0], "nome": row[1],
-                             "descricao": row[2] or row[1],
-                             "unidade": row[3], "quantidade": row[4] or 0}
+                            {"id": row['itens_id'], "nome": row['nome_item'],
+                             "descricao": row['descricao'] or row['nome_item'],
+                             "unidade": row['unidade_medida'], "quantidade": row['COALESCE(SUM(p.quantidade), 0)'] or 0}
                             for row in resultado.fetchall()
                         ]
                 else:
@@ -211,8 +211,8 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
                     resultado = db.executar(sql)
                     if resultado:
                         self.itens_catalogo = [
-                            {"id": row[0], "nome": row[1], "descricao": row[2],
-                             "unidade": row[3], "quantidade": 0}
+                            {"id": row['id'], "nome": row['nome'], "descricao": row['descricao'],
+                             "unidade": row['unidade_medida'], "quantidade": 0}
                             for row in resultado.fetchall()
                         ]
         except Exception:
@@ -700,7 +700,7 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
                     return
 
                 sql = """INSERT INTO locais (cep, endereco, instituicao, responsavel, telefone)
-                         VALUES (?, ?, ?, ?, ?)"""
+                         VALUES (%s, %s, %s, %s, %s)"""
                 params = (cep, endereco, instituicao, responsavel, telefone or None)
 
                 db.executar(sql, params)

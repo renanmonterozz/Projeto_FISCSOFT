@@ -86,7 +86,7 @@ class HistoricoPage(CrudBase, ctk.CTkFrame):
             logs = []
             if resultados:
                 for row in resultados.fetchall():
-                    criado_em = row[5]
+                    criado_em = row['criado_em']
                     if isinstance(criado_em, str):
                         try:
                             criado_em = datetime.strptime(criado_em, "%Y-%m-%d %H:%M:%S")
@@ -94,11 +94,11 @@ class HistoricoPage(CrudBase, ctk.CTkFrame):
                             criado_em = None
 
                     logs.append({
-                        "id": row[0],
-                        "usuario": row[1],
-                        "acao": row[2],
-                        "tabela": row[3],
-                        "descricao": row[4],
+                        "id": row['id'],
+                        "usuario": row['usuario'],
+                        "acao": row['acao'],
+                        "tabela": row['tabela'],
+                        "descricao": row['descricao'],
                         "data_hora": criado_em,
                     })
             return logs

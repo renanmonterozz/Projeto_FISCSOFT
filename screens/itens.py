@@ -104,9 +104,9 @@ class ItensPage(CrudBase, ctk.CTkFrame):
                     r = db.executar(
                         "SELECT DISTINCT i.id, i.nome, i.descricao, i.tipo, i.justificativa, i.unidade_medida "
                         "FROM itens i "
-                        "WHERE i.processo = ? "
+                        "WHERE i.processo = %s "
                         "   OR i.notas_fiscais IN ("
-                        "  SELECT nf.nota_fiscal FROM \"nota fiscal\" nf WHERE nf.processo = ?"
+                        "  SELECT nf.nota_fiscal FROM `nota fiscal` nf WHERE nf.processo = %s"
                         ") ORDER BY i.id",
                         (self.processo_tccm, self.processo_tccm)
                     )
@@ -114,9 +114,9 @@ class ItensPage(CrudBase, ctk.CTkFrame):
                     r = db.executar(
                         "SELECT DISTINCT i.id, i.nome, i.descricao, i.categoria, NULL, '' "
                         "FROM itens i "
-                        "WHERE i.processo = ? "
+                        "WHERE i.processo = %s "
                         "   OR i.notas_fiscais IN ("
-                        "  SELECT nf.nota_fiscal FROM \"nota fiscal\" nf WHERE nf.processo = ?"
+                        "  SELECT nf.nota_fiscal FROM `nota fiscal` nf WHERE nf.processo = %s"
                         ") ORDER BY i.id",
                         (self.processo_tccm, self.processo_tccm)
                     )
@@ -136,12 +136,12 @@ class ItensPage(CrudBase, ctk.CTkFrame):
             if r:
                 for row in r.fetchall():
                     itens.append(dict(
-                        id=row[0],
-                        nome=row[1] or "-",
-                        descricao=row[2] or "-",
-                        tipo=row[3] or "-",
-                        justificativa=row[4] or "",
-                        unidade_medida=row[5] or "",
+                        id=row['id'],
+                        nome=row['nome'] or "-",
+                        descricao=row['descricao'] or "-",
+                        tipo=row['tipo'] or "-",
+                        justificativa=row['justificativa'] or "",
+                        unidade_medida=row['unidade_medida'] or "",
                     ))
             self._todos_os_itens = itens[:]
             return itens
@@ -213,11 +213,11 @@ class ItensPage(CrudBase, ctk.CTkFrame):
     def _inserir_item_db(self, db, data, codigo_interno=None):
         if codigo_interno is None:
             c = db.executar("SELECT COALESCE(MAX(id), 0) + 1 FROM itens")
-            nid = c.fetchone()[0] if c else 1
+            nid = c.fetchone()['COALESCE(MAX(id), 0) + 1'] if c else 1
             codigo_interno = f"IT-{nid:03d}"
         db.executar(
             "INSERT INTO itens (nome, descricao, codigo_interno, tipo, justificativa, unidade_medida, status) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "VALUES (%s, %s, %s, %s, %s, %s, %s)",
             (
                 data.get("nome", "")[:200],
                 data.get("descricao", "")[:200],
@@ -242,7 +242,7 @@ class ItensPage(CrudBase, ctk.CTkFrame):
             if not db.conexao:
                 return False
             db.executar(
-                "UPDATE itens SET nome=?, descricao=?, tipo=?, justificativa=?, unidade_medida=? WHERE id=?",
+                "UPDATE itens SET nome=%s, descricao=%s, tipo=%s, justificativa=%s, unidade_medida=%s WHERE id=%s",
                 (
                     data.get("nome", "")[:200],
                     data.get("descricao", "")[:200],
@@ -376,7 +376,7 @@ class ItensPage(CrudBase, ctk.CTkFrame):
             return
         with Database() as db:
             if db.conexao:
-                db.executar("DELETE FROM itens WHERE id = ?", (item["id"],))
+                db.executar("DELETE FROM itens WHERE id = %s", (item["id"],))
                 db.commitar()
         registrar_log("Sistema", "exclusao", "itens", f"Item '{item['nome']}' (ID: {item['id']}) excluido")
         self.itens = self.carregar_do_banco()

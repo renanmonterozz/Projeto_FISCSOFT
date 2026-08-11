@@ -362,15 +362,15 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
             if not db.conexao:
                 return
             try:
-                r = db.executar("SELECT matricula, nome_agente FROM \"agente ibama\" WHERE status = 'ativo'")
+                r = db.executar("SELECT matricula, nome_agente FROM `agente ibama` WHERE status = 'ativo'")
                 if r:
-                    self.agentes = [(row[0], row[1]) for row in r.fetchall()]
+                    self.agentes = [(row['matricula'], row['nome_agente']) for row in r.fetchall()]
             except Exception:
                 self.agentes = []
             try:
                 r = db.executar("SELECT id_infrator, nome_infrator FROM infrator")
                 if r:
-                    self.infratores = [(row[0], row[1]) for row in r.fetchall()]
+                    self.infratores = [(row['id_infrator'], row['nome_infrator']) for row in r.fetchall()]
             except Exception:
                 self.infratores = []
 
@@ -541,9 +541,9 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
                     (processo, documento_sei, data_inicio, semestres,
                      total_pago, total_validado, total_devido,
                      data_validade, intervalo, status,
-                     "agente ibama_matricula", "infrator_id_infrator")
-                    VALUES (?, ?, ?, ?, 0.00, 0.00, ?,
-                            NULL, ?, 'pendente', ?, ?)"""
+                     `agente ibama_matricula`, `infrator_id_infrator`)
+                    VALUES (%s, %s, %s, %s, 0.00, 0.00, %s,
+                            NULL, %s, 'pendente', %s, %s)"""
                 db.executar(sql, (processo, documento_sei or None, data_inicio_db,
                                   semestres_val, total_devido_val,
                                   semestres_val, agente_matricula, infrator_id))
@@ -551,7 +551,7 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
                 for item in self.itens_lista:
                     sql_item = """INSERT INTO itens (nome, descricao, codigo_interno, unidade_medida,
                                                     quantidade_prevista, status, processo)
-                                  VALUES (?, ?, ?, ?, ?, 'Ativo', ?)"""
+                                  VALUES (%s, %s, %s, %s, %s, 'Ativo', %s)"""
                     db.executar(sql_item, (item["nome"], item["descricao"],
                                            f"{processo}-{item['nome'][:10].upper()}",
                                            item["unidade"], item["quantidade"], processo))

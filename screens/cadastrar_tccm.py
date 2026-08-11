@@ -259,15 +259,15 @@ class CadastrarTCCMPage(ctk.CTkFrame):
             if not db.conexao:
                 return
             try:
-                r = db.executar("SELECT matricula, nome_agente FROM \"agente ibama\" WHERE status = 'ativo'")
+                r = db.executar("SELECT matricula, nome_agente FROM `agente ibama` WHERE status = 'ativo'")
                 if r:
-                    self.agentes = [(row[0], row[1]) for row in r.fetchall()]
+                    self.agentes = [(row['matricula'], row['nome_agente']) for row in r.fetchall()]
             except Exception:
                 self.agentes = []
             try:
                 r = db.executar("SELECT id_infrator, nome_infrator FROM infrator")
                 if r:
-                    self.infratores = [(row[0], row[1]) for row in r.fetchall()]
+                    self.infratores = [(row['id_infrator'], row['nome_infrator']) for row in r.fetchall()]
             except Exception:
                 self.infratores = []
 
@@ -324,8 +324,8 @@ class CadastrarTCCMPage(ctk.CTkFrame):
                 sql = """INSERT INTO tccm
                     (processo, total_pago, total_validado, data_validade,
                      intervalo, total_devido, status,
-                     "agente ibama_matricula", "infrator_id_infrator")
-                    VALUES (?, 0.00, ?, ?, ?, ?, 'pendente', ?, ?)"""
+                     `agente ibama_matricula`, `infrator_id_infrator`)
+                    VALUES (%s, 0.00, %s, %s, %s, %s, 'pendente', %s, %s)"""
                 db.executar(sql, (processo, total_validado_val, data_validade,
                                   intervalo_val, total_devido_val,
                                   agente_matricula, infrator_id))
