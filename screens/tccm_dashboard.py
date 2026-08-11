@@ -766,13 +766,6 @@ class TccmDetalhesPage(CrudBase, ctk.CTkFrame):
         left = ctk.CTkFrame(header, fg_color="transparent")
         left.pack(side="left")
 
-        ctk.CTkButton(
-            left, text="\u2190 Voltar", height=36, corner_radius=6,
-            fg_color=COLORS["dark"], hover_color=COLORS["dark_hover"],
-            text_color="white", font=ctk.CTkFont(size=12),
-            command=self._voltar,
-        ).pack(side="left", padx=(0, 15))
-
         ctk.CTkLabel(left, text=f"Detalhes TCCM - {self.processo}",
                       font=ctk.CTkFont(size=FONTS["size_title"], weight="bold"),
                       text_color=COLORS["text"]).pack(side="left")
