@@ -332,8 +332,10 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
                     total_itens = 0
 
                 try:
-                    r = db.executar('SELECT COALESCE(SUM(valor_total), 0) FROM "nota fiscal" WHERE processo = ?',
-                                    (self.processo_tccm,)).fetchone()
+                    r = db.executar(
+                        'SELECT COALESCE(SUM(valor_total), 0) FROM "nota fiscal" WHERE processo = ? AND status_nota = \'Aprovada\'',
+                        (self.processo_tccm,)
+                    ).fetchone()
                     valor_total = float(r[0]) if r else 0
                 except Exception:
                     valor_total = 0
@@ -353,7 +355,9 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
                     total_itens = 0
 
                 try:
-                    r = db.executar('SELECT COALESCE(SUM(valor_total), 0) FROM "nota fiscal"').fetchone()
+                    r = db.executar(
+                        'SELECT COALESCE(SUM(valor_total), 0) FROM "nota fiscal" WHERE status_nota = \'Aprovada\''
+                    ).fetchone()
                     valor_total = float(r[0]) if r else 0
                 except Exception:
                     valor_total = 0

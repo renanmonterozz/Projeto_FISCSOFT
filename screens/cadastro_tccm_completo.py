@@ -34,7 +34,7 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
 
         self._botoes_sidebar = []
         self._paginas = [
-            ("Tccm", "Dados do TCCM"),
+            ("TCCM", "Dados do TCCM"),
             ("Agente", "Agente Responsavel"),
             ("Infrator", "Infrator"),
             ("Itens", "Itens"),
@@ -406,12 +406,16 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
         )
 
     def _abrir_cadastrar_agente(self):
-        from screens.tccm_dashboard import ModalCadastrarAgente
-        ModalCadastrarAgente(self, onSalvar=self._atualizar_combos)
+        from screens.cadastrar_usuario import CadastrarUsuarioWindow
+        janela = CadastrarUsuarioWindow(self, usuario_logado=self.usuario_logado)
+        self.wait_window(janela)
+        self._atualizar_combos()
 
     def _abrir_cadastrar_infrator(self):
-        from screens.tccm_dashboard import ModalCadastrarInfrator
-        ModalCadastrarInfrator(self, onSalvar=self._atualizar_combos)
+        from screens.cadastrar_infrator import CadastrarInfratorWindow
+        janela = CadastrarInfratorWindow(self)
+        self.wait_window(janela)
+        self._atualizar_combos()
 
     def _mostrar_pagina(self, key):
         for w in self.content_frame.winfo_children():

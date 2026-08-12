@@ -35,26 +35,19 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
         self.build_ui()
 
     def build_ui(self):
-        main_container = ctk.CTkFrame(self, fg_color="transparent")
-        main_container.pack(fill="both", expand=True, padx=30, pady=30)
-
-        left_panel = ctk.CTkFrame(main_container, fg_color="transparent")
-        left_panel.pack(side="left", fill="both", expand=True, padx=(0, 15))
+        self.build_bottom_buttons(self)
 
         self.build_header(
             "Relatorio de Entrega de Materiais",
             "Selecione um local de destino ou cadastre um novo local"
         )
-        self.build_local_destino_section(left_panel)
-        self.build_adicionar_itens_section(left_panel)
-        self.build_informacoes_adicionais_section(left_panel)
-        self.build_bottom_buttons(left_panel)
 
-        right_panel = ctk.CTkFrame(main_container, fg_color="transparent", width=320)
-        right_panel.pack(side="right", fill="y")
-        right_panel.pack_propagate(False)
+        main_container = ctk.CTkFrame(self, fg_color="transparent")
+        main_container.pack(fill="both", expand=True, padx=30, pady=(0, 0))
 
-        self.build_preview_panel(right_panel)
+        self.build_local_destino_section(main_container)
+        self.build_adicionar_itens_section(main_container)
+        self.build_informacoes_adicionais_section(main_container)
 
     def _carregar_locais(self):
         try:
@@ -106,10 +99,10 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
             parent, fg_color=COLORS["white"], corner_radius=4,
             border_width=1, border_color=COLORS["border"]
         )
-        section.pack(fill="x", pady=(0, 15))
+        section.pack(fill="x", pady=(0, 12))
 
         header_frame = ctk.CTkFrame(section, fg_color="transparent")
-        header_frame.pack(fill="x", padx=20, pady=(12, 10))
+        header_frame.pack(fill="x", padx=20, pady=(8, 6))
 
         ctk.CTkLabel(
             header_frame, text="1. Local de Destino",
@@ -144,7 +137,7 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
         nomes_locais = [f"{l['instituicao']} - {l['endereco']}" for l in self.locais_catalogo] if self.locais_catalogo else ["Nenhum local cadastrado"]
         self.combo_local = ComboBoxComSeta(
             combo_frame, values=nomes_locais,
-            height=38, border_width=1, border_color=COLORS["border"],
+            height=34, border_width=1, border_color=COLORS["border"],
             corner_radius=4, fg_color=COLORS["white"], text_color=COLORS["text"],
             button_color=COLORS["primary"], button_hover_color=COLORS["primary_hover"],
             dropdown_fg_color=COLORS["white"], dropdown_hover_color=COLORS["primary_light"],
@@ -157,7 +150,7 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
         self._bind_scroll(self.combo_local)
 
         info_frame = ctk.CTkFrame(section, fg_color="transparent")
-        info_frame.pack(fill="x", padx=20, pady=(0, 15))
+        info_frame.pack(fill="x", padx=20, pady=(0, 10))
 
         self.local_info_labels = {}
         campos = ["CEP:", "Endereco:", "Instituicao:", "Responsavel:", "Telefone:"]
@@ -230,10 +223,15 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
             return
         for item in self.itens_catalogo:
             if self._item_display(item) == selection:
-                qtd = item.get("quantidade") or 0
                 self.entry_quantidade.delete(0, "end")
-                if qtd:
-                    self.entry_quantidade.insert(0, str(qtd))
+                disponivel = self._quantidade_disponivel(item["id"])
+                if disponivel:
+                    self.entry_quantidade.insert(0, str(disponivel))
+                    self.entry_quantidade.configure(placeholder_text=f"max: {disponivel}")
+                elif disponivel == 0:
+                    self.entry_quantidade.configure(placeholder_text="max: 0")
+                else:
+                    self.entry_quantidade.configure(placeholder_text="0")
                 return
 
     def build_adicionar_itens_section(self, parent):
@@ -241,10 +239,10 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
             parent, fg_color=COLORS["white"], corner_radius=4,
             border_width=1, border_color=COLORS["border"]
         )
-        section.pack(fill="x", pady=(0, 15))
+        section.pack(fill="x", pady=(0, 10))
 
         header_frame = ctk.CTkFrame(section, fg_color="transparent")
-        header_frame.pack(fill="x", padx=20, pady=(12, 10))
+        header_frame.pack(fill="x", padx=20, pady=(6, 4))
 
         ctk.CTkLabel(
             header_frame, text="2. Adicionar Itens",
@@ -253,7 +251,7 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
         ).pack(side="left")
 
         input_frame = ctk.CTkFrame(section, fg_color="transparent")
-        input_frame.pack(fill="x", padx=20, pady=(0, 10))
+        input_frame.pack(fill="x", padx=20, pady=(0, 4))
 
         item_frame = ctk.CTkFrame(input_frame, fg_color="transparent")
         item_frame.pack(side="left", fill="x", expand=True, padx=(0, 10))
@@ -267,7 +265,7 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
         nomes_itens = [self._item_display(i) for i in self.itens_catalogo] if self.itens_catalogo else (["Nenhum item registrado no TCCM"] if self.processo_tccm else ["Nenhum item ativo"])
         self.combo_item = ComboBoxComSeta(
             item_frame, values=nomes_itens,
-            height=36, border_width=1, border_color=COLORS["border"],
+            height=30, border_width=1, border_color=COLORS["border"],
             corner_radius=4, fg_color=COLORS["white"], text_color=COLORS["text"],
             button_color=COLORS["primary"], button_hover_color=COLORS["primary_hover"],
             dropdown_fg_color=COLORS["white"], dropdown_hover_color=COLORS["primary_light"],
@@ -292,7 +290,7 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
         self.entry_quantidade = ctk.CTkEntry(
             qtd_frame,
             placeholder_text="0",
-            width=120, height=36, border_width=1,
+            width=120, height=30, border_width=1,
             border_color=COLORS["border"], corner_radius=4,
             fg_color=COLORS["white"], text_color=COLORS["text"],
             placeholder_text_color=COLORS["text_muted"],
@@ -302,15 +300,10 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
         btn_frame = ctk.CTkFrame(input_frame, fg_color="transparent")
         btn_frame.pack(side="left", padx=(0, 10))
 
-        ctk.CTkLabel(
-            btn_frame, text=" ",
-            font=ctk.CTkFont(size=FONTS["size_small"]),
-        ).pack()
-
         ctk.CTkButton(
             btn_frame,
             text="+ Adicionar",
-            height=36, corner_radius=4,
+            height=30, corner_radius=4,
             fg_color=COLORS["primary_light"],
             hover_color=COLORS["primary_light_hover"],
             text_color=COLORS["primary"],
@@ -318,8 +311,8 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
             command=self.adicionar_item,
         ).pack()
 
-        table_header = ctk.CTkFrame(section, fg_color="#FAFAFA", height=36, corner_radius=4)
-        table_header.pack(fill="x", padx=20, pady=(0, 5))
+        table_header = ctk.CTkFrame(section, fg_color="#FAFAFA", height=26, corner_radius=4)
+        table_header.pack(fill="x", padx=20, pady=(0, 4))
         table_header.pack_propagate(False)
 
         table_header.grid_columnconfigure(0, weight=3)
@@ -345,26 +338,26 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
         ).grid(row=0, column=2, sticky="w", padx=10)
 
         self.itens_body = ctk.CTkScrollableFrame(
-            section, fg_color="transparent", height=120
+            section, fg_color="transparent", height=45
         )
-        self.itens_body.pack(fill="x", padx=20, pady=(0, 10))
+        self.itens_body.pack(fill="x", padx=20, pady=(0, 4))
 
         self.total_label = ctk.CTkLabel(
             section, text="Total de Itens: 0",
             font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
             text_color=COLORS["text_muted"],
         )
-        self.total_label.pack(padx=20, pady=(0, 15))
+        self.total_label.pack(padx=20, pady=(0, 6))
 
     def build_informacoes_adicionais_section(self, parent):
         section = ctk.CTkFrame(
             parent, fg_color=COLORS["white"], corner_radius=4,
             border_width=1, border_color=COLORS["border"]
         )
-        section.pack(fill="x", pady=(0, 15))
+        section.pack(fill="x", pady=(0, 10))
 
         header_frame = ctk.CTkFrame(section, fg_color="transparent")
-        header_frame.pack(fill="x", padx=20, pady=(12, 10))
+        header_frame.pack(fill="x", padx=20, pady=(8, 6))
 
         ctk.CTkLabel(
             header_frame, text="3. Informacoes Adicionais",
@@ -373,7 +366,7 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
         ).pack(side="left")
 
         fields_frame = ctk.CTkFrame(section, fg_color="transparent")
-        fields_frame.pack(fill="x", padx=20, pady=(0, 10))
+        fields_frame.pack(fill="x", padx=20, pady=(0, 6))
 
         for i in range(3):
             fields_frame.grid_columnconfigure(i, weight=1)
@@ -390,7 +383,7 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
         self.entry_processo = ctk.CTkEntry(
             campo_frame,
             placeholder_text="",
-            height=36, border_width=1,
+            height=32, border_width=1,
             border_color=COLORS["border"], corner_radius=4,
             fg_color=COLORS["white"], text_color=COLORS["text"],
         )
@@ -408,7 +401,7 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
         self.entry_documento_sei = ctk.CTkEntry(
             doc_frame,
             placeholder_text="",
-            height=36, border_width=1,
+            height=32, border_width=1,
             border_color=COLORS["border"], corner_radius=4,
             fg_color=COLORS["white"], text_color=COLORS["text"],
         )
@@ -426,14 +419,14 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
         self.entry_responsavel = ctk.CTkEntry(
             resp_frame,
             placeholder_text="",
-            height=36, border_width=1,
+            height=32, border_width=1,
             border_color=COLORS["border"], corner_radius=4,
             fg_color=COLORS["white"], text_color=COLORS["text"],
         )
         self.entry_responsavel.pack(fill="x")
 
         obs_frame = ctk.CTkFrame(section, fg_color="transparent")
-        obs_frame.pack(fill="x", padx=20, pady=(0, 15))
+        obs_frame.pack(fill="x", padx=20, pady=(0, 10))
 
         ctk.CTkLabel(
             obs_frame, text="Observacoes",
@@ -443,18 +436,46 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
 
         self.text_obs = ctk.CTkTextbox(
             obs_frame,
-            height=80, border_width=1,
+            height=60, border_width=1,
             border_color=COLORS["border"], corner_radius=4,
             fg_color=COLORS["white"], text_color=COLORS["text"],
         )
         self.text_obs.pack(fill="x")
 
     def build_bottom_buttons(self, parent):
-        btn_frame = ctk.CTkFrame(parent, fg_color="transparent")
-        btn_frame.pack(fill="x", pady=(10, 0))
+        footer = ctk.CTkFrame(parent, fg_color=COLORS["white"], corner_radius=0,
+                              border_width=1, border_color=COLORS["border"])
+        footer.pack(side="bottom", fill="x", pady=(10, 0))
+
+        inner = ctk.CTkFrame(footer, fg_color="transparent")
+        inner.pack(anchor="center", pady=12)
 
         ctk.CTkButton(
-            btn_frame,
+            inner,
+            text="Baixar PDF",
+            height=40, corner_radius=4,
+            fg_color=COLORS["white"],
+            hover_color=COLORS["hover"],
+            text_color=COLORS["text"],
+            border_width=1,
+            border_color=COLORS["border"],
+            font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
+            command=self.baixar_pdf,
+        ).pack(side="left", padx=6)
+
+        ctk.CTkButton(
+            inner,
+            text="Imprimir",
+            height=40, corner_radius=4,
+            fg_color=COLORS["success"],
+            hover_color=COLORS["success_hover"],
+            text_color="white",
+            font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
+            command=self.imprimir,
+        ).pack(side="left", padx=6)
+
+        ctk.CTkButton(
+            inner,
             text="Salvar Relatorio",
             height=40, corner_radius=4,
             fg_color=COLORS["success"],
@@ -462,10 +483,10 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
             text_color="white",
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             command=self.salvar_relatorio,
-        ).pack(side="left", padx=(0, 10))
+        ).pack(side="left", padx=6)
 
         ctk.CTkButton(
-            btn_frame,
+            inner,
             text="Voltar",
             height=40, corner_radius=4,
             fg_color=COLORS["white"],
@@ -475,59 +496,17 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
             border_color=COLORS["border"],
             font=ctk.CTkFont(size=FONTS["size_body"]),
             command=self.voltar,
-        ).pack(side="left")
+        ).pack(side="left", padx=6)
 
-    def build_preview_panel(self, parent):
-        preview_container = ctk.CTkFrame(
-            parent, fg_color=COLORS["white"], corner_radius=4,
-            border_width=1, border_color=COLORS["border"]
-        )
-        preview_container.pack(fill="both", expand=True)
-
-        ctk.CTkLabel(
-            preview_container, text="Previa do Relatorio",
-            font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
-            text_color=COLORS["text"],
-        ).pack(anchor="w", padx=15, pady=(12, 10))
-
-        self.preview_frame = ctk.CTkFrame(
-            preview_container, fg_color=COLORS["border"], corner_radius=4
-        )
-        self.preview_frame.pack(fill="both", expand=True, padx=15, pady=(0, 15))
-
-        ctk.CTkLabel(
-            self.preview_frame,
-            text="Previa do relatorio\nsera exibida aqui",
-            font=ctk.CTkFont(size=FONTS["size_small"]),
-            text_color=COLORS["text_muted"],
-        ).pack(expand=True)
-
-        btn_frame = ctk.CTkFrame(preview_container, fg_color="transparent")
-        btn_frame.pack(fill="x", padx=15, pady=(0, 15))
-
-        ctk.CTkButton(
-            btn_frame,
-            text="Baixar PDF",
-            height=36, corner_radius=4,
-            fg_color=COLORS["white"],
-            hover_color=COLORS["hover"],
-            text_color=COLORS["text"],
-            border_width=1,
-            border_color=COLORS["border"],
-            font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-            command=self.baixar_pdf,
-        ).pack(side="left", padx=(0, 8), expand=True, fill="x")
-
-        ctk.CTkButton(
-            btn_frame,
-            text="Imprimir",
-            height=36, corner_radius=4,
-            fg_color=COLORS["success"],
-            hover_color=COLORS["success_hover"],
-            text_color="white",
-            font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-            command=self.imprimir,
-        ).pack(side="right", expand=True, fill="x")
+    def _quantidade_disponivel(self, item_id):
+        item = next((i for i in self.itens_catalogo if i["id"] == item_id), None)
+        if item is None:
+            return None
+        max_qtd = item.get("quantidade") or 0
+        if max_qtd <= 0:
+            return None
+        usada = sum(i["quantidade"] for i in self.itens_lista if i.get("item_id") == item_id)
+        return max(0, max_qtd - usada)
 
     def adicionar_item(self):
         display = self.combo_item.get().strip()
@@ -558,6 +537,14 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
             messagebox.showwarning("Aviso", "Item nao encontrado no catalogo.")
             return
 
+        disponivel = self._quantidade_disponivel(item_info["id"])
+        if disponivel is not None and qtd_int > disponivel:
+            messagebox.showwarning(
+                "Aviso",
+                f"Quantidade maxima permitida para '{item_info['nome']}' e {disponivel}.",
+            )
+            return
+
         self.itens_lista.append({
             "item_id": item_info["id"],
             "item": item_info["nome"],
@@ -567,6 +554,7 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
         self.render_itens()
 
         self.entry_quantidade.delete(0, "end")
+        self.entry_quantidade.configure(placeholder_text="0")
 
     def render_itens(self):
         for widget in self.itens_body.winfo_children():
@@ -741,6 +729,12 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
             command=form.destroy,
         ).pack(side="left")
 
+    def salvar_relatorio(self):
+        if not self.itens_lista:
+            messagebox.showwarning("Aviso", "Adicione pelo menos um item ao relatorio.")
+            return
+        messagebox.showinfo("Sucesso", "Relatorio salvo com sucesso!")
+
     def _gerar_texto_relatorio(self):
         texto = "RELATORIO DE ENTREGA DE MATERIAIS\n"
         texto += "=" * 40 + "\n\n"
@@ -758,12 +752,6 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
         total = sum(item["quantidade"] for item in self.itens_lista)
         texto += f"Total de Itens: {total}\n"
         return texto
-
-    def salvar_relatorio(self):
-        if not self.itens_lista:
-            messagebox.showwarning("Aviso", "Adicione pelo menos um item ao relatorio.")
-            return
-        messagebox.showinfo("Sucesso", "Relatorio salvo com sucesso!")
 
     def baixar_pdf(self):
         if not self.itens_lista:

@@ -599,7 +599,8 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
 
             try:
                 r = db.executar(
-                    f'''SELECT COALESCE(SUM(nf.valor_total), 0) {base}''',
+                    f"""SELECT COALESCE(SUM(nf.valor_total), 0) {base}
+                        AND nf.status_nota = 'Aprovada'""",
                     (self.id_infrator,)
                 ).fetchone()
                 valor_total = float(r[0]) if r else 0
