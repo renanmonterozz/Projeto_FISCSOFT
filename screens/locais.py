@@ -60,15 +60,15 @@ class LocaisPage(CrudBase, ctk.CTkFrame):
         header.pack_propagate(False)
 
         cols = ctk.CTkFrame(header, fg_color="transparent")
-        cols.pack(side="left", fill="x", expand=True, padx=(10, 0))
+        cols.pack(side="left", fill="x", expand=True, padx=(10, 17))
 
         colunas = ["CEP", "Endereco", "Instituicao", "Responsavel", "Telefone"]
         col_cfg = [
-            (0.0, 0.15, "w"),    # CEP
-            (0.15, 0.25, "w"),   # Endereco
-            (0.40, 0.25, "w"),   # Instituicao
-            (0.65, 0.20, "w"),   # Responsavel
-            (0.85, 0.15, "w"),   # Telefone
+            (0.0, 0.12, "w"),      # CEP
+            (0.12, 0.22, "w"),     # Endereco
+            (0.34, 0.22, "w"),     # Instituicao
+            (0.56, 0.18, "w"),     # Responsavel
+            (0.74, 0.12, "center"),# Telefone
         ]
 
         for texto, (rx, rw, anchor) in zip(colunas, col_cfg):
@@ -125,11 +125,11 @@ class LocaisPage(CrudBase, ctk.CTkFrame):
 
         # pesos → relx / relwidth (idêntico ao cabeçalho)
         col_cfg = [
-            (0.0,  0.15, "w"),      # CEP
-            (0.15, 0.25, "w"),      # Endereco
-            (0.40, 0.25, "w"),      # Instituicao
-            (0.65, 0.20, "w"),      # Responsavel
-            (0.85, 0.15, "w"),      # Telefone
+            (0.0,  0.12, "w"),      # CEP
+            (0.12, 0.22, "w"),      # Endereco
+            (0.34, 0.22, "w"),      # Instituicao
+            (0.56, 0.18, "w"),      # Responsavel
+            (0.74, 0.12, "center"), # Telefone
         ]
 
         endereco = local["endereco"][:40] + ("..." if len(local["endereco"]) > 40 else "")
