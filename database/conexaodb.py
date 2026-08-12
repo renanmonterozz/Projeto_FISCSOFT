@@ -1,10 +1,13 @@
 import os
 import re
 import logging
+import sqlite3
 
 import mysql.connector
 from mysql.connector import Error
 from dotenv import load_dotenv
+
+from cache.gerenciador_cache import CacheManager
 
 logger = logging.getLogger(__name__)
 
@@ -124,6 +127,16 @@ class Database:
             self.conexao.close()
 
     def executar(self, sql: str, params=None):
+        cache = CacheManager.instancia()
+        sql_upper = sql.strip().upper()
+
+        if cache.ativo and sql_upper.startswith("SELECT"):
+            try:
+                cursor_cache = cache.executar_cache(sql, params)
+                return cursor_cache
+            except Exception as e:
+                logger.debug("Fallback p/ MySQL (cache erro): %s", e)
+
         if not self.conexao or not self.conexao.is_connected():
             return None
         cursor = self.conexao.cursor(dictionary=True)
@@ -133,6 +146,9 @@ class Database:
     def commitar(self):
         if self.conexao and self.conexao.is_connected():
             self.conexao.commit()
+        cache = CacheManager.instancia()
+        if cache.ativo:
+            cache.commitar_cache()
 
 
 def criar_schema():

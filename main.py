@@ -14,6 +14,7 @@ import customtkinter as ctk
 from config.styles import ASSETS_DIR, COLORS, FONTS
 from config.permissoes import PAGINAS_EXTERNO, normalizar_perfil, paginas_do_perfil, pode_acao
 from database.conexaodb import Database
+from cache.gerenciador_cache import CacheManager
 from screens.sidebar import Sidebar
 from screens.menu_inicial import MenuInicialPage
 from screens.usuarios import UsuariosPage
@@ -49,6 +50,19 @@ def _suprimir_erro_tcl():
             root.tk.eval("proc bgerror {msg} {}")
     except Exception:
         pass
+
+
+def _criar_cache():
+    """Baixa dados do MySQL e cria cache local SQLite."""
+    cache = CacheManager.instancia()
+    with Database() as db:
+        if db.conexao:
+            cache.criar_cache(db.conexao)
+
+
+def _limpar_cache():
+    """Remove o cache local SQLite."""
+    CacheManager.instancia().limpar_cache()
 
 
 # Cores da tela de login
@@ -282,6 +296,7 @@ class LoginApp(ctk.CTk):
             self.usuario_logado = nome
             self.perfil = normalizar_perfil(perfil)
 
+            _criar_cache()
             self._abrir_tela_principal(perfil=self.perfil)
             return
 
@@ -308,6 +323,7 @@ class LoginApp(ctk.CTk):
 
         self.usuario_logado = nome_inf
         self.id_infrator = id_infrator
+        _criar_cache()
         self._abrir_tela_externa()
 
     def _login_cpf(self, cpf, senha):
@@ -333,6 +349,7 @@ class LoginApp(ctk.CTk):
 
         self.usuario_logado = nome
         self.id_infrator = id_infrator
+        _criar_cache()
         self._abrir_tela_externa()
 
     def _on_sair_click(self):
@@ -356,6 +373,7 @@ class LoginApp(ctk.CTk):
             perfil_db = (dados["perfil"] or "agente").lower()
             self.perfil = "admin" if perfil_db == "administrador" else "agente"
 
+            _criar_cache()
             if self.perfil == "admin":
                 self._abrir_tela_principal(perfil="admin")
             else:
@@ -419,6 +437,7 @@ class LoginApp(ctk.CTk):
                 ).pack(fill="both", expand=True)
 
         def logout():
+            _limpar_cache()
             try:
                 main_app.quit()
                 main_app.destroy()
@@ -467,6 +486,7 @@ class LoginApp(ctk.CTk):
         content.pack(fill="both", expand=True, padx=30, pady=(15, 20))
 
         def _logout_welcome():
+            _limpar_cache()
             try:
                 welcome_app.quit()
                 welcome_app.destroy()
@@ -589,6 +609,7 @@ class LoginApp(ctk.CTk):
                 ).pack(expand=True)
 
         def logout():
+            _limpar_cache()
             try:
                 main_app.quit()
                 main_app.destroy()
