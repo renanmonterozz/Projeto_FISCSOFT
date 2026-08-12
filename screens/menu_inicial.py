@@ -126,13 +126,13 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
 
     def build_notas_table(self):
         self.colunas_place = [
-            (0.00, 0.15, "w"),  # Numero da NF
-            (0.15, 0.23, "w"),  # Chave de acesso
-            (0.38, 0.15, "w"),  # Data de Emissao
-            (0.53, 0.08, "w"),  # Itens
-            (0.61, 0.15, "w"),  # Valor Total
-            (0.76, 0.16, "w"),  # Usuario
-            (0.92, 0.08, "w"),  # Status
+            (0.00, 0.12, "w"),      # Numero da NF
+            (0.14, 0.26, "w"),      # Chave de acesso (44 chars)
+            (0.42, 0.12, "center"), # Data de Emissao
+            (0.56, 0.06, "center"), # Itens
+            (0.64, 0.12, "center"), # Valor Total
+            (0.78, 0.12, "w"),      # Usuario
+            (0.92, 0.06, "center"), # Status
         ]
 
         section = ctk.CTkFrame(
@@ -285,7 +285,7 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
 
             dados = [
                 (nota["nota_fiscal"], COLORS["text"]),
-                (nota["chave_de_acesso"], COLORS["text_muted"]),
+                (nota["chave_de_acesso"].ljust(44), COLORS["text_muted"]),
                 (nota["data"], COLORS["text_muted"]),
                 (str(nota["qtd_itens"]), COLORS["text_muted"]),
                 (f"R$ {nota['valor_total']:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), COLORS["text_muted"]),
