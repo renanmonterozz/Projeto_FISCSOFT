@@ -51,6 +51,42 @@ class Database:
                     continue
                 logger.debug("Migracao ignorada para %s: %s", nome, e)
 
+        # Create item_semestre table and migrate existing quantidade_prevista into current semester
+        try:
+            self.conexao.execute(
+                """
+                CREATE TABLE IF NOT EXISTS item_semestre (
+                    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                    itens_id INTEGER NOT NULL,
+                    ano INTEGER NOT NULL,
+                    semestre INTEGER NOT NULL,
+                    quantidade_prevista INTEGER NOT NULL DEFAULT 0,
+                    processo TEXT,
+                    UNIQUE (itens_id, ano, semestre),
+                    FOREIGN KEY (itens_id) REFERENCES itens (id)
+                );
+                """
+            )
+            self.conexao.commit()
+            logger.info("Migracao aplicada: item_semestre table")
+            try:
+                from datetime import datetime as _dt
+                now = _dt.now()
+                ano = now.year
+                semestre = 1 if now.month <= 6 else 2
+                # migrate non-zero previsao into current semester
+                self.conexao.execute(
+                    "INSERT OR IGNORE INTO item_semestre (itens_id, ano, semestre, quantidade_prevista, processo) "
+                    "SELECT id, ?, ?, quantidade_prevista, processo FROM itens WHERE quantidade_prevista IS NOT NULL AND quantidade_prevista != 0",
+                    (ano, semestre),
+                )
+                self.conexao.commit()
+                logger.info("Migracao aplicada: item_semestre data migrated for current semester")
+            except Exception as e:
+                logger.debug("item_semestre data migration skipped: %s", e)
+        except Exception as e:
+            logger.debug("item_semestre table migration ignored: %s", e)
+
         self._migrar_perfis()
 
     def _migrar_perfis(self):
@@ -269,14 +305,7 @@ def criar_schema():
 
     INSERT OR IGNORE INTO itens (id, nome, descricao, codigo_interno, categoria, tipo, justificativa, unidade_medida, semestre, quantidade_prevista, status, notas_fiscais, criado_em)
     VALUES
-        (1, 'Monitor Dell 24"', 'Monitor Dell 24"', 'IT-001', 'Eletrônicos', 'Equipamento', 'Monitor para estacao de trabalho', 'Unidade', NULL, 0, 'Ativo', 'NF-001234', '2026-06-26 23:05:18'),
-        (2, 'Cadeira Ergonômica', 'Cadeira Ergonômica', 'IT-002', 'Mobiliário', 'Móvel', 'Cadeira para escritorio', 'Unidade', NULL, 0, 'Ativo', 'NF-001235', '2026-06-26 23:05:18'),
-        (3, 'Notebook Lenovo', 'Notebook Lenovo', 'IT-003', 'Eletrônicos', 'Equipamento', 'Notebook para uso administrativo', 'Unidade', NULL, 0, 'Pendente', 'NF-001236', '2026-06-26 23:05:18'),
-        (4, 'Mesa de Escritório', 'Mesa de Escritório', 'IT-004', 'Mobiliário', 'Móvel', 'Mesa para trabalho', 'Unidade', NULL, 0, 'Ativo', 'NF-001234', '2026-06-26 23:05:18'),
-        (5, 'Impressora HP', 'Impressora HP', 'IT-005', 'Eletrônicos', 'Equipamento', 'Impressora multifuncional', 'Unidade', NULL, 0, 'Inativo', 'NF-001235', '2026-06-26 23:05:18'),
-        (6, 'Teclado USB', 'Teclado USB', 'IT-006', 'Eletrônicos', 'Periférico', 'Teclado USB padrao', 'Unidade', NULL, 0, 'Ativo', 'NF-001236', '2026-06-26 23:05:18'),
-        (7, 'Cadeira Executiva', 'Cadeira Executiva', 'IT-007', 'Mobiliário', 'Móvel', 'Cadeira executiva', 'Unidade', NULL, 0, 'Ativo', 'NF-001234', '2026-06-26 23:05:18'),
-        (8, 'computador', 'dell', '', NULL, NULL, NULL, NULL, '3', 100, 'Ativo', NULL, '2026-06-27 00:11:24');
+        
 
     INSERT OR IGNORE INTO locais (id, cep, endereco, instituicao, responsavel, telefone)
     VALUES
