@@ -1,8 +1,11 @@
 import _path  # noqa: F401
 
+import os
+import calendar
 from datetime import datetime as _dt
 
 import customtkinter as ctk
+from PIL import Image
 
 from config.styles import get_colors, FONTS
 from database.conexaodb import Database
@@ -27,6 +30,8 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
         self.usuario_logado = usuario_logado
         self.perfil = perfil
         self.processo_tccm = processo_tccm
+        # mark this page as the post-login main screen so alerts show here
+        self.is_post_login = True
 
         if processo_tccm:
             titulo = f"TCCM - {processo_tccm}"
@@ -41,6 +46,8 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
             subtitulo = "Gerencie usuarios, relatorios e informacoes do sistema"
         self.build_header(titulo, subtitulo)
         self.build_stats_cards()
+        if processo_tccm:
+            self.build_info_tccm()
         self.build_notas_table()
 
     def build_stats_cards(self):
@@ -50,13 +57,12 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
 
         card_data = [
             ("Notas Fiscais", "Total de notas", "0"),
-            ("Itens Recebidos", "Total de itens", "0"),
+            ("Itens Recebidos", "Itens de notas aprovadas", "0"),
             ("Valor Total(R$)", "Valor acumulado", "R$ 0,00"),
-            ("Tccms Ativos", "Tccms cadastrados", "0"),
         ]
 
         self.stat_labels = {}
-        icons = ["\U0001f4cb", "\U0001f4e6", "\U0001f4b0", "\U0001f464"]
+        icons = ["nota.png", "caixa2.png", "cifrao.png"]
 
         for i, (titulo, subtitulo, valor) in enumerate(card_data):
             card = ctk.CTkFrame(
@@ -76,11 +82,35 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
             icon_circle.pack(side="left", padx=(0, 12))
             icon_circle.pack_propagate(False)
 
+<<<<<<< HEAD
             ctk.CTkLabel(
                 icon_circle, text=icons[i],
                 font=ctk.CTkFont(size=18),
                 text_color=colors["primary"]
             ).pack(expand=True)
+=======
+            icon_img = None
+            try:
+                icon_img = ctk.CTkImage(
+                    light_image=Image.open(os.path.join(ASSETS_DIR, icons[i])),
+                    dark_image=Image.open(os.path.join(ASSETS_DIR, icons[i])),
+                    size=(32, 32),
+                )
+            except Exception:
+                pass
+
+            if icon_img:
+                ctk.CTkLabel(
+                    icon_circle, text="",
+                    image=icon_img
+                ).pack(expand=True)
+            else:
+                ctk.CTkLabel(
+                    icon_circle, text=["\U0001f4cb", "\U0001f4e6", "\U0001f4b0"][i],
+                    font=ctk.CTkFont(size=18),
+                    text_color=COLORS["primary"]
+                ).pack(expand=True)
+>>>>>>> main
 
             text_frame = ctk.CTkFrame(inner, fg_color="transparent")
             text_frame.pack(side="left", fill="both", expand=True)
@@ -108,12 +138,30 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
         self.atualizar_cards()
 
     def build_notas_table(self):
+<<<<<<< HEAD
         colors = get_colors()
+=======
+        self.colunas_place = [
+            (0.00, 0.12, "w"),      # Numero da NF
+            (0.14, 0.26, "w"),      # Chave de acesso (44 chars)
+            (0.42, 0.12, "center"), # Data de Emissao
+            (0.56, 0.06, "center"), # Itens
+            (0.64, 0.12, "center"), # Valor Total
+            (0.78, 0.12, "w"),      # Usuario
+            (0.92, 0.06, "center"), # Status
+        ]
+
+>>>>>>> main
         section = ctk.CTkFrame(
             self, fg_color=colors["white"], corner_radius=4,
             border_width=1, border_color=colors["border"]
         )
-        section.pack(fill="both", expand=True, padx=30, pady=(0, 30))
+        if self.processo_tccm:
+            section.configure(height=340)
+            section.pack(fill="x", padx=30, pady=(0, 30))
+            section.pack_propagate(False)
+        else:
+            section.pack(fill="both", expand=True, padx=30, pady=(0, 30))
 
         header_frame = ctk.CTkFrame(section, fg_color="transparent")
         header_frame.pack(fill="x", padx=20, pady=(15, 10))
@@ -135,24 +183,30 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
             "Numero da NF", "Chave de acesso", "Data de Emissao",
             "Itens", "Valor Total(R$)", "Usuario", "Status"
         ]
+<<<<<<< HEAD
         weights = [2, 3, 2, 1, 2, 2, 1]
 
         header = ctk.CTkFrame(section, fg_color=colors["table_header"], height=40, corner_radius=0)
+=======
+        header = ctk.CTkFrame(section, fg_color=COLORS["table_header"], height=40, corner_radius=0)
+>>>>>>> main
         header.pack(fill="x", padx=15, pady=(5, 0))
         header.pack_propagate(False)
 
         cols_frame = ctk.CTkFrame(header, fg_color="transparent")
-        cols_frame.pack(side="left", fill="x", expand=True, padx=(10, 0))
+        cols_frame.pack(side="left", fill="x", expand=True, padx=(10, 16))
 
-        for i, w in enumerate(weights):
-            cols_frame.grid_columnconfigure(i, weight=w)
-
-        for i, col in enumerate(columns):
+        for col, (relx, relwidth, anchor) in zip(columns, self.colunas_place):
             ctk.CTkLabel(
                 cols_frame, text=col,
                 font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
+<<<<<<< HEAD
                 text_color=colors["text_muted"]
             ).grid(row=0, column=i, sticky="w", padx=5)
+=======
+                text_color=COLORS["text_muted"], anchor=anchor,
+            ).place(relx=relx, relwidth=relwidth, rely=0, relheight=1)
+>>>>>>> main
 
         self.table_body = ctk.CTkScrollableFrame(
             section, fg_color=colors["white"], corner_radius=0
@@ -243,7 +297,6 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
             ).pack(pady=30)
             return
 
-        weights = [2, 3, 2, 1, 2, 2, 1]
         for idx, nota in enumerate(self.notas):
             linha = ctk.CTkFrame(self.table_body, fg_color="transparent", height=44)
             linha.pack(fill="x")
@@ -254,6 +307,7 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
             cols = ctk.CTkFrame(linha, fg_color="transparent")
             cols.pack(side="left", fill="x", expand=True, padx=(10, 0))
 
+<<<<<<< HEAD
             for i, w in enumerate(weights):
                 cols.grid_columnconfigure(i, weight=w)
 
@@ -275,6 +329,8 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
             status_frame.pack(side="right", padx=(0, 10))
             status_frame.pack_propagate(False)
 
+=======
+>>>>>>> main
             if nota["status"] == "Aprovada":
                 status_color = colors["success_dark"]
                 status_text = "\u2714"
@@ -285,18 +341,138 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
                 status_color = colors["warning"]
                 status_text = "\u26A0"
 
-            status_icon = ctk.CTkLabel(
-                status_frame, text=status_text,
-                font=ctk.CTkFont(size=16, weight="bold"),
-                text_color=status_color
-            )
-            status_icon.pack(expand=True)
+            dados = [
+                (nota["nota_fiscal"], COLORS["text"]),
+                (nota["chave_de_acesso"].ljust(44), COLORS["text_muted"]),
+                (nota["data"], COLORS["text_muted"]),
+                (str(nota["qtd_itens"]), COLORS["text_muted"]),
+                (f"R$ {nota['valor_total']:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), COLORS["text_muted"]),
+                (nota["usuario"], COLORS["text_muted"]),
+                (status_text, status_color),
+            ]
+
+            for (relx, relwidth, anchor), (valor, cor) in zip(self.colunas_place, dados):
+                ctk.CTkLabel(
+                    cols, text=valor,
+                    font=ctk.CTkFont(size=FONTS["size_small"]),
+                    text_color=cor, anchor=anchor,
+                ).place(relx=relx, relwidth=relwidth, rely=0, relheight=1)
 
         self.lbl_total_registros.configure(text=f"Total de Registros: {len(self.notas)}")
         valor_total = sum(n["valor_total"] for n in self.notas)
         self.lbl_valor_total.configure(
             text=f"Valor Total: R$ {valor_total:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
         )
+
+    def build_info_tccm(self):
+        with Database() as db:
+            if not db.conexao:
+                return
+            try:
+                r = db.executar(
+                    """SELECT processo, status, documento_sei, data_inicio, semestres,
+                              data_validade, total_devido, total_pago
+                       FROM tccm WHERE processo = ?""",
+                    (self.processo_tccm,),
+                )
+                row = r.fetchone() if r else None
+            except Exception:
+                row = None
+
+        if not row:
+            return
+
+        status = row[1] or "pendente"
+        semestres = row[4] or 0
+
+        # try to parse data_inicio from DB; prefer a datetime object when possible
+        data_inicio_obj = None
+        try:
+            if hasattr(row[3], "year"):
+                data_inicio_obj = row[3]
+            else:
+                data_inicio_obj = _dt.strptime(str(row[3]), "%Y-%m-%d")
+        except Exception:
+            data_inicio_obj = None
+
+        # calculate data_validade = data_inicio + semestres * 6 months
+        def _add_months(dt_obj, months):
+            if not dt_obj:
+                return None
+            total = dt_obj.month - 1 + months
+            y = dt_obj.year + total // 12
+            m = total % 12 + 1
+            day = min(dt_obj.day, calendar.monthrange(y, m)[1])
+            return _dt(y, m, day)
+
+        months_to_add = int(semestres) * 6 if semestres else 0
+        data_validade_obj = _add_months(data_inicio_obj, months_to_add) if months_to_add and data_inicio_obj else (row[5] if row[5] else None)
+
+        data_inicio = _fmt_date(data_inicio_obj)
+        data_validade = _fmt_date(data_validade_obj)
+        total_devido = float(row[6]) if row[6] else 0
+        total_pago = float(row[7]) if row[7] else 0
+        pendente = max(0, total_devido - total_pago)
+        pct = (total_pago / total_devido * 100) if total_devido > 0 else 0
+
+        def _fmt_brl(valor):
+            return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+        section = ctk.CTkFrame(self, fg_color=COLORS["white"], corner_radius=4,
+                                border_width=1, border_color=COLORS["border"])
+        section.pack(fill="x", padx=30, pady=(0, 20))
+
+        hdr = ctk.CTkFrame(section, fg_color="transparent")
+        hdr.pack(fill="x", padx=15, pady=(12, 8))
+
+        dot = ctk.CTkFrame(hdr, fg_color=COLORS["primary"], width=10, height=10, corner_radius=5)
+        dot.pack(side="left", padx=(0, 8))
+        dot.pack_propagate(False)
+
+        ctk.CTkLabel(hdr, text="Informações do TCCM",
+                      font=ctk.CTkFont(size=16, weight="bold"),
+                      text_color=COLORS["text"]).pack(side="left")
+
+        progress_frame = ctk.CTkFrame(section, fg_color="transparent")
+        progress_frame.pack(fill="x", padx=15, pady=(0, 8))
+
+        progress_bar_bg = ctk.CTkFrame(progress_frame, fg_color=COLORS["border"], height=8, corner_radius=4)
+        progress_bar_bg.pack(fill="x")
+        progress_bar_fg = ctk.CTkFrame(progress_bar_bg, fg_color=COLORS["primary"], height=8, corner_radius=4)
+        progress_bar_fg.place(x=0, y=0, relwidth=pct / 100, relheight=1)
+
+        ctk.CTkLabel(progress_frame, text=f"{pct:.1f}% pago",
+                      font=ctk.CTkFont(size=FONTS["size_small"]),
+                      text_color=COLORS["text_muted"]).pack(anchor="e", pady=(4, 0))
+
+        info_grid = ctk.CTkFrame(section, fg_color="transparent")
+        info_grid.pack(fill="x", padx=15, pady=(0, 15))
+        for i in range(4):
+            info_grid.grid_columnconfigure(i, weight=1)
+
+        campos = [
+            ("Processo", row[0] or "--"),
+            ("Status", status.capitalize()),
+            ("Documento SEI", row[2] or "--"),
+            ("Data Inicio", data_inicio),
+            ("Semestres", f"{semestres}"),
+            ("Data Validade", data_validade),
+            ("Total Devido", _fmt_brl(total_devido)),
+            ("Total Pago", _fmt_brl(total_pago)),
+            ("Total Pendente", _fmt_brl(pendente)),
+        ]
+
+        for i, (label, valor) in enumerate(campos):
+            row_idx = i // 4
+            col = i % 4
+            frame = ctk.CTkFrame(info_grid, fg_color="transparent")
+            frame.grid(row=row_idx, column=col, padx=5, pady=4, sticky="w")
+            ctk.CTkLabel(frame, text=label,
+                          font=ctk.CTkFont(size=14),
+                          text_color=COLORS["text_muted"]).pack(anchor="w")
+            ctk.CTkLabel(frame, text=valor,
+                          font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
+                          text_color=COLORS["text"]).pack(anchor="w")
 
     def atualizar_cards(self):
         with Database() as db:
@@ -316,7 +492,7 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
                         'SELECT COUNT(p.lote) FROM produtos p '
                         'JOIN "nota fiscal" nf ON p."nota fiscal_nota_fiscal" = nf.nota_fiscal '
                         'AND p."nota fiscal_agente ibama_matricula" = nf."agente ibama_matricula" '
-                        'WHERE nf.processo = ?',
+                        'WHERE nf.processo = ? AND nf.status_nota = \'Aprovada\'',
                         (self.processo_tccm,)
                     ).fetchone()
                     total_itens = r[0] if r else 0
@@ -324,13 +500,14 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
                     total_itens = 0
 
                 try:
-                    r = db.executar('SELECT COALESCE(SUM(valor_total), 0) FROM "nota fiscal" WHERE processo = ?',
-                                    (self.processo_tccm,)).fetchone()
+                    r = db.executar(
+                        'SELECT COALESCE(SUM(valor_total), 0) FROM "nota fiscal" WHERE processo = ? AND status_nota = \'Aprovada\'',
+                        (self.processo_tccm,)
+                    ).fetchone()
                     valor_total = float(r[0]) if r else 0
                 except Exception:
                     valor_total = 0
 
-                total_tccm = 1
             else:
                 try:
                     r = db.executar('SELECT COUNT(DISTINCT nota_fiscal) FROM "nota fiscal"').fetchone()
@@ -339,27 +516,27 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
                     total_nf = 0
 
                 try:
-                    r = db.executar('SELECT COUNT(lote) FROM produtos').fetchone()
+                    r = db.executar('SELECT COUNT(lote) FROM produtos p '
+                                    'JOIN "nota fiscal" nf ON p."nota fiscal_nota_fiscal" = nf.nota_fiscal '
+                                    'AND p."nota fiscal_agente ibama_matricula" = nf."agente ibama_matricula" '
+                                    'WHERE nf.status_nota = \'Aprovada\'').fetchone()
                     total_itens = r[0] if r else 0
                 except Exception:
                     total_itens = 0
 
                 try:
-                    r = db.executar('SELECT COALESCE(SUM(valor_total), 0) FROM "nota fiscal"').fetchone()
+                    r = db.executar(
+                        'SELECT COALESCE(SUM(valor_total), 0) FROM "nota fiscal" WHERE status_nota = \'Aprovada\''
+                    ).fetchone()
                     valor_total = float(r[0]) if r else 0
                 except Exception:
                     valor_total = 0
-
-                try:
-                    r = db.executar("SELECT COUNT(DISTINCT processo) FROM tccm").fetchone()
-                    total_tccm = r[0] if r else 0
-                except Exception:
-                    total_tccm = 0
 
         self.stat_labels["Notas Fiscais"].configure(text=str(total_nf))
         self.stat_labels["Itens Recebidos"].configure(text=str(total_itens))
         valor_formatado = f"R$ {valor_total:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
         self.stat_labels["Valor Total(R$)"].configure(text=valor_formatado)
+<<<<<<< HEAD
         self.stat_labels["Tccms Ativos"].configure(text=str(total_tccm))
 
 
@@ -374,3 +551,5 @@ if __name__ == "__main__":
 
     MenuInicialPage(app).pack(fill="both", expand=True)
     app.mainloop()
+=======
+>>>>>>> main

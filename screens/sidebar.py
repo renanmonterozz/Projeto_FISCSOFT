@@ -41,16 +41,15 @@ class Sidebar(ctk.CTkFrame):
         except Exception:
             ctk.CTkLabel(logo_frame, text="FiscSoft", font=ctk.CTkFont(size=18, weight="bold"), text_color="#1D4D21").pack()
 
+        # Each entry: (display_text, icon_filename, page_name)
+        # `page_name` is the identifier passed to the navigate handler
         self.nav_items = [
-            ("Menu Principal", "casa.png"),
-            ("Dashboard TCCM", "relatorios.png"),
-            ("Itens", "caixa.png"),
-            ("Destinacao", "destinacao.png"),
-            ("Agente", "Agente.png"),
-            ("Usuario Externo", "usuarios.png"),
-            ("Locais Cadastrados", "predios.png"),
-            ("Relatorio", "relatorios.png"),
-            ("Historico", "relogio.png"),
+            ("Menu Principal", "casa.png", "Menu Principal"),
+            ("Registros", "nota.png", "Itens"),
+            ("Destinacao", "destinacao.png", "Destinacao"),
+            ("Usuários", "usuarios.png", "Agente"),
+            ("Notas Fiscais", "relatorios.png", "Notas Fiscais"),
+            ("Historico", "relogio.png", "Historico"),
         ]
 
         nav_container = ctk.CTkFrame(self, fg_color="transparent")
@@ -58,8 +57,10 @@ class Sidebar(ctk.CTkFrame):
 
         paginas_permitidas = paginas_do_perfil(perfil) if perfil else None
 
-        for text, img_path in self.nav_items:
-            if paginas_permitidas is not None and text not in paginas_permitidas:
+        for entry in self.nav_items:
+            display_text, img_path, page_name = entry
+            # permissions check must use the page identifier (existing names)
+            if paginas_permitidas is not None and page_name not in paginas_permitidas:
                 continue
 
             btn_icon = carregar_icone(img_path)
@@ -67,7 +68,7 @@ class Sidebar(ctk.CTkFrame):
             btn = ctk.CTkButton(
                 nav_container,
                 image=btn_icon,
-                text=f"   {text}",
+                text=f"   {display_text}",
                 anchor="w",
                 compound="left",
                 fg_color="transparent",
@@ -76,7 +77,7 @@ class Sidebar(ctk.CTkFrame):
                 height=42,
                 corner_radius=6,
                 font=ctk.CTkFont(family=FONTS["family"], size=FONTS["size_small"], weight="bold"),
-                command=lambda t=text: self._navigate(t),
+                command=lambda p=page_name: self._navigate(p),
             )
             btn.pack(fill="x", pady=4)
 

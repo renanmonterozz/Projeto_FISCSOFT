@@ -16,13 +16,11 @@ from config.permissoes import PAGINAS_EXTERNO, normalizar_perfil, paginas_do_per
 from database.conexaodb import Database
 from screens.sidebar import Sidebar
 from screens.menu_inicial import MenuInicialPage
-from screens.usuarios import UsuariosPage
-from screens.itens import ItensPage
-from screens.infratores import InfratoresPage
-from screens.relatorios import RelatoriosPage
-from screens.relatorio_entrega import RelatorioEntregaPage
-from screens.locais import LocaisPage
+from screens.notas_fiscais import RelatoriosPage
+from screens.destinacao import RelatorioEntregaPage
 from screens.historico import HistoricoPage
+from screens.itens_locais import ItensLocaisPage
+from screens.usuarios_infratores import UsuariosInfratoresPage
 from screens.tccm_dashboard import TccmDashboardPage, TccmDetalhesPage
 from screens.cadastro_tccm_completo import CadastroTCCMCompleto
 from utils import verify_password, login_por_certificado
@@ -159,9 +157,7 @@ class LoginApp(ctk.CTk):
         self.frame_login.lift()
         pywinstyles.set_opacity(self.frame_login, color="#000001")
 
-        self._modo_login = "usuario"
-
-        # --- Campo de credencial com icone de toggle ao lado ---
+        # --- Campo de credencial ---
         frame_cred = ctk.CTkFrame(self.frame_login, fg_color="transparent", width=586, height=45)
         frame_cred.pack(pady=(10, 10))
         frame_cred.pack_propagate(False)
@@ -172,18 +168,9 @@ class LoginApp(ctk.CTk):
             font=("Segoe UI", 16),
             fg_color="#CFFFE3", border_color="#16A34A", border_width=2,
             text_color="#2D8A4E", placeholder_text_color="#2D8A4E",
-            placeholder_text="Digite seu usuario"
+            placeholder_text="Digite seu usuário ou CPF"
         )
         self.entry_credencial.place(x=53, y=0)
-
-        self.btn_modo = ctk.CTkButton(
-            frame_cred, text="\U0001f464", width=45, height=45, corner_radius=8,
-            fg_color="#CFFFE3", hover_color="#b0e8c0",
-            text_color="#2D8A4E", font=("Segoe UI", 18),
-            border_width=2, border_color="#16A34A",
-            command=self._toggle_modo_login
-        )
-        self.btn_modo.place(x=541, y=0)
 
         # --- Campo de senha com olho ---
         frame_senha = ctk.CTkFrame(self.frame_login, fg_color="transparent", width=586, height=45)
@@ -232,17 +219,7 @@ class LoginApp(ctk.CTk):
         self.entry_credencial.bind("<Return>", lambda e: self._on_entrar_click())
         self.entry_senha.bind("<Return>", lambda e: self._on_entrar_click())
 
-    def _toggle_modo_login(self):
-        if self._modo_login == "usuario":
-            self._modo_login = "cpf"
-            self.btn_modo.configure(text="\U0001faaa")
-            self.entry_credencial.configure(placeholder_text="Digite seu CPF")
-        else:
-            self._modo_login = "usuario"
-            self.btn_modo.configure(text="\U0001f464")
-            self.entry_credencial.configure(placeholder_text="Digite seu usuario")
-        self.entry_credencial.delete(0, "end")
-
+    
     def _on_entrar_click(self):
         credencial = self.entry_credencial.get().strip()
         senha = self.entry_senha.get()
@@ -251,10 +228,12 @@ class LoginApp(ctk.CTk):
             messagebox.showwarning("Atencao", "Preencha todos os campos!")
             return
 
-        if self._modo_login == "usuario":
-            self._login_usuario(credencial, senha)
-        else:
+        # Detect CPF (digits, length 11) automatically; fallback to usuario
+        only_digits = ''.join([c for c in credencial if c.isdigit()])
+        if len(only_digits) == 11 and only_digits == credencial:
             self._login_cpf(credencial, senha)
+        else:
+            self._login_usuario(credencial, senha)
 
     def _login_usuario(self, usuario, senha):
         with Database() as db:
@@ -533,25 +512,22 @@ class LoginApp(ctk.CTk):
             for w in content_frame.winfo_children():
                 w.destroy()
 
-            usuario_logado = main_app.usuario_logado if perfil == "agente" else None
+            usuario_logado = main_app.usuario_logado
 
             if pagina == "Menu Principal":
                 MenuInicialPage(content_frame, usuario_logado=usuario_logado, perfil=perfil,
                                 processo_tccm=processo_tccm).pack(fill="both", expand=True)
-            elif pagina == "Itens":
-                ItensPage(content_frame, on_voltar=lambda: navegar("Menu Principal"),
-                          processo_tccm=processo_tccm, perfil=perfil).pack(fill="both", expand=True)
+            elif pagina in ("Itens", "Locais Cadastrados"):
+                ItensLocaisPage(content_frame, usuario_logado=usuario_logado,
+                                processo_tccm=processo_tccm, perfil=perfil).pack(fill="both", expand=True)
             elif pagina == "Destinacao":
                 RelatorioEntregaPage(content_frame, on_voltar=lambda: navegar("Menu Principal"),
                                      usuario_logado=usuario_logado, processo_tccm=processo_tccm,
                                      perfil=perfil).pack(fill="both", expand=True)
-            elif pagina == "Agente":
-                UsuariosPage(content_frame, usuario_logado=usuario_logado, perfil=perfil).pack(fill="both", expand=True)
-            elif pagina == "Usuario Externo":
-                InfratoresPage(content_frame, perfil=perfil).pack(fill="both", expand=True)
-            elif pagina == "Locais Cadastrados":
-                LocaisPage(content_frame, usuario_logado=usuario_logado, perfil=perfil).pack(fill="both", expand=True)
-            elif pagina == "Relatorio":
+            elif pagina in ("Agente", "Usuario Externo"):
+                UsuariosInfratoresPage(content_frame, usuario_logado=usuario_logado,
+                                       perfil=perfil).pack(fill="both", expand=True)
+            elif pagina == "Notas Fiscais":
                 RelatoriosPage(content_frame, usuario_logado=usuario_logado, perfil=perfil).pack(fill="both", expand=True)
             elif pagina == "Historico":
                 HistoricoPage(content_frame, usuario_logado=usuario_logado).pack(fill="both", expand=True)

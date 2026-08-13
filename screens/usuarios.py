@@ -12,11 +12,12 @@ from utils import registrar_log
 
 
 class UsuariosPage(CrudBase, ctk.CTkFrame):
-    def __init__(self, master, usuario_logado=None, perfil="admin", **kwargs):
+    def __init__(self, master, usuario_logado=None, perfil="admin", table_height=None, **kwargs):
         super().__init__(master, **kwargs)
         self.configure(fg_color=COLORS["bg"])
         self.usuario_logado = usuario_logado
         self.perfil = perfil
+        self.table_height = table_height
         self.pode_editar = pode_acao(perfil, "gerenciar_usuarios")
 
         self.build_header("Agentes IBAMA", "Gerencie os agentes cadastrados no sistema")
@@ -44,7 +45,7 @@ class UsuariosPage(CrudBase, ctk.CTkFrame):
                                   border=False, bold=True)
 
     def build_table(self):
-        CrudBase.build_table(self, pad_y=(0, 30))
+        CrudBase.build_table(self, pad_y=(0, 30), height=self.table_height)
 
         # Container interno com borda
         self.table_container = ctk.CTkFrame(
@@ -60,14 +61,14 @@ class UsuariosPage(CrudBase, ctk.CTkFrame):
         header.pack_propagate(False)
 
         cols = ctk.CTkFrame(header, fg_color="transparent")
-        cols.pack(side="left", fill="x", expand=True, padx=(10, 0))
+        cols.pack(side="left", fill="x", expand=True, padx=(10, 17))
 
         colunas = ["Usuario", "Email", "Perfil", "Status"]
         col_cfg = [
-            (0.0, 0.40, "w"),    # Usuario
-            (0.40, 0.30, "w"),   # Email
-            (0.70, 0.15, "center"),  # Perfil
-            (0.85, 0.15, "center"),  # Status
+            (0.0, 0.30, "w"),      # Usuario
+            (0.30, 0.25, "center"), # Email
+            (0.55, 0.15, "center"), # Perfil
+            (0.70, 0.15, "center"), # Status
         ]
 
         for texto, (rx, rw, anchor) in zip(colunas, col_cfg):
@@ -126,10 +127,10 @@ class UsuariosPage(CrudBase, ctk.CTkFrame):
 
         # pesos → relx / relwidth (idêntico ao cabeçalho)
         col_cfg = [
-            (0.0,  0.40, "w"),      # Usuario
-            (0.40, 0.30, "w"),      # Email
-            (0.70, 0.15, "center"), # Perfil
-            (0.85, 0.15, "center"), # Status
+            (0.0,  0.30, "w"),      # Usuario
+            (0.30, 0.25, "center"), # Email
+            (0.55, 0.15, "center"), # Perfil
+            (0.70, 0.15, "center"), # Status
         ]
 
         valores = [

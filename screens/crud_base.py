@@ -1,6 +1,9 @@
 import _path  # noqa: F401
 
+from tkinter import messagebox
+
 import customtkinter as ctk
+<<<<<<< HEAD
 from config.styles import get_colors, FONTS
 
 
@@ -33,10 +36,81 @@ def _rebuild_sidebar_and_content(page):
         page_name = page_map.get(current_page)
         if page_name:
             navegar(page_name)
+=======
+
+from config.styles import COLORS, FONTS
+from database.conexaodb import Database
+>>>>>>> main
 
 
 class CrudBase:
     CARD_BORDER_RADIUS = 4
+
+    def build_alerta_nota(self, header, processo_tccm=None, pack_direction="right"):
+        """Exibe um sino que so aparece quando existe nota fiscal pendente de conferencia."""
+        # only show alerta on the post-login main screen
+        if not getattr(self, "is_post_login", False):
+            return None
+
+        processos = self._notas_pendentes(processo_tccm)
+        if not processos:
+            return None
+
+        texto = "Voce tem uma nova nota fiscal em " + ", ".join(processos)
+
+        btn = ctk.CTkButton(
+            header, text="\U0001f514  Nova nota fiscal",
+            height=38, corner_radius=19,
+            fg_color=COLORS["white"], hover_color=COLORS["primary_light"],
+            text_color=COLORS["warning"], border_width=1, border_color=COLORS["border"],
+            font=ctk.CTkFont(size=13, weight="bold"),
+            command=lambda: messagebox.showinfo("Notificacao", texto, parent=self),
+        )
+        if pack_direction == "right":
+            btn.pack(side="right", padx=(10, 0))
+        else:
+            btn.pack(side="left", padx=(0, 10))
+        # keep a reference to the alerta button so it can be removed later
+        try:
+            self._alerta_btn = btn
+        except Exception:
+            self._alerta_btn = None
+
+        # initialize exigencias tracking
+        try:
+            with Database() as db:
+                if db.conexao:
+                    sql = "SELECT DISTINCT processo FROM \"nota fiscal\" WHERE status_nota = 'Correcao Solicitada'"
+                    params = ()
+                    if processo_tccm:
+                        sql += " AND processo = ?"
+                        params = (processo_tccm,)
+                    r = db.executar(sql, params)
+                    self._exigencias_set = set([row[0] for row in r.fetchall()]) if r else set()
+                else:
+                    self._exigencias_set = set()
+        except Exception:
+            self._exigencias_set = set()
+
+        return btn
+
+    def _notas_pendentes(self, processo_tccm=None):
+        try:
+            with Database() as db:
+                if not db.conexao:
+                    return []
+                if processo_tccm:
+                    sql = """SELECT DISTINCT processo FROM "nota fiscal"
+                             WHERE processo = ? AND status_nota NOT IN ('Aprovada', 'Rejeitada')"""
+                    params = (processo_tccm,)
+                else:
+                    sql = """SELECT DISTINCT processo FROM "nota fiscal"
+                             WHERE status_nota NOT IN ('Aprovada', 'Rejeitada')"""
+                    params = ()
+                r = db.executar(sql, params)
+                return [row[0] for row in r.fetchall()] if r else []
+        except Exception:
+            return []
 
     def build_card(self, parent, **kwargs):
         return ctk.CTkFrame(
@@ -48,6 +122,7 @@ class CrudBase:
             **kwargs,
         )
 
+<<<<<<< HEAD
     def build_header(self, title, subtitle):
         colors = get_colors()
         header = ctk.CTkFrame(self, fg_color="transparent")
@@ -55,6 +130,16 @@ class CrudBase:
 
         text_frame = ctk.CTkFrame(header, fg_color="transparent")
         text_frame.pack(side="left", fill="x", expand=True)
+=======
+    def build_header(self, title, subtitle, alerta_nota=True, processo_tccm=None):
+        header = ctk.CTkFrame(self, fg_color="transparent")
+        header.pack(fill="x", padx=30, pady=(30, 20))
+
+        if alerta_nota:
+            if processo_tccm is None:
+                processo_tccm = getattr(self, "processo_tccm", None)
+            self.build_alerta_nota(header, processo_tccm)
+>>>>>>> main
 
         ctk.CTkLabel(
             text_frame, text=title,
@@ -146,13 +231,22 @@ class CrudBase:
         btn.pack(side="left", padx=(0, 8))
         return btn
 
+<<<<<<< HEAD
     def build_table(self, pad_y=(0, 30)):
         colors = get_colors()
+=======
+    def build_table(self, pad_y=(0, 30), height=None):
+>>>>>>> main
         self.table_frame = ctk.CTkFrame(
             self, fg_color=colors["white"], corner_radius=4,
             border_width=1, border_color=colors["border"]
         )
-        self.table_frame.pack(fill="both", expand=True, padx=30, pady=pad_y)
+        if height:
+            self.table_frame.configure(height=height)
+            self.table_frame.pack(fill="x", padx=30, pady=pad_y)
+            self.table_frame.pack_propagate(False)
+        else:
+            self.table_frame.pack(fill="both", expand=True, padx=30, pady=pad_y)
         return self.table_frame
 
     def build_table_header(self, parent, columns, weights, has_checkbox=True, alignments=None):
@@ -242,3 +336,52 @@ class CrudBase:
     def configure_data_columns(self, data_frame, weights):
         for i, w in enumerate(weights):
             data_frame.grid_columnconfigure(i, weight=w)
+
+    def _check_exigencias_and_refresh(self, processo_tccm=None):
+        """Check for exigencias (correcao solicitada) that were attended and refresh alerta button."""
+        try:
+            with Database() as db:
+                if not db.conexao:
+                    current = set()
+                else:
+                    sql = "SELECT DISTINCT processo FROM \"nota fiscal\" WHERE status_nota = 'Correcao Solicitada'"
+                    params = ()
+                    if processo_tccm:
+                        sql += " AND processo = ?"
+                        params = (processo_tccm,)
+                    r = db.executar(sql, params)
+                    current = set([row[0] for row in r.fetchall()]) if r else set()
+        except Exception:
+            current = set()
+
+        prev = getattr(self, '_exigencias_set', set())
+        removed = prev - current
+        for proc in removed:
+            try:
+                messagebox.showinfo("Exigência atendida", f"Exigência atendida para processo {proc}", parent=self)
+            except Exception:
+                pass
+
+        # store new set
+        self._exigencias_set = current
+
+        # refresh alerta visibility
+        try:
+            processos = self._notas_pendentes(processo_tccm)
+        except Exception:
+            processos = []
+
+        if not processos:
+            if hasattr(self, '_alerta_btn') and self._alerta_btn:
+                try:
+                    self._alerta_btn.destroy()
+                except Exception:
+                    pass
+                self._alerta_btn = None
+        else:
+            texto = "Voce tem uma nova nota fiscal em " + ", ".join(processos)
+            if hasattr(self, '_alerta_btn') and self._alerta_btn:
+                try:
+                    self._alerta_btn.configure(command=lambda: messagebox.showinfo("Notificacao", texto, parent=self))
+                except Exception:
+                    pass

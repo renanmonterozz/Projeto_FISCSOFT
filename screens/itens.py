@@ -13,12 +13,15 @@ from utils import registrar_log
 
 
 class ItensPage(CrudBase, ctk.CTkFrame):
-    def __init__(self, master, on_voltar=None, processo_tccm=None, perfil="admin", **kwargs):
+    def __init__(self, master, on_voltar=None, usuario_logado=None, processo_tccm=None,
+                 perfil="admin", table_height=None, **kwargs):
         super().__init__(master, **kwargs)
         self.configure(fg_color=COLORS["bg"])
         self.on_voltar = on_voltar
+        self.usuario_logado = usuario_logado
         self.processo_tccm = processo_tccm
         self.perfil = perfil
+        self.table_height = table_height
         self.pode_editar = pode_acao(perfil, "gerenciar_itens")
 
         titulo = "Itens do TCCM" if processo_tccm else "Itens"
@@ -45,7 +48,7 @@ class ItensPage(CrudBase, ctk.CTkFrame):
                                   border=False, bold=True)
 
     def _build_table(self):
-        CrudBase.build_table(self, pad_y=(0, 30))
+        CrudBase.build_table(self, pad_y=(0, 30), height=self.table_height)
 
         # Container interno com borda
         self.table_container = ctk.CTkFrame(
@@ -63,13 +66,17 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         cols = ctk.CTkFrame(header, fg_color="transparent")
         cols.pack(side="left", fill="x", expand=True, padx=(10, 0))
 
-        colunas = ["Item", "Tipo de Material", "Justificativa", "Unidade de Medida"]
+        colunas = ["Item", "Tipo de Material", "Justificativa", "Unidade de Medida",
+                   "Qtd. Prevista", "", "Qtd Entregue"]
         # pesos [3, 2, 3, 2] → relx / relwidth
         col_cfg = [
-            (0.0, 0.30, "w"),    # Item
-            (0.30, 0.20, "center"),  # Tipo de Material
-            (0.50, 0.30, "center"),  # Justificativa
-            (0.80, 0.20, "center"),  # Unidade de Medida
+            (0.0,  0.22, "w"),      # Item
+            (0.22, 0.14, "center"), # Tipo de Material
+            (0.36, 0.22, "center"), # Justificativa
+            (0.58, 0.11, "center"), # Unidade de Medida
+            (0.69, 0.10, "center"), # Qtd. Prevista
+            (0.79, 0.13, "center"), # barra de progresso
+            (0.92, 0.08, "center"), # Qtd Entregue
         ]
 
         for texto, (rx, rw, anchor) in zip(colunas, col_cfg):
@@ -102,7 +109,9 @@ class ItensPage(CrudBase, ctk.CTkFrame):
             if self.processo_tccm:
                 try:
                     r = db.executar(
-                        "SELECT DISTINCT i.id, i.nome, i.descricao, i.tipo, i.justificativa, i.unidade_medida "
+                        "SELECT DISTINCT i.id, i.nome, i.descricao, i.tipo, i.justificativa, i.unidade_medida, "
+                        "i.quantidade_prevista, "
+                        "COALESCE((SELECT SUM(p.quantidade) FROM produtos p WHERE p.itens_id = i.id), 0) "
                         "FROM itens i "
                         "WHERE i.processo = ? "
                         "   OR i.notas_fiscais IN ("
@@ -112,7 +121,7 @@ class ItensPage(CrudBase, ctk.CTkFrame):
                     )
                 except Exception:
                     r = db.executar(
-                        "SELECT DISTINCT i.id, i.nome, i.descricao, i.categoria, NULL, '' "
+                        "SELECT DISTINCT i.id, i.nome, i.descricao, i.categoria, NULL, '', 0, 0 "
                         "FROM itens i "
                         "WHERE i.processo = ? "
                         "   OR i.notas_fiscais IN ("
@@ -123,12 +132,13 @@ class ItensPage(CrudBase, ctk.CTkFrame):
             else:
                 try:
                     r = db.executar(
-                        "SELECT id, nome, descricao, tipo, justificativa, unidade_medida "
+                        "SELECT id, nome, descricao, tipo, justificativa, unidade_medida, quantidade_prevista, "
+                        "COALESCE((SELECT SUM(p.quantidade) FROM produtos p WHERE p.itens_id = itens.id), 0) "
                         "FROM itens ORDER BY id"
                     )
                 except Exception:
                     r = db.executar(
-                        "SELECT id, nome, descricao, categoria, NULL, '' "
+                        "SELECT id, nome, descricao, categoria, NULL, '', 0, 0 "
                         "FROM itens ORDER BY id"
                     )
 
@@ -142,6 +152,8 @@ class ItensPage(CrudBase, ctk.CTkFrame):
                         tipo=row[3] or "-",
                         justificativa=row[4] or "",
                         unidade_medida=row[5] or "",
+                        quantidade_prevista=row[6] or 0,
+                        qtd_entregue=row[7] or 0,
                     ))
             self._todos_os_itens = itens[:]
             return itens
@@ -158,29 +170,54 @@ class ItensPage(CrudBase, ctk.CTkFrame):
 
         # pesos [3, 2, 3, 2] → relx / relwidth (idêntico ao cabeçalho)
         col_cfg = [
-            (0.0,  0.30, "w"),      # Item
-            (0.30, 0.20, "center"), # Tipo de Material
-            (0.50, 0.30, "center"), # Justificativa
-            (0.80, 0.20, "center"), # Unidade de Medida
+            (0.0,  0.22, "w"),      # Item
+            (0.22, 0.14, "center"), # Tipo de Material
+            (0.36, 0.22, "center"), # Justificativa
+            (0.58, 0.11, "center"), # Unidade de Medida
+            (0.69, 0.10, "center"), # Qtd. Prevista
+            (0.79, 0.13, "center"), # barra de progresso
+            (0.92, 0.08, "center"), # Qtd Entregue
         ]
 
         just = item.get("justificativa", "")
         just_text = (just[:60] + "...") if len(just) > 60 else just
+
+        prevista = item.get("quantidade_prevista", 0) or 0
+        entregue = item.get("qtd_entregue", 0) or 0
+        progresso = min(entregue / prevista, 1.0) if prevista else 0
 
         valores = [
             item["nome"],
             item["tipo"],
             just_text or "-",
             item.get("unidade_medida", "") or "-",
+            str(prevista),
+            "",
+            str(entregue),
         ]
 
         for (rx, rw, anchor), texto in zip(col_cfg, valores):
-            ctk.CTkLabel(
-                data, text=texto,
-                font=ctk.CTkFont(size=FONTS["size_body"]),
-                text_color=COLORS["text"] if anchor == "w" else COLORS["text_muted"],
-                anchor=anchor,
-            ).place(relx=rx, relwidth=rw, rely=0, relheight=1)
+            if anchor == "w":
+                ctk.CTkLabel(
+                    data, text=texto,
+                    font=ctk.CTkFont(size=FONTS["size_body"]),
+                    text_color=COLORS["text"] if rx == 0 else COLORS["text_muted"],
+                    anchor=anchor,
+                ).place(relx=rx, relwidth=rw, rely=0, relheight=1)
+            elif rx == 0.79:
+                bar = ctk.CTkProgressBar(
+                    data, progress_color=COLORS["success_dark"],
+                    fg_color=COLORS["border"], height=8, corner_radius=4,
+                )
+                bar.place(relx=rx + 0.02, relwidth=rw - 0.04, rely=0.42, relheight=0.16)
+                bar.set(progresso)
+            else:
+                ctk.CTkLabel(
+                    data, text=texto,
+                    font=ctk.CTkFont(size=FONTS["size_body"]),
+                    text_color=COLORS["text_muted"],
+                    anchor=anchor,
+                ).place(relx=rx, relwidth=rw, rely=0, relheight=1)
 
         acoes = [("\U0001f441", lambda i=item: self.visualizar(i))]
         if self.pode_editar:
@@ -256,81 +293,12 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         return True
 
     def abrir_formulario(self, item=None):
-        editando = item is not None
-        modal = ctk.CTkToplevel(self)
-        modal.title(f"{'Editar' if editando else 'Novo'} Item")
-        modal.geometry("550x520")
-        modal.configure(fg_color=COLORS["white"])
-        modal.transient(self)
-        modal.grab_set()
-
-        ctk.CTkLabel(
-            modal,
-            text=f"{'Editar' if editando else 'Cadastrar Novo'} Item",
-            font=ctk.CTkFont(size=FONTS["size_title"], weight="bold"),
-            text_color=COLORS["primary"],
-        ).pack(pady=(20, 15))
-
-        frame = ctk.CTkFrame(modal, fg_color="transparent")
-        frame.pack(padx=30, fill="x")
-
-        campos = ["Nome do Item", "Descricao", "Tipo de Material", "Justificativa", "Unidade de Medida"]
-        entries = {}
-        for label in campos:
-            ctk.CTkLabel(
-                frame, text=label,
-                font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
-            ).pack(fill="x", pady=(8, 2))
-            e = ctk.CTkEntry(
-                frame, height=36, corner_radius=4,
-                fg_color=COLORS["white"], border_width=1, border_color=COLORS["border"],
-            )
-            e.pack(fill="x")
-            entries[label] = e
-
-        if editando:
-            entries["Nome do Item"].insert(0, item.get("nome", ""))
-            entries["Descricao"].insert(0, item.get("descricao", ""))
-            entries["Tipo de Material"].insert(0, item.get("tipo", ""))
-            entries["Justificativa"].insert(0, item.get("justificativa", ""))
-            entries["Unidade de Medida"].insert(0, item.get("unidade_medida", ""))
-
-        def salvar():
-            nome = entries["Nome do Item"].get().strip()
-            if not nome:
-                return messagebox.showwarning("Aviso", "Nome do Item e obrigatorio!", parent=modal)
-            data = dict(
-                nome=nome,
-                descricao=entries["Descricao"].get().strip() or nome,
-                tipo=entries["Tipo de Material"].get().strip(),
-                justificativa=entries["Justificativa"].get().strip(),
-                unidade_medida=entries["Unidade de Medida"].get().strip(),
-            )
-            if editando:
-                self._atualizar_item(item["id"], data)
-            else:
-                self._inserir_item(data)
-            modal.destroy()
-            self.itens = self.carregar_do_banco()
-            self.render_rows()
-
-        btn_frame = ctk.CTkFrame(frame, fg_color="transparent")
-        btn_frame.pack(fill="x", pady=(20, 5))
-        ctk.CTkButton(
-            btn_frame, text="Salvar",
-            height=40, corner_radius=4,
-            fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
-            text_color="white", border_width=0,
-            font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
-            command=salvar,
-        ).pack(side="left", fill="x", expand=True, padx=(0, 5))
-        ctk.CTkButton(
-            btn_frame, text="Cancelar",
-            height=40, corner_radius=4,
-            fg_color=COLORS["white"], hover_color="#F0F0F0",
-            text_color=COLORS["text_muted"], border_width=1, border_color=COLORS["border"],
-            command=modal.destroy,
-        ).pack(side="left", fill="x", expand=True, padx=(5, 0))
+        from screens.cadastrar_itens import CadastrarItensWindow
+        janela = CadastrarItensWindow(self, item=item, processo_tccm=self.processo_tccm,
+                                      usuario_logado=self.usuario_logado)
+        self.wait_window(janela)
+        self.itens = self.carregar_do_banco()
+        self.render_rows()
 
     def visualizar(self, item):
         modal = ctk.CTkToplevel(self)
@@ -378,7 +346,7 @@ class ItensPage(CrudBase, ctk.CTkFrame):
             if db.conexao:
                 db.executar("DELETE FROM itens WHERE id = ?", (item["id"],))
                 db.commitar()
-        registrar_log("Sistema", "exclusao", "itens", f"Item '{item['nome']}' (ID: {item['id']}) excluido")
+        registrar_log(self.usuario_logado or "Sistema", "exclusao", "itens", f"Item '{item['nome']}' (ID: {item['id']}) excluido")
         self.itens = self.carregar_do_banco()
         self.render_rows()
 

@@ -1,8 +1,11 @@
 import _path  # noqa: F401
 
-import customtkinter as ctk
+import os
 
-from config.styles import COLORS, FONTS
+import customtkinter as ctk
+from PIL import Image
+
+from config.styles import ASSETS_DIR, COLORS, FONTS
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
 
@@ -14,9 +17,10 @@ class DashboardExterno(CrudBase, ctk.CTkFrame):
         self.usuario_logado = usuario_logado
         self.id_infrator = id_infrator
 
-        self.build_header("Meu Painel", f"Bem-vindo, {usuario_logado or 'Usuario'}")
+        self.build_header("Meu Painel", f"Bem-vindo, {usuario_logado or 'Usuario'}",
+                          alerta_nota=False)
         self.build_stats_cards()
-        self.build_tccm_info()
+        # build_tccm_info removed
         self.build_notas_resumo()
 
     def build_stats_cards(self):
@@ -31,7 +35,7 @@ class DashboardExterno(CrudBase, ctk.CTkFrame):
         ]
 
         self.stat_labels = {}
-        icons = ["\U0001f4cb", "\U0001f4c4", "\U0001f4b0", "\u23F3"]
+        icons = ["nota.png", "caixa2.png", "cifrao.png", "icone_usuario.png"]
 
         for i, (titulo, subtitulo, valor) in enumerate(card_data):
             card = ctk.CTkFrame(
@@ -51,11 +55,27 @@ class DashboardExterno(CrudBase, ctk.CTkFrame):
             icon_circle.pack(side="left", padx=(0, 12))
             icon_circle.pack_propagate(False)
 
-            ctk.CTkLabel(
-                icon_circle, text=icons[i],
-                font=ctk.CTkFont(size=18),
-                text_color=COLORS["primary"]
-            ).pack(expand=True)
+            icon_img = None
+            try:
+                icon_img = ctk.CTkImage(
+                    light_image=Image.open(os.path.join(ASSETS_DIR, icons[i])),
+                    dark_image=Image.open(os.path.join(ASSETS_DIR, icons[i])),
+                    size=(32, 32),
+                )
+            except Exception:
+                pass
+
+            if icon_img:
+                ctk.CTkLabel(
+                    icon_circle, text="",
+                    image=icon_img
+                ).pack(expand=True)
+            else:
+                ctk.CTkLabel(
+                    icon_circle, text=["\U0001f4cb", "\U0001f4e6", "\U0001f4b0", "\U0001f464"][i],
+                    font=ctk.CTkFont(size=18),
+                    text_color=COLORS["primary"]
+                ).pack(expand=True)
 
             text_frame = ctk.CTkFrame(inner, fg_color="transparent")
             text_frame.pack(side="left", fill="both", expand=True)
@@ -82,65 +102,16 @@ class DashboardExterno(CrudBase, ctk.CTkFrame):
 
         self._atualizar_cards()
 
-    def build_tccm_info(self):
-        section = ctk.CTkFrame(
-            self, fg_color=COLORS["white"], corner_radius=4,
-            border_width=1, border_color=COLORS["border"]
-        )
-        section.pack(fill="x", padx=30, pady=(0, 20))
-
-        header_frame = ctk.CTkFrame(section, fg_color="transparent")
-        header_frame.pack(fill="x", padx=20, pady=(15, 10))
-
-        dot = ctk.CTkFrame(
-            header_frame, fg_color=COLORS["primary"],
-            width=12, height=12, corner_radius=6
-        )
-        dot.pack(side="left", padx=(0, 8))
-        dot.pack_propagate(False)
-
-        ctk.CTkLabel(
-            header_frame, text="Informacoes do TCCM",
-            font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
-            text_color=COLORS["text"]
-        ).pack(side="left")
-
-        info_frame = ctk.CTkFrame(section, fg_color="transparent")
-        info_frame.pack(fill="x", padx=20, pady=(0, 15))
-
-        self.tccm_labels = {}
-        campos = [
-            ("Processo:", "processo"),
-            ("Total Devido:", "total_devido"),
-            ("Total Pago:", "total_pago"),
-            ("Status:", "status"),
-        ]
-
-        for i, (campo_texto, key) in enumerate(campos):
-            row = i // 2
-            col = i % 2
-
-            campo_frame = ctk.CTkFrame(info_frame, fg_color="transparent")
-            campo_frame.grid(row=row, column=col, padx=10, pady=5, sticky="w")
-            info_frame.columnconfigure(col, weight=1)
-
-            ctk.CTkLabel(
-                campo_frame, text=campo_texto,
-                font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                text_color=COLORS["text_muted"]
-            ).pack(side="left")
-
-            lbl = ctk.CTkLabel(
-                campo_frame, text="--",
-                font=ctk.CTkFont(size=FONTS["size_small"]),
-                text_color=COLORS["text"]
-            )
-            lbl.pack(side="left", padx=(5, 0))
-            self.tccm_labels[key] = lbl
-
-        self._carregar_tccm()
+    # build_tccm_info removed — TCCM info panel not shown in external dashboard
 
     def build_notas_resumo(self):
+        self.colunas_place = [
+            (0.00, 0.25, "w"),      # Numero da NF
+            (0.27, 0.15, "center"), # Data
+            (0.44, 0.12, "center"), # Valor(R$)
+            (0.58, 0.06, "center"), # Status
+        ]
+
         section = ctk.CTkFrame(
             self, fg_color=COLORS["white"], corner_radius=4,
             border_width=1, border_color=COLORS["border"]
@@ -164,24 +135,19 @@ class DashboardExterno(CrudBase, ctk.CTkFrame):
         ).pack(side="left")
 
         columns = ["Numero da NF", "Data", "Valor(R$)", "Status"]
-        weights = [3, 2, 2, 1]
-
         header = ctk.CTkFrame(section, fg_color=COLORS["table_header"], height=40, corner_radius=0)
         header.pack(fill="x", padx=15, pady=(5, 0))
         header.pack_propagate(False)
 
         cols_frame = ctk.CTkFrame(header, fg_color="transparent")
-        cols_frame.pack(side="left", fill="x", expand=True, padx=(10, 0))
+        cols_frame.pack(side="left", fill="x", expand=True, padx=(10, 17))
 
-        for i, w in enumerate(weights):
-            cols_frame.grid_columnconfigure(i, weight=w)
-
-        for i, col in enumerate(columns):
+        for col, (relx, relwidth, anchor) in zip(columns, self.colunas_place):
             ctk.CTkLabel(
                 cols_frame, text=col,
                 font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                text_color=COLORS["text_muted"]
-            ).grid(row=0, column=i, sticky="w", padx=5)
+                text_color=COLORS["text_muted"], anchor=anchor,
+            ).place(relx=relx, relwidth=relwidth, rely=0, relheight=1)
 
         self.table_body = ctk.CTkScrollableFrame(
             section, fg_color=COLORS["white"], corner_radius=0
@@ -274,7 +240,6 @@ class DashboardExterno(CrudBase, ctk.CTkFrame):
             ).pack(pady=30)
             return
 
-        weights = [3, 2, 2, 1]
         for nota in notas:
             linha = ctk.CTkFrame(self.table_body, fg_color="transparent", height=44)
             linha.pack(fill="x")
@@ -285,23 +250,19 @@ class DashboardExterno(CrudBase, ctk.CTkFrame):
             cols = ctk.CTkFrame(linha, fg_color="transparent")
             cols.pack(side="left", fill="x", expand=True, padx=(10, 0))
 
-            for i, w in enumerate(weights):
-                cols.grid_columnconfigure(i, weight=w)
-
             valor_formatado = f"R$ {nota['valor_total']:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-            dados = [nota["nota_fiscal"], nota["data"], valor_formatado]
+            dados = [
+                (nota["nota_fiscal"], COLORS["text"]),
+                (nota["data"], COLORS["text_muted"]),
+                (valor_formatado, COLORS["text_muted"]),
+            ]
 
-            for i, valor in enumerate(dados):
-                cor = COLORS["text"] if i == 0 else COLORS["text_muted"]
+            for (relx, relwidth, anchor), (valor, cor) in zip(self.colunas_place[:3], dados):
                 ctk.CTkLabel(
                     cols, text=valor,
                     font=ctk.CTkFont(size=FONTS["size_small"]),
-                    text_color=cor, anchor="w"
-                ).grid(row=0, column=i, sticky="w", padx=5)
-
-            status_frame = ctk.CTkFrame(linha, fg_color="transparent", width=80)
-            status_frame.pack(side="right", padx=(0, 10))
-            status_frame.pack_propagate(False)
+                    text_color=cor, anchor=anchor,
+                ).place(relx=relx, relwidth=relwidth, rely=0, relheight=1)
 
             if nota["status"] == "Aprovada":
                 status_color = COLORS["success_dark"]
@@ -317,10 +278,10 @@ class DashboardExterno(CrudBase, ctk.CTkFrame):
                 status_text = "\u26A0"
 
             ctk.CTkLabel(
-                status_frame, text=status_text,
+                cols, text=status_text,
                 font=ctk.CTkFont(size=16, weight="bold"),
-                text_color=status_color
-            ).pack(expand=True)
+                text_color=status_color, anchor="center",
+            ).place(relx=0.58, relwidth=0.06, rely=0, relheight=1)
 
     def _atualizar_cards(self):
         if not self.id_infrator:
@@ -354,7 +315,8 @@ class DashboardExterno(CrudBase, ctk.CTkFrame):
 
             try:
                 r = db.executar(
-                    f'''SELECT COALESCE(SUM(nf.valor_total), 0) {base}''',
+                    f"""SELECT COALESCE(SUM(nf.valor_total), 0) {base}
+                        AND nf.status_nota = 'Aprovada'""",
                     (self.id_infrator,)
                 ).fetchone()
                 valor_total = float(r[0]) if r else 0
