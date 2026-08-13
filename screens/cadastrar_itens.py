@@ -9,10 +9,11 @@ from utils import registrar_log
 
 
 class CadastrarItensWindow(ctk.CTkToplevel):
-    def __init__(self, master=None, item=None, processo_tccm=None):
+    def __init__(self, master=None, item=None, processo_tccm=None, usuario_logado=None):
         super().__init__(master)
         self.item_edicao = item
         self.processo_tccm = processo_tccm
+        self.usuario_logado = usuario_logado
         self.title("FISCSOFT - Cadastrar Item")
         self.geometry("820x600")
         self.resizable(False, False)
@@ -193,6 +194,6 @@ class CadastrarItensWindow(ctk.CTkToplevel):
             db.executar(sql, params)
             db.commitar()
 
-        registrar_log("Sistema", "edicao" if self.item_edicao else "cadastro", "itens", mensagem)
+        registrar_log(self.usuario_logado or "Sistema", "edicao" if self.item_edicao else "cadastro", "itens", mensagem)
         messagebox.showinfo("Sucesso", mensagem, parent=self)
         self.destroy()

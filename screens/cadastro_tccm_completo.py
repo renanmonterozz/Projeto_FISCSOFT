@@ -289,13 +289,23 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
         header = ctk.CTkFrame(container, fg_color="transparent")
         header.pack(fill="x", padx=30, pady=(25, 15))
 
-        ctk.CTkLabel(header, text="Itens do TCCM",
+        titulo_frame = ctk.CTkFrame(header, fg_color="transparent")
+        titulo_frame.pack(side="left")
+
+        ctk.CTkLabel(titulo_frame, text="Itens do TCCM",
                       font=ctk.CTkFont(size=FONTS["size_title"], weight="bold"),
                       text_color=COLORS["text"]).pack(anchor="w")
 
-        ctk.CTkLabel(header, text="Adicione os itens que farao parte deste TCCM.",
+        ctk.CTkLabel(titulo_frame, text="Adicione os itens que farao parte deste TCCM.",
                       font=ctk.CTkFont(size=FONTS["size_subtitle"]),
                       text_color=COLORS["text_muted"]).pack(anchor="w", pady=(4, 0))
+
+        ctk.CTkButton(
+            header, text="Exportar Planilha", height=36, corner_radius=6,
+            fg_color=COLORS["dark"], hover_color=COLORS["dark_hover"],
+            text_color="white", font=ctk.CTkFont(size=12, weight="bold"),
+            command=self._exportar_planilha,
+        ).pack(side="right", padx=(10, 0))
 
         form_card = ctk.CTkFrame(container, fg_color=COLORS["white"], corner_radius=8,
                                   border_width=1, border_color=COLORS["border"])
@@ -522,6 +532,84 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
                 text_color="white", font=ctk.CTkFont(size=11),
                 command=lambda idx=idx: self._remover_item(idx),
             ).grid(row=0, column=5, padx=(6, 10))
+
+    def _exportar_planilha(self):
+        """Exporta os itens (adicionados no formulario ou ja salvos no banco)
+        para uma planilha Excel .xlsx com os cabecalhos padrao."""
+        from tkinter import filedialog
+
+        import openpyxl
+        from openpyxl.styles import Font
+
+        processo = self.entries_tccm["processo"].get().strip()
+        itens = list(self.itens_lista)
+
+        if processo:
+            try:
+                with Database() as db:
+                    if db.conexao:
+                        r = db.executar(
+                            "SELECT nome, descricao, tipo, justificativa, quantidade_prevista, unidade_medida "
+                            "FROM itens WHERE processo = ?",
+                            (processo,),
+                        )
+                        if r:
+                            rows = r.fetchall()
+                            if rows:
+                                itens = [
+                                    {
+                                        "nome": row[0],
+                                        "descricao": row[1],
+                                        "tipo": row[2],
+                                        "justificativa": row[3],
+                                        "quantidade": row[4],
+                                        "unidade_medida": row[5],
+                                    }
+                                    for row in rows
+                                ]
+            except Exception:
+                pass
+
+        if not itens:
+            messagebox.showwarning(
+                "Atencao",
+                "Nenhum item encontrado. Adicione os itens manualmente no formulario acima.",
+                parent=self,
+            )
+            return
+
+        caminho = filedialog.asksaveasfilename(
+            title="Exportar planilha de itens",
+            defaultextension=".xlsx",
+            filetypes=[("Planilha Excel", "*.xlsx")],
+            initialfile=f"itens_tccm_{processo or 'novo'}.xlsx",
+        )
+        if not caminho:
+            return
+
+        try:
+            wb = openpyxl.Workbook()
+            ws = wb.active
+            ws.title = "Itens"
+            ws.append(["Nome do Item", "Descricao", "Tipo de Material",
+                       "Justificativa", "Quantidade", "Unidade de Medida"])
+            for celula in ws[1]:
+                celula.font = Font(bold=True)
+            for item in itens:
+                ws.append([
+                    item.get("nome") or "",
+                    item.get("descricao") or "",
+                    item.get("tipo") or item.get("tipo_material") or "",
+                    item.get("justificativa") or "",
+                    item.get("quantidade") or item.get("quantidade_prevista") or 0,
+                    item.get("unidade_medida") or "",
+                ])
+            wb.save(caminho)
+        except Exception as e:
+            messagebox.showerror("Erro", f"Falha ao exportar planilha: {e}", parent=self)
+            return
+
+        messagebox.showinfo("Sucesso", f"Planilha exportada com {len(itens)} itens!", parent=self)
 
     def _salvar_tudo(self):
         processo = self.entries_tccm["processo"].get().strip()

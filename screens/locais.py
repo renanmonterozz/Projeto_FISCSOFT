@@ -12,11 +12,12 @@ from utils import registrar_log
 
 
 class LocaisPage(CrudBase, ctk.CTkFrame):
-    def __init__(self, master, usuario_logado=None, perfil="admin", **kwargs):
+    def __init__(self, master, usuario_logado=None, perfil="admin", table_height=None, **kwargs):
         super().__init__(master, **kwargs)
         self.configure(fg_color=COLORS["bg"])
         self.usuario_logado = usuario_logado
         self.perfil = perfil
+        self.table_height = table_height
         self.pode_editar = pode_acao(perfil, "gerenciar_locais")
         self.locais = []
         self.local_edicao = None
@@ -44,7 +45,7 @@ class LocaisPage(CrudBase, ctk.CTkFrame):
                                   border=False, bold=True)
 
     def build_table(self):
-        CrudBase.build_table(self, pad_y=(0, 30))
+        CrudBase.build_table(self, pad_y=(0, 30), height=self.table_height)
 
         # Container interno com borda
         self.table_container = ctk.CTkFrame(
@@ -241,7 +242,7 @@ class LocaisPage(CrudBase, ctk.CTkFrame):
     def _abrir_formulario(self):
         form = ctk.CTkToplevel(self)
         form.title("Novo Local" if not self.local_edicao else "Editar Local")
-        form.geometry("500x400")
+        form.geometry("500x620")
         form.configure(fg_color=COLORS["bg"])
         form.transient(self.winfo_toplevel())
         form.grab_set()

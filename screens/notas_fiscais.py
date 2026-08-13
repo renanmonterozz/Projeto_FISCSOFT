@@ -11,6 +11,7 @@ from config.permissoes import pode_acao
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
+from screens.widgets import CalendarioPopup, ComboBoxComSeta
 
 
 def _fmt_date(val):
@@ -35,12 +36,13 @@ COL_NF_CFG = [
 
 
 class RelatoriosPage(CrudBase, ctk.CTkFrame):
-    def __init__(self, master, usuario_logado=None, perfil="admin", **kwargs):
+    def __init__(self, master, usuario_logado=None, perfil="admin", processo_tccm=None, **kwargs):
         super().__init__(master, **kwargs)
         self.configure(fg_color=COLORS["bg"])
         self.usuario_logado = usuario_logado
         self.perfil = perfil
         self.pode_aprovar = pode_acao(perfil, "aprovar_nota")
+        self.processo_tccm = processo_tccm
         self.nf_selecionada = None
 
         self.build_header("Monitoramento de Notas Fiscais",
@@ -54,14 +56,42 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
         row = ctk.CTkFrame(inner, fg_color="transparent")
         row.pack(fill="x")
 
-        self.entry_periodo = self.build_filter_entry(row, "Periodo (mm/aaaa)", 160)
-        self.entry_status = self.build_filter_entry(row, "Status", 160)
+        # periodo field removed; selection will be done via the calendar popup
+        self.entry_status = ComboBoxComSeta(
+            row,
+            values=["Todos", "Aprovada", "Pendente", "Rejeitada", "Em exigência"],
+            width=160,
+            height=38,
+        )
+        self.entry_status.pack(side="left", padx=(0, 10))
+        try:
+            self.entry_status.set("Todos")
+        except Exception:
+            pass
+
+        ctk.CTkButton(
+            row, text="Selecionar Periodo", height=38, corner_radius=4,
+            fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
+            text_color="white", border_width=0,
+            font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
+            command=self._abrir_calendario
+        ).pack(side="left", padx=(0, 10))
 
         btn_frame = self.build_btn_frame(row)
         self.build_action_btn(btn_frame, "  Filtrar", carregar_icone("lupa.png"), self.filtrar,
                               fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
                               text_color="white", border=False, bold=True)
         self.build_action_btn(btn_frame, "  Limpar", carregar_icone("apagar.png"), self.limpar_filtros)
+
+    def _abrir_calendario(self):
+        CalendarioPopup(self, title="Selecionar Periodo", on_confirm=self._periodo_selecionado)
+
+    def _periodo_selecionado(self, inicio, fim):
+        # Guarde o periodo e atualize o campo de filtro (mm/aaaa) com o mes/ano inicial
+        self.data_inicio = inicio
+        self.data_fim = fim
+        # Aplicar filtro automaticamente pelo intervalo selecionado
+        self.filtrar()
 
     def build_stats_cards(self):
         cards_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -76,18 +106,22 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
         ]
 
         self.stat_labels = {}
+        self.stat_cards = {}
+        self.stat_titles = {}
         for i, (titulo, valor) in enumerate(card_data):
             card = ctk.CTkFrame(cards_frame, fg_color=COLORS["white"], corner_radius=4,
                                 border_width=1, border_color=COLORS["border"])
             card.grid(row=0, column=i, padx=5, sticky="nsew")
             cards_frame.columnconfigure(i, weight=1)
-
-            ctk.CTkLabel(card, text=titulo, font=ctk.CTkFont(size=FONTS["size_small"]),
-                         text_color=COLORS["text_muted"], wraplength=120).pack(pady=(15, 5))
+            lbl_title = ctk.CTkLabel(card, text=titulo, font=ctk.CTkFont(size=FONTS["size_small"]),
+                                      text_color=COLORS["text_muted"], wraplength=120)
+            lbl_title.pack(pady=(15, 5))
             lbl = ctk.CTkLabel(card, text=valor, font=ctk.CTkFont(size=20, weight="bold"),
                                text_color=COLORS["text"])
             lbl.pack(pady=(0, 15))
             self.stat_labels[titulo] = lbl
+            self.stat_cards[titulo] = card
+            self.stat_titles[titulo] = lbl_title
 
     def build_main_content(self):
         content = ctk.CTkFrame(self, fg_color="transparent")
@@ -293,6 +327,9 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
                             "total_pago": total_pago,
                             "arquivo": row['arquivo'],
                         })
+                # if a specific TCCM processo was provided, filter results to that processo
+                if self.processo_tccm:
+                    notas = [n for n in notas if (n.get("processo") or "") == self.processo_tccm]
                 return notas
         except Exception:
             return []
@@ -407,7 +444,43 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
         self.stat_labels["Aprovadas"].configure(text=str(aprovadas))
         self.stat_labels["Rejeitadas"].configure(text=str(rejeitadas))
         valor_fmt = f"R$ {valor_total:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-        self.stat_labels["Valor Total (Periodo)"].configure(text=valor_fmt)
+        # determine current selected status
+        try:
+            sel = self.entry_status.get().strip().lower() if self.entry_status else ""
+        except Exception:
+            sel = ""
+        if sel == "todos" or not sel:
+            status_filter = ""
+        elif "exig" in sel:
+            status_filter = "correcao solicitada"
+        else:
+            status_filter = sel
+
+        # If filtering by a specific status, hide other status cards and show only Notas Fiscais Geral and Valor Total
+        if status_filter:
+            # hide specific status cards
+            for t in ("Pendentes", "Aprovadas", "Rejeitadas"):
+                card = self.stat_cards.get(t)
+                if card:
+                    card.grid_remove()
+            # ensure Notas Fiscais Geral visible
+            card_main = self.stat_cards.get("Notas Fiscais Geral")
+            if card_main:
+                card_main.grid()
+            # update Valor Total title and ensure visible
+            vt_card = self.stat_cards.get("Valor Total (Periodo)")
+            if vt_card:
+                self.stat_titles["Valor Total (Periodo)"].configure(text="Valor Total")
+                vt_card.grid()
+                self.stat_labels["Valor Total (Periodo)"].configure(text=valor_fmt)
+        else:
+            # show all cards and restore title
+            for t, card in self.stat_cards.items():
+                card.grid()
+            # restore original title
+            if "Valor Total (Periodo)" in self.stat_titles:
+                self.stat_titles["Valor Total (Periodo)"].configure(text="Valor Total (Periodo)")
+            self.stat_labels["Valor Total (Periodo)"].configure(text=valor_fmt)
 
     def _atualizar_status_nota(self, novo_status):
         if not self.nf_selecionada:
@@ -461,21 +534,62 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
         self.notas = self.carregar_do_banco()
         self.render_rows()
         self._atualizar_estado_botoes(novo_status)
+        # refresh alert and check if any exigencia was attended
+        try:
+            proc = processo if 'processo' in locals() else self.nf_selecionada.get('processo')
+            if hasattr(self, '_check_exigencias_and_refresh'):
+                self._check_exigencias_and_refresh(proc)
+        except Exception:
+            pass
 
     def filtrar(self):
-        periodo = self.entry_periodo.get().strip().lower()
-        status = self.entry_status.get().strip().lower()
+        sel = self.entry_status.get().strip().lower() if self.entry_status else ""
+        # Map combobox labels to actual status values stored in DB
+        if sel == "todos" or not sel:
+            status = ""
+        elif "exig" in sel:
+            status = "correcao solicitada"
+        else:
+            status = sel
 
         todos = self.carregar_do_banco()
-        self.notas = [
-            n for n in todos
-            if (not status or status in n["status"].lower())
-            and (not periodo or periodo in n["data"])
-        ]
+
+        filtered = []
+        for n in todos:
+            try:
+                nota_status = (n.get("status") or "").lower()
+                status_match = (not status) or (status in nota_status)
+
+                period_match = True
+                if getattr(self, "data_inicio", None) and getattr(self, "data_fim", None):
+                    try:
+                        from datetime import datetime as _dt
+                        dt = _dt.strptime(n.get("data", "--"), "%d/%m/%Y").date()
+                        period_match = self.data_inicio <= dt <= self.data_fim
+                    except Exception:
+                        period_match = False
+
+                if status_match and period_match:
+                    filtered.append(n)
+            except Exception:
+                continue
+
+        # debug summary removed
+
+        self.notas = filtered
         self.render_rows()
 
     def limpar_filtros(self):
-        self.clear_entries(self.entry_periodo, self.entry_status)
+        # no periodo entry anymore
+        try:
+            if hasattr(self.entry_status, "set"):
+                self.entry_status.set("Todos")
+            else:
+                self.entry_status.delete(0, "end")
+        except Exception:
+            pass
+        self.data_inicio = None
+        self.data_fim = None
         self.notas = self.carregar_do_banco()
         self.render_rows()
 

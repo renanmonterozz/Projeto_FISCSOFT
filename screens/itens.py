@@ -13,12 +13,15 @@ from utils import registrar_log
 
 
 class ItensPage(CrudBase, ctk.CTkFrame):
-    def __init__(self, master, on_voltar=None, processo_tccm=None, perfil="admin", **kwargs):
+    def __init__(self, master, on_voltar=None, usuario_logado=None, processo_tccm=None,
+                 perfil="admin", table_height=None, **kwargs):
         super().__init__(master, **kwargs)
         self.configure(fg_color=COLORS["bg"])
         self.on_voltar = on_voltar
+        self.usuario_logado = usuario_logado
         self.processo_tccm = processo_tccm
         self.perfil = perfil
+        self.table_height = table_height
         self.pode_editar = pode_acao(perfil, "gerenciar_itens")
 
         titulo = "Itens do TCCM" if processo_tccm else "Itens"
@@ -45,7 +48,7 @@ class ItensPage(CrudBase, ctk.CTkFrame):
                                   border=False, bold=True)
 
     def _build_table(self):
-        CrudBase.build_table(self, pad_y=(0, 30))
+        CrudBase.build_table(self, pad_y=(0, 30), height=self.table_height)
 
         # Container interno com borda
         self.table_container = ctk.CTkFrame(
@@ -289,7 +292,8 @@ class ItensPage(CrudBase, ctk.CTkFrame):
 
     def abrir_formulario(self, item=None):
         from screens.cadastrar_itens import CadastrarItensWindow
-        janela = CadastrarItensWindow(self, item=item, processo_tccm=self.processo_tccm)
+        janela = CadastrarItensWindow(self, item=item, processo_tccm=self.processo_tccm,
+                                      usuario_logado=self.usuario_logado)
         self.wait_window(janela)
         self.itens = self.carregar_do_banco()
         self.render_rows()
@@ -340,7 +344,7 @@ class ItensPage(CrudBase, ctk.CTkFrame):
             if db.conexao:
                 db.executar("DELETE FROM itens WHERE id = %s", (item["id"],))
                 db.commitar()
-        registrar_log("Sistema", "exclusao", "itens", f"Item '{item['nome']}' (ID: {item['id']}) excluido")
+        registrar_log(self.usuario_logado or "Sistema", "exclusao", "itens", f"Item '{item['nome']}' (ID: {item['id']}) excluido")
         self.itens = self.carregar_do_banco()
         self.render_rows()
 

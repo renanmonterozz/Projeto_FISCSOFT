@@ -25,36 +25,30 @@ _ALIAS_PERFIL = {
     "user": "operador",
 }
 
-# Paginas que cada perfil pode acessar (visao geral / sidebar)
+# Paginas que cada perfil pode acessar (visao geral / sidebar).
+# Obs.: "Itens" reune itens + locais; "Agente" reune agentes + usuarios externos.
 PAGINAS_POR_PERFIL = {
     "admin": {
         "Menu Principal",
         "Dashboard TCCM",
-        "Cadastro TCCM",
         "Itens",
         "Destinacao",
         "Agente",
-        "Usuario Externo",
-        "Locais Cadastrados",
-        "Relatorio",
+        "Notas Fiscais",
         "Historico",
     },
     "agente": {
         "Menu Principal",
         "Dashboard TCCM",
-        "Cadastro TCCM",
         "Itens",
         "Destinacao",
-        "Usuario Externo",
-        "Locais Cadastrados",
-        "Relatorio",
+        "Agente",
+        "Notas Fiscais",
     },
     "operador": {
         "Menu Principal",
-        "Dashboard TCCM",
         "Itens",
-        "Locais Cadastrados",
-        "Relatorio",
+        "Notas Fiscais",
     },
 }
 

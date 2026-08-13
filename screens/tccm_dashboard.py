@@ -11,6 +11,7 @@ from config.permissoes import pode_acao
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
 from screens.widgets import ComboBoxComSeta
+from screens.sidebar import carregar_icone
 
 
 def _calcular_data_validade(data_inicio, semestres):
@@ -763,6 +764,10 @@ class TccmDetalhesPage(CrudBase, ctk.CTkFrame):
         header = ctk.CTkFrame(self, fg_color="transparent")
         header.pack(fill="x", padx=30, pady=(25, 15))
 
+        right = ctk.CTkFrame(header, fg_color="transparent")
+        right.pack(side="right")
+        self.build_alerta_nota(right, processo_tccm=self.processo, pack_direction="right")
+
         left = ctk.CTkFrame(header, fg_color="transparent")
         left.pack(side="left")
 
@@ -1033,6 +1038,8 @@ class TccmDashboardPage(CrudBase, ctk.CTkFrame):
 
         right = ctk.CTkFrame(header, fg_color="transparent")
         right.pack(side="right")
+
+        self.build_alerta_nota(right, pack_direction="right")
 
         if self.pode_criar_tccm:
             ctk.CTkButton(
