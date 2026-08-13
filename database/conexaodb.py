@@ -73,7 +73,7 @@ class Database:
             self._migrar()
             return True
         except Error as e:
-            logger.error("Erro ao conectar ao MySQL: %s", e)
+            logger.warning("MySQL indisponivel: %s", e)
             return False
 
     def _migrar(self):
@@ -89,7 +89,7 @@ class Database:
             try:
                 cursor.execute(sql)
                 self.conexao.commit()
-                logger.info("Migracao aplicada: %s", nome)
+                logger.debug("Migracao aplicada: %s", nome)
             except Error as e:
                 if "duplicate column" in str(e).lower():
                     continue
@@ -117,7 +117,7 @@ class Database:
                         f'UPDATE `agente ibama` SET perfil = %s WHERE LOWER(perfil) IN ({marca})',
                         (novo, *antigos),
                     )
-                    logger.info("Migracao aplicada: perfis '%s' -> '%s'", "/".join(antigos), novo)
+                    logger.debug("Migracao aplicada: perfis '%s' -> '%s'", "/".join(antigos), novo)
             self.conexao.commit()
         except Error:
             pass

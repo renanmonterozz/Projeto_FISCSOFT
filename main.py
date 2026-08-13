@@ -51,11 +51,13 @@ def _suprimir_erro_tcl():
 
 
 def _criar_cache():
-    """Baixa dados do MySQL e cria cache local SQLite."""
+    """Baixa dados do MySQL e cria cache local SQLite. Se MySQL indisponivel, reutiliza cache existente."""
     cache = CacheManager.instancia()
     with Database() as db:
         if db.conexao:
             cache.criar_cache(db.conexao)
+        else:
+            cache.criar_cache(None)
 
 
 def _limpar_cache():

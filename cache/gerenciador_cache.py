@@ -28,26 +28,47 @@ class CacheManager:
     def conexao(self):
         return self._cache_conn
 
-    def criar_cache(self, conexao_mysql):
-        """Cria cache local SQLite copiando dados do MySQL."""
+    def criar_cache(self, conexao_mysql=None):
+        """Cria cache local SQLite copiando dados do MySQL.
+
+        Se conexao_mysql for None ou indisponivel, tenta usar cache existente.
+        """
         try:
             os.makedirs(CACHE_DIR, exist_ok=True)
 
-            if os.path.exists(CACHE_DB):
-                os.remove(CACHE_DB)
+            if conexao_mysql is not None and self._mysql_disponivel(conexao_mysql):
+                if os.path.exists(CACHE_DB):
+                    os.remove(CACHE_DB)
 
-            self._cache_conn = sqlite3.connect(CACHE_DB)
-            self._cache_conn.execute("PRAGMA journal_mode=WAL")
-            self._cache_conn.row_factory = sqlite3.Row
+                self._cache_conn = sqlite3.connect(CACHE_DB)
+                self._cache_conn.execute("PRAGMA journal_mode=WAL")
+                self._cache_conn.row_factory = sqlite3.Row
 
-            self._criar_schema_local()
-            self._sincronizar_dados(conexao_mysql)
+                self._criar_schema_local()
+                self._sincronizar_dados(conexao_mysql)
 
-            logger.info("Cache local criado: %s", CACHE_DB)
-            return True
+                logger.info("Cache local criado: %s", CACHE_DB)
+                return True
+            else:
+                if os.path.exists(CACHE_DB):
+                    self._cache_conn = sqlite3.connect(CACHE_DB)
+                    self._cache_conn.execute("PRAGMA journal_mode=WAL")
+                    self._cache_conn.row_factory = sqlite3.Row
+                    logger.info("Cache local reutilizado (offline): %s", CACHE_DB)
+                    return True
+                else:
+                    logger.warning("Sem conexao MySQL e sem cache local")
+                    return False
         except Exception as e:
             logger.error("Erro ao criar cache: %s", e)
             self.limpar_cache()
+            return False
+
+    def _mysql_disponivel(self, conexao_mysql):
+        """Verifica se a conexao MySQL esta ativa."""
+        try:
+            return conexao_mysql is not None and conexao_mysql.is_connected()
+        except Exception:
             return False
 
     def limpar_cache(self):

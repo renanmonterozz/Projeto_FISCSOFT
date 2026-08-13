@@ -441,18 +441,12 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
                 try:
                     r = db.executar(
                         'SELECT COUNT(p.lote) FROM produtos p '
-<<<<<<< HEAD
-                        'JOIN `nota fiscal` nf ON p.`nota fiscal_nota_fiscal` = nf.nota_fiscal '
-                        'AND p.`nota fiscal_agente ibama_matricula` = nf.`agente ibama_matricula` '
-                        'WHERE nf.processo = %s',
-=======
                         'JOIN "nota fiscal" nf ON p."nota fiscal_nota_fiscal" = nf.nota_fiscal '
                         'AND p."nota fiscal_agente ibama_matricula" = nf."agente ibama_matricula" '
                         'WHERE nf.processo = ? AND nf.status_nota = \'Aprovada\'',
->>>>>>> origin/saulo.dantas
                         (self.processo_tccm,)
                     ).fetchone()
-                    total_itens = r['COUNT(p.lote)'] if r else 0
+                    total_itens = r[0] if r else 0
                 except Exception:
                     total_itens = 0
 
@@ -473,16 +467,11 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
                     total_nf = 0
 
                 try:
-<<<<<<< HEAD
-                    r = db.executar('SELECT COUNT(lote) FROM produtos').fetchone()
-                    total_itens = r['COUNT(lote)'] if r else 0
-=======
                     r = db.executar('SELECT COUNT(lote) FROM produtos p '
                                     'JOIN "nota fiscal" nf ON p."nota fiscal_nota_fiscal" = nf.nota_fiscal '
                                     'AND p."nota fiscal_agente ibama_matricula" = nf."agente ibama_matricula" '
                                     'WHERE nf.status_nota = \'Aprovada\'').fetchone()
                     total_itens = r[0] if r else 0
->>>>>>> origin/saulo.dantas
                 except Exception:
                     total_itens = 0
 
@@ -494,15 +483,11 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
                 except Exception:
                     valor_total = 0
 
-<<<<<<< HEAD
                 try:
                     r = db.executar("SELECT COUNT(DISTINCT processo) FROM tccm").fetchone()
                     total_tccm = r['COUNT(DISTINCT processo)'] if r else 0
                 except Exception:
                     total_tccm = 0
-
-=======
->>>>>>> origin/saulo.dantas
         self.stat_labels["Notas Fiscais"].configure(text=str(total_nf))
         self.stat_labels["Itens Recebidos"].configure(text=str(total_itens))
         valor_formatado = f"R$ {valor_total:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
