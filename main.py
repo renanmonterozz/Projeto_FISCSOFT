@@ -157,9 +157,7 @@ class LoginApp(ctk.CTk):
         self.frame_login.lift()
         pywinstyles.set_opacity(self.frame_login, color="#000001")
 
-        self._modo_login = "usuario"
-
-        # --- Campo de credencial com icone de toggle ao lado ---
+        # --- Campo de credencial ---
         frame_cred = ctk.CTkFrame(self.frame_login, fg_color="transparent", width=586, height=45)
         frame_cred.pack(pady=(10, 10))
         frame_cred.pack_propagate(False)
@@ -170,18 +168,9 @@ class LoginApp(ctk.CTk):
             font=("Segoe UI", 16),
             fg_color="#CFFFE3", border_color="#16A34A", border_width=2,
             text_color="#2D8A4E", placeholder_text_color="#2D8A4E",
-            placeholder_text="Digite seu usuario"
+            placeholder_text="Digite seu usuário ou CPF"
         )
         self.entry_credencial.place(x=53, y=0)
-
-        self.btn_modo = ctk.CTkButton(
-            frame_cred, text="\U0001f464", width=45, height=45, corner_radius=8,
-            fg_color="#CFFFE3", hover_color="#b0e8c0",
-            text_color="#2D8A4E", font=("Segoe UI", 18),
-            border_width=2, border_color="#16A34A",
-            command=self._toggle_modo_login
-        )
-        self.btn_modo.place(x=541, y=0)
 
         # --- Campo de senha com olho ---
         frame_senha = ctk.CTkFrame(self.frame_login, fg_color="transparent", width=586, height=45)
@@ -230,17 +219,7 @@ class LoginApp(ctk.CTk):
         self.entry_credencial.bind("<Return>", lambda e: self._on_entrar_click())
         self.entry_senha.bind("<Return>", lambda e: self._on_entrar_click())
 
-    def _toggle_modo_login(self):
-        if self._modo_login == "usuario":
-            self._modo_login = "cpf"
-            self.btn_modo.configure(text="\U0001faaa")
-            self.entry_credencial.configure(placeholder_text="Digite seu CPF")
-        else:
-            self._modo_login = "usuario"
-            self.btn_modo.configure(text="\U0001f464")
-            self.entry_credencial.configure(placeholder_text="Digite seu usuario")
-        self.entry_credencial.delete(0, "end")
-
+    
     def _on_entrar_click(self):
         credencial = self.entry_credencial.get().strip()
         senha = self.entry_senha.get()
@@ -249,10 +228,12 @@ class LoginApp(ctk.CTk):
             messagebox.showwarning("Atencao", "Preencha todos os campos!")
             return
 
-        if self._modo_login == "usuario":
-            self._login_usuario(credencial, senha)
-        else:
+        # Detect CPF (digits, length 11) automatically; fallback to usuario
+        only_digits = ''.join([c for c in credencial if c.isdigit()])
+        if len(only_digits) == 11 and only_digits == credencial:
             self._login_cpf(credencial, senha)
+        else:
+            self._login_usuario(credencial, senha)
 
     def _login_usuario(self, usuario, senha):
         with Database() as db:

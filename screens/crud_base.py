@@ -13,6 +13,10 @@ class CrudBase:
 
     def build_alerta_nota(self, header, processo_tccm=None, pack_direction="right"):
         """Exibe um sino que so aparece quando existe nota fiscal pendente de conferencia."""
+        # only show alerta on the post-login main screen
+        if not getattr(self, "is_post_login", False):
+            return None
+
         processos = self._notas_pendentes(processo_tccm)
         if not processos:
             return None
@@ -31,6 +35,28 @@ class CrudBase:
             btn.pack(side="right", padx=(10, 0))
         else:
             btn.pack(side="left", padx=(0, 10))
+        # keep a reference to the alerta button so it can be removed later
+        try:
+            self._alerta_btn = btn
+        except Exception:
+            self._alerta_btn = None
+
+        # initialize exigencias tracking
+        try:
+            with Database() as db:
+                if db.conexao:
+                    sql = "SELECT DISTINCT processo FROM \"nota fiscal\" WHERE status_nota = 'Correcao Solicitada'"
+                    params = ()
+                    if processo_tccm:
+                        sql += " AND processo = ?"
+                        params = (processo_tccm,)
+                    r = db.executar(sql, params)
+                    self._exigencias_set = set([row[0] for row in r.fetchall()]) if r else set()
+                else:
+                    self._exigencias_set = set()
+        except Exception:
+            self._exigencias_set = set()
+
         return btn
 
     def _notas_pendentes(self, processo_tccm=None):
@@ -247,3 +273,52 @@ class CrudBase:
     def configure_data_columns(self, data_frame, weights):
         for i, w in enumerate(weights):
             data_frame.grid_columnconfigure(i, weight=w)
+
+    def _check_exigencias_and_refresh(self, processo_tccm=None):
+        """Check for exigencias (correcao solicitada) that were attended and refresh alerta button."""
+        try:
+            with Database() as db:
+                if not db.conexao:
+                    current = set()
+                else:
+                    sql = "SELECT DISTINCT processo FROM \"nota fiscal\" WHERE status_nota = 'Correcao Solicitada'"
+                    params = ()
+                    if processo_tccm:
+                        sql += " AND processo = ?"
+                        params = (processo_tccm,)
+                    r = db.executar(sql, params)
+                    current = set([row[0] for row in r.fetchall()]) if r else set()
+        except Exception:
+            current = set()
+
+        prev = getattr(self, '_exigencias_set', set())
+        removed = prev - current
+        for proc in removed:
+            try:
+                messagebox.showinfo("Exigência atendida", f"Exigência atendida para processo {proc}", parent=self)
+            except Exception:
+                pass
+
+        # store new set
+        self._exigencias_set = current
+
+        # refresh alerta visibility
+        try:
+            processos = self._notas_pendentes(processo_tccm)
+        except Exception:
+            processos = []
+
+        if not processos:
+            if hasattr(self, '_alerta_btn') and self._alerta_btn:
+                try:
+                    self._alerta_btn.destroy()
+                except Exception:
+                    pass
+                self._alerta_btn = None
+        else:
+            texto = "Voce tem uma nova nota fiscal em " + ", ".join(processos)
+            if hasattr(self, '_alerta_btn') and self._alerta_btn:
+                try:
+                    self._alerta_btn.configure(command=lambda: messagebox.showinfo("Notificacao", texto, parent=self))
+                except Exception:
+                    pass

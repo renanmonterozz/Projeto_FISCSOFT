@@ -1,6 +1,7 @@
 import _path  # noqa: F401
 
 import os
+import calendar
 from datetime import datetime as _dt
 
 import customtkinter as ctk
@@ -29,6 +30,8 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
         self.usuario_logado = usuario_logado
         self.perfil = perfil
         self.processo_tccm = processo_tccm
+        # mark this page as the post-login main screen so alerts show here
+        self.is_post_login = True
 
         if processo_tccm:
             titulo = f"TCCM - {processo_tccm}"
@@ -331,9 +334,33 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
             return
 
         status = row[1] or "pendente"
-        data_inicio = _fmt_date(row[3])
         semestres = row[4] or 0
-        data_validade = _fmt_date(row[5])
+
+        # try to parse data_inicio from DB; prefer a datetime object when possible
+        data_inicio_obj = None
+        try:
+            if hasattr(row[3], "year"):
+                data_inicio_obj = row[3]
+            else:
+                data_inicio_obj = _dt.strptime(str(row[3]), "%Y-%m-%d")
+        except Exception:
+            data_inicio_obj = None
+
+        # calculate data_validade = data_inicio + semestres * 6 months
+        def _add_months(dt_obj, months):
+            if not dt_obj:
+                return None
+            total = dt_obj.month - 1 + months
+            y = dt_obj.year + total // 12
+            m = total % 12 + 1
+            day = min(dt_obj.day, calendar.monthrange(y, m)[1])
+            return _dt(y, m, day)
+
+        months_to_add = int(semestres) * 6 if semestres else 0
+        data_validade_obj = _add_months(data_inicio_obj, months_to_add) if months_to_add and data_inicio_obj else (row[5] if row[5] else None)
+
+        data_inicio = _fmt_date(data_inicio_obj)
+        data_validade = _fmt_date(data_validade_obj)
         total_devido = float(row[6]) if row[6] else 0
         total_pago = float(row[7]) if row[7] else 0
         pendente = max(0, total_devido - total_pago)

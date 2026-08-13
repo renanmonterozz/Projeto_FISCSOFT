@@ -20,7 +20,7 @@ class DashboardExterno(CrudBase, ctk.CTkFrame):
         self.build_header("Meu Painel", f"Bem-vindo, {usuario_logado or 'Usuario'}",
                           alerta_nota=False)
         self.build_stats_cards()
-        self.build_tccm_info()
+        # build_tccm_info removed
         self.build_notas_resumo()
 
     def build_stats_cards(self):
@@ -102,63 +102,7 @@ class DashboardExterno(CrudBase, ctk.CTkFrame):
 
         self._atualizar_cards()
 
-    def build_tccm_info(self):
-        section = ctk.CTkFrame(
-            self, fg_color=COLORS["white"], corner_radius=4,
-            border_width=1, border_color=COLORS["border"]
-        )
-        section.pack(fill="x", padx=30, pady=(0, 20))
-
-        header_frame = ctk.CTkFrame(section, fg_color="transparent")
-        header_frame.pack(fill="x", padx=20, pady=(15, 10))
-
-        dot = ctk.CTkFrame(
-            header_frame, fg_color=COLORS["primary"],
-            width=12, height=12, corner_radius=6
-        )
-        dot.pack(side="left", padx=(0, 8))
-        dot.pack_propagate(False)
-
-        ctk.CTkLabel(
-            header_frame, text="Informacoes do TCCM",
-            font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
-            text_color=COLORS["text"]
-        ).pack(side="left")
-
-        info_frame = ctk.CTkFrame(section, fg_color="transparent")
-        info_frame.pack(fill="x", padx=20, pady=(0, 15))
-
-        self.tccm_labels = {}
-        campos = [
-            ("Processo:", "processo"),
-            ("Total Devido:", "total_devido"),
-            ("Total Pago:", "total_pago"),
-            ("Status:", "status"),
-        ]
-
-        for i, (campo_texto, key) in enumerate(campos):
-            row = i // 2
-            col = i % 2
-
-            campo_frame = ctk.CTkFrame(info_frame, fg_color="transparent")
-            campo_frame.grid(row=row, column=col, padx=10, pady=5, sticky="w")
-            info_frame.columnconfigure(col, weight=1)
-
-            ctk.CTkLabel(
-                campo_frame, text=campo_texto,
-                font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                text_color=COLORS["text_muted"]
-            ).pack(side="left")
-
-            lbl = ctk.CTkLabel(
-                campo_frame, text="--",
-                font=ctk.CTkFont(size=FONTS["size_small"]),
-                text_color=COLORS["text"]
-            )
-            lbl.pack(side="left", padx=(5, 0))
-            self.tccm_labels[key] = lbl
-
-        self._carregar_tccm()
+    # build_tccm_info removed — TCCM info panel not shown in external dashboard
 
     def build_notas_resumo(self):
         self.colunas_place = [

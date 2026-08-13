@@ -242,7 +242,7 @@ class LocaisPage(CrudBase, ctk.CTkFrame):
     def _abrir_formulario(self):
         form = ctk.CTkToplevel(self)
         form.title("Novo Local" if not self.local_edicao else "Editar Local")
-        form.geometry("500x400")
+        form.geometry("500x620")
         form.configure(fg_color=COLORS["bg"])
         form.transient(self.winfo_toplevel())
         form.grab_set()

@@ -1,243 +1,15 @@
 import _path  # noqa: F401
 
-import calendar as cal_mod
-from datetime import datetime, date
-
 import customtkinter as ctk
 from tkinter import messagebox
 
 from config.styles import COLORS, FONTS
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
+from screens.widgets import CalendarioPopup
 
 
-class CalendarioPopup(ctk.CTkToplevel):
-    def __init__(self, master, title="Selecionar Periodo", on_confirm=None):
-        super().__init__(master)
-        self.title(title)
-        self.geometry("420x480+{}+{}".format(
-            (self.winfo_screenwidth() - 420) // 2,
-            (self.winfo_screenheight() - 480) // 2
-        ))
-        self.resizable(False, False)
-        self.configure(fg_color=COLORS["white"])
-        self.transient(master)
-        self.grab_set()
 
-        self.on_confirm = on_confirm
-        self.data_inicio = None
-        self.data_fim = None
-        self.selecionando_fim = False
-
-        today = date.today()
-        self.mes_atual = today.month
-        self.ano_atual = today.year
-
-        container = ctk.CTkFrame(self, fg_color="transparent")
-        container.pack(fill="both", expand=True, padx=20, pady=15)
-
-        ctk.CTkLabel(
-            container, text=title,
-            font=ctk.CTkFont(size=18, weight="bold"),
-            text_color=COLORS["text"]
-        ).pack(anchor="w")
-
-        self.lbl_selecao = ctk.CTkLabel(
-            container, text="Clique na data de INICIO",
-            font=ctk.CTkFont(size=FONTS["size_small"]),
-            text_color=COLORS["primary"]
-        )
-        self.lbl_selecao.pack(anchor="w", pady=(2, 10))
-
-        nav = ctk.CTkFrame(container, fg_color="transparent")
-        nav.pack(fill="x", pady=(0, 8))
-
-        ctk.CTkButton(
-            nav, text="<", width=36, height=32, corner_radius=4,
-            fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
-            text_color="white", border_width=0,
-            font=ctk.CTkFont(size=16, weight="bold"),
-            command=self._mes_anterior
-        ).pack(side="left")
-
-        self.lbl_mes_ano = ctk.CTkLabel(
-            nav, text="",
-            font=ctk.CTkFont(size=16, weight="bold"),
-            text_color=COLORS["text"]
-        )
-        self.lbl_mes_ano.pack(side="left", expand=True)
-
-        ctk.CTkButton(
-            nav, text=">", width=36, height=32, corner_radius=4,
-            fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
-            text_color="white", border_width=0,
-            font=ctk.CTkFont(size=16, weight="bold"),
-            command=self._mes_seguinte
-        ).pack(side="right")
-
-        dias_semana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"]
-        hdr = ctk.CTkFrame(container, fg_color="transparent")
-        hdr.pack(fill="x")
-        for d in dias_semana:
-            ctk.CTkLabel(
-                hdr, text=d, width=48, height=28,
-                font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                text_color=COLORS["text_muted"]
-            ).pack(side="left", expand=True)
-
-        self.frame_dias = ctk.CTkFrame(container, fg_color="transparent")
-        self.frame_dias.pack(fill="both", expand=True, pady=(4, 0))
-
-        self.lbl_datas = ctk.CTkLabel(
-            container, text="Inicio: --/--/----  Fim: --/--/----",
-            font=ctk.CTkFont(size=FONTS["size_body"]),
-            text_color=COLORS["text"]
-        )
-        self.lbl_datas.pack(pady=(10, 5))
-
-        btns = ctk.CTkFrame(container, fg_color="transparent")
-        btns.pack(fill="x", pady=(5, 0))
-
-        ctk.CTkButton(
-            btns, text="Limpar", height=34, corner_radius=4,
-            fg_color="#6B7280", hover_color="#4B5563",
-            text_color="white", border_width=0,
-            font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
-            command=self._limpar
-        ).pack(side="left", expand=True, padx=(0, 5))
-
-        ctk.CTkButton(
-            btns, text="Confirmar", height=34, corner_radius=4,
-            fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
-            text_color="white", border_width=0,
-            font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
-            command=self._confirmar
-        ).pack(side="right", expand=True, padx=(5, 0))
-
-        self.btns_dias = []
-        self._renderizar_calendario()
-
-    def _mes_anterior(self):
-        self.mes_atual -= 1
-        if self.mes_atual < 1:
-            self.mes_atual = 12
-            self.ano_atual -= 1
-        self._renderizar_calendario()
-
-    def _mes_seguinte(self):
-        self.mes_atual += 1
-        if self.mes_atual > 12:
-            self.mes_atual = 1
-            self.ano_atual += 1
-        self._renderizar_calendario()
-
-    def _renderizar_calendario(self):
-        for w in self.frame_dias.winfo_children():
-            w.destroy()
-        self.btns_dias = []
-
-        meses_pt = ["", "Janeiro", "Fevereiro", "Marco", "Abril", "Maio", "Junho",
-                     "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
-        self.lbl_mes_ano.configure(text=f"{meses_pt[self.mes_atual]} {self.ano_atual}")
-
-        primeiro_dia, dias_no_mes = cal_mod.monthrange(self.ano_atual, self.mes_atual)
-
-        semana = ctk.CTkFrame(self.frame_dias, fg_color="transparent")
-        semana.pack(fill="x")
-        self.btns_dias.append([])
-
-        for _ in range(primeiro_dia):
-            ctk.CTkLabel(semana, text="", width=48, height=32).pack(side="left", expand=True)
-            self.btns_dias[-1].append(None)
-
-        for dia in range(1, dias_no_mes + 1):
-            if len(self.btns_dias[-1]) >= 7:
-                semana = ctk.CTkFrame(self.frame_dias, fg_color="transparent")
-                semana.pack(fill="x")
-                self.btns_dias.append([])
-
-            d = dia
-            btn = ctk.CTkButton(
-                semana, text=str(dia), width=48, height=32, corner_radius=4,
-                fg_color="transparent", hover_color=COLORS["primary_light"],
-                text_color=COLORS["text"], border_width=0,
-                font=ctk.CTkFont(size=FONTS["size_small"]),
-                command=lambda dia=d: self._selecionar_dia(dia)
-            )
-            btn.pack(side="left", expand=True)
-            self.btns_dias[-1].append(btn)
-
-        self._atualizar_destaque()
-
-    def _selecionar_dia(self, dia):
-        dt = date(self.ano_atual, self.mes_atual, dia)
-        if not self.selecionando_fim:
-            self.data_inicio = dt
-            self.data_fim = None
-            self.selecionando_fim = True
-            self.lbl_selecao.configure(text="Clique na data de FIM")
-        else:
-            if dt < self.data_inicio:
-                self.data_fim = self.data_inicio
-                self.data_inicio = dt
-            else:
-                self.data_fim = dt
-            self.selecionando_fim = False
-            self.lbl_selecao.configure(text="Periodo selecionado")
-
-        self._atualizar_destaque()
-        self._atualizar_lbl_datas()
-
-    def _atualizar_destaque(self):
-        for semana in self.btns_dias:
-            for btn in semana:
-                if btn is None:
-                    continue
-                btn.configure(fg_color="transparent", text_color=COLORS["text"])
-
-        if self.data_inicio and self.data_inicio.year == self.ano_atual and self.data_inicio.month == self.mes_atual:
-            idx_semana = (self.data_inicio.weekday() + 1) % 7
-            for semana in self.btns_dias:
-                for btn in semana:
-                    if btn is None:
-                        continue
-                    try:
-                        if int(btn.cget("text")) == self.data_inicio.day:
-                            btn.configure(fg_color=COLORS["primary"], text_color="white")
-                    except Exception:
-                        pass
-
-        if self.data_fim and self.data_fim.year == self.ano_atual and self.data_fim.month == self.mes_atual:
-            for semana in self.btns_dias:
-                for btn in semana:
-                    if btn is None:
-                        continue
-                    try:
-                        if int(btn.cget("text")) == self.data_fim.day:
-                            btn.configure(fg_color=COLORS["primary"], text_color="white")
-                    except Exception:
-                        pass
-
-    def _atualizar_lbl_datas(self):
-        i = self.data_inicio.strftime("%d/%m/%Y") if self.data_inicio else "--/--/----"
-        f = self.data_fim.strftime("%d/%m/%Y") if self.data_fim else "--/--/----"
-        self.lbl_datas.configure(text=f"Inicio: {i}  Fim: {f}")
-
-    def _limpar(self):
-        self.data_inicio = None
-        self.data_fim = None
-        self.selecionando_fim = False
-        self.lbl_selecao.configure(text="Clique na data de INICIO")
-        self._atualizar_destaque()
-        self._atualizar_lbl_datas()
-
-    def _confirmar(self):
-        if not self.data_inicio or not self.data_fim:
-            messagebox.showwarning("Aviso", "Selecione both data de inicio e fim.", parent=self)
-            return
-        if self.on_confirm:
-            self.on_confirm(self.data_inicio, self.data_fim)
-        self.destroy()
 
 
 class RelatorioExterno(CrudBase, ctk.CTkFrame):
@@ -247,8 +19,8 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
         self.usuario_logado = usuario_logado
         self.id_infrator = id_infrator
 
-        self.build_header("Relatorio",
-                          "Visualize o resumo das suas notas fiscais e processos",
+        self.build_header("Relatório Geral",
+                          "Visualize o resumo das suas notas fiscais e processos TCCM.",
                           alerta_nota=False)
         self.build_filter_bar()
         self.build_stats_cards()
@@ -261,13 +33,22 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
 
         self.data_inicio = None
         self.data_fim = None
+        # Processo (TCCM) combobox (left of the period selector)
+        col_processo = ctk.CTkFrame(row, fg_color="transparent")
+        col_processo.pack(side="left", padx=(0, 10))
 
-        self.lbl_periodo = ctk.CTkLabel(
-            row, text="Periodo: clique para selecionar",
-            font=ctk.CTkFont(size=FONTS["size_body"]),
-            text_color=COLORS["text_muted"]
+
+        # use the same style as in Cadastrar Notas
+        self.combo_processo = ctk.CTkComboBox(
+            col_processo, values=["Todos"], height=38, width=300,
+            border_width=1, border_color=COLORS["border"], corner_radius=4,
+            fg_color=COLORS["white"], text_color=COLORS["text"],
+            button_color=COLORS["primary"], button_hover_color=COLORS["primary_hover"],
+            dropdown_fg_color=COLORS["white"], dropdown_hover_color=COLORS["primary_light"],
+            command=self._on_processo_changed,
         )
-        self.lbl_periodo.pack(side="left", padx=(0, 10))
+        self.combo_processo.pack(fill="x")
+        self.combo_processo.set("Todos")
 
         ctk.CTkButton(
             row, text="Selecionar Periodo", height=38, corner_radius=4,
@@ -277,14 +58,78 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
             command=self._abrir_calendario
         ).pack(side="left", padx=(0, 10))
 
+        # periodo label (shows selected period)
+        self.lbl_periodo = ctk.CTkLabel(
+            row, text="Periodo: -", font=ctk.CTkFont(size=FONTS["size_small"]),
+            text_color=COLORS["text_muted"]
+        )
+        self.lbl_periodo.pack(side="left", padx=(10, 0))
+
+
+        try:
+            self._carregar_processos()
+        except Exception:
+            pass
+
         btn_frame = self.build_btn_frame(row)
-        self.build_action_btn(btn_frame, "  Gerar Relatorio", None, self.gerar_relatorio,
+        # create gerar relatorio button but keep it disabled until periodo is selected
+        self.btn_gerar = self.build_action_btn(btn_frame, "  Gerar Relatorio", None, self.gerar_relatorio,
                               fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
                               text_color="white", border=False, bold=True)
+        try:
+            self.btn_gerar.configure(state="disabled")
+        except Exception:
+            pass
         self.build_action_btn(btn_frame, "  Limpar", None, self.limpar_filtros)
 
     def _abrir_calendario(self):
         CalendarioPopup(self, title="Selecionar Periodo", on_confirm=self._periodo_selecionado)
+
+    def _carregar_processos(self):
+        try:
+            with Database() as db:
+                if not db.conexao:
+                    return
+                sql = """SELECT t.processo, i.nome_infrator
+                         FROM tccm t
+                         JOIN infrator i ON t."infrator_id_infrator" = i.id_infrator
+                         WHERE t."infrator_id_infrator" = ?
+                         ORDER BY t.processo"""
+                resultado = db.executar(sql, (self.id_infrator,))
+                if resultado:
+                    rows = resultado.fetchall()
+                    if rows:
+                        self._processo_map = {}
+                        opcoes = []
+                        for row in rows:
+                            processo = row[0]
+                            nome_infrator = row[1]
+                            display = f"{processo} - {nome_infrator}"
+                            self._processo_map[display] = processo
+                            opcoes.append(display)
+                        valores = ["Todos"] + opcoes
+                        self.combo_processo.configure(values=valores)
+                        self.combo_processo.set("Todos")
+                    else:
+                        self.combo_processo.configure(values=["Todos", "Nenhum TCCM encontrado"])
+                        self.combo_processo.set("Todos")
+        except Exception:
+            pass
+
+    def _get_processo_real(self):
+        display = self.combo_processo.get().strip()
+        if not display or display == "Todos" or "Nenhum TCCM" in display:
+            return ""
+        if hasattr(self, '_processo_map') and display in self._processo_map:
+            return self._processo_map[display]
+        if " - " in display:
+            return display.split(" - ")[0].strip()
+        return display
+
+    def _on_processo_changed(self, event=None):
+        # reload data when processo changes
+        self._carregar_dados()
+        self._atualizar_cards()
 
     def _periodo_selecionado(self, inicio, fim):
         self.data_inicio = inicio
@@ -293,6 +138,12 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
         self.lbl_periodo.configure(text=texto, text_color=COLORS["text"])
         self._carregar_dados()
         self._atualizar_cards()
+        # enable gerar relatorio button when a period is selected
+        if hasattr(self, 'btn_gerar'):
+            try:
+                self.btn_gerar.configure(state="normal")
+            except Exception:
+                pass
 
     def build_stats_cards(self):
         cards_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -445,7 +296,9 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
                 font=ctk.CTkFont(size=FONTS["size_body"]),
                 text_color=COLORS["text_muted"]
             ).pack(pady=30)
+            self._processo_map = {}
             return
+
 
         with Database() as db:
             if not db.conexao:
@@ -459,6 +312,14 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
                         AND p."nota fiscal_agente ibama_matricula" = nf."agente ibama_matricula"
                      WHERE t."infrator_id_infrator" = ?"""
             params = [self.id_infrator]
+            # filter by selected processo if any
+            try:
+                proc = self._get_processo_real()
+            except Exception:
+                proc = ""
+            if proc:
+                sql += " AND nf.processo = ?"
+                params.append(proc)
 
             if self.data_inicio and self.data_fim:
                 sql += " AND nf.data >= ? AND nf.data <= ?"
@@ -638,11 +499,13 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
                           AND nf.data >= ? AND nf.data <= ?
                         ORDER BY nf.data DESC"""
             try:
-                resultado = db.executar(sql_nf, (
-                    self.id_infrator,
-                    self.data_inicio.strftime("%Y-%m-%d"),
-                    self.data_fim.strftime("%Y-%m-%d"),
-                ))
+                # allow optional processo filter
+                proc = self._get_processo_real() if hasattr(self, '_get_processo_real') else ""
+                params = [self.id_infrator, self.data_inicio.strftime("%Y-%m-%d"), self.data_fim.strftime("%Y-%m-%d")]
+                if proc:
+                    sql_nf = sql_nf.replace("ORDER BY nf.data DESC", "AND nf.processo = ?\n                        ORDER BY nf.data DESC")
+                    params.append(proc)
+                resultado = db.executar(sql_nf, tuple(params))
                 if resultado:
                     for row in resultado.fetchall():
                         raw_data = row[1]
@@ -746,9 +609,14 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
     def limpar_filtros(self):
         self.data_inicio = None
         self.data_fim = None
-        self.lbl_periodo.configure(text="Periodo: clique para selecionar", text_color=COLORS["text_muted"])
         self._carregar_dados()
         self._atualizar_cards()
+        # disable gerar relatorio when filters cleared
+        if hasattr(self, 'btn_gerar'):
+            try:
+                self.btn_gerar.configure(state="disabled")
+            except Exception:
+                pass
 
     def _ver_detalhes(self, nota_fiscal):
         popup = ctk.CTkToplevel(self)
