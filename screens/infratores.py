@@ -12,10 +12,12 @@ from utils import registrar_log
 
 
 class InfratoresPage(CrudBase, ctk.CTkFrame):
-    def __init__(self, master, perfil="admin", **kwargs):
+    def __init__(self, master, usuario_logado=None, perfil="admin", table_height=None, **kwargs):
         super().__init__(master, **kwargs)
         self.configure(fg_color=COLORS["bg"])
+        self.usuario_logado = usuario_logado
         self.perfil = perfil
+        self.table_height = table_height
         self.pode_editar = pode_acao(perfil, "gerenciar_infratores")
 
         self.build_header("Infratores", "Gerencie os infratores cadastrados no sistema")
@@ -43,7 +45,7 @@ class InfratoresPage(CrudBase, ctk.CTkFrame):
                                   border=False, bold=True)
 
     def build_table(self):
-        CrudBase.build_table(self, pad_y=(0, 30))
+        CrudBase.build_table(self, pad_y=(0, 30), height=self.table_height)
 
         # Container interno com borda
         self.table_container = ctk.CTkFrame(
@@ -200,7 +202,7 @@ class InfratoresPage(CrudBase, ctk.CTkFrame):
                     )
                     db.commitar()
             registrar_log(
-                "Sistema",
+                self.usuario_logado or "Sistema",
                 "exclusao",
                 "infrator",
                 f"Infrator '{infrator['nome']}' (ID: {infrator['id']}) excluido"

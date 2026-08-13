@@ -43,13 +43,11 @@ class Sidebar(ctk.CTkFrame):
 
         self.nav_items = [
             ("Menu Principal", "casa.png"),
-            ("Dashboard TCCM", "relatorios.png"),
+            ("Dashboard TCCM", "processo.png"),
             ("Itens", "caixa.png"),
             ("Destinacao", "destinacao.png"),
             ("Agente", "Agente.png"),
-            ("Usuario Externo", "usuarios.png"),
-            ("Locais Cadastrados", "predios.png"),
-            ("Relatorio", "relatorios.png"),
+            ("Notas Fiscais", "relatorios.png"),
             ("Historico", "relogio.png"),
         ]
 

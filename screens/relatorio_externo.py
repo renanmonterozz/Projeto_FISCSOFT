@@ -248,7 +248,8 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
         self.id_infrator = id_infrator
 
         self.build_header("Relatorio",
-                          "Visualize o resumo das suas notas fiscais e processos")
+                          "Visualize o resumo das suas notas fiscais e processos",
+                          alerta_nota=False)
         self.build_filter_bar()
         self.build_stats_cards()
         self.build_relatorio_content()

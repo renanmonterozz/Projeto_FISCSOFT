@@ -16,13 +16,11 @@ from config.permissoes import PAGINAS_EXTERNO, normalizar_perfil, paginas_do_per
 from database.conexaodb import Database
 from screens.sidebar import Sidebar
 from screens.menu_inicial import MenuInicialPage
-from screens.usuarios import UsuariosPage
-from screens.itens import ItensPage
-from screens.infratores import InfratoresPage
-from screens.relatorios import RelatoriosPage
-from screens.relatorio_entrega import RelatorioEntregaPage
-from screens.locais import LocaisPage
+from screens.notas_fiscais import RelatoriosPage
+from screens.destinacao import RelatorioEntregaPage
 from screens.historico import HistoricoPage
+from screens.itens_locais import ItensLocaisPage
+from screens.usuarios_infratores import UsuariosInfratoresPage
 from screens.tccm_dashboard import TccmDashboardPage, TccmDetalhesPage
 from screens.cadastro_tccm_completo import CadastroTCCMCompleto
 from utils import verify_password, login_por_certificado
@@ -533,25 +531,22 @@ class LoginApp(ctk.CTk):
             for w in content_frame.winfo_children():
                 w.destroy()
 
-            usuario_logado = main_app.usuario_logado if perfil == "agente" else None
+            usuario_logado = main_app.usuario_logado
 
             if pagina == "Menu Principal":
                 MenuInicialPage(content_frame, usuario_logado=usuario_logado, perfil=perfil,
                                 processo_tccm=processo_tccm).pack(fill="both", expand=True)
-            elif pagina == "Itens":
-                ItensPage(content_frame, on_voltar=lambda: navegar("Menu Principal"),
-                          processo_tccm=processo_tccm, perfil=perfil).pack(fill="both", expand=True)
+            elif pagina in ("Itens", "Locais Cadastrados"):
+                ItensLocaisPage(content_frame, usuario_logado=usuario_logado,
+                                processo_tccm=processo_tccm, perfil=perfil).pack(fill="both", expand=True)
             elif pagina == "Destinacao":
                 RelatorioEntregaPage(content_frame, on_voltar=lambda: navegar("Menu Principal"),
                                      usuario_logado=usuario_logado, processo_tccm=processo_tccm,
                                      perfil=perfil).pack(fill="both", expand=True)
-            elif pagina == "Agente":
-                UsuariosPage(content_frame, usuario_logado=usuario_logado, perfil=perfil).pack(fill="both", expand=True)
-            elif pagina == "Usuario Externo":
-                InfratoresPage(content_frame, perfil=perfil).pack(fill="both", expand=True)
-            elif pagina == "Locais Cadastrados":
-                LocaisPage(content_frame, usuario_logado=usuario_logado, perfil=perfil).pack(fill="both", expand=True)
-            elif pagina == "Relatorio":
+            elif pagina in ("Agente", "Usuario Externo"):
+                UsuariosInfratoresPage(content_frame, usuario_logado=usuario_logado,
+                                       perfil=perfil).pack(fill="both", expand=True)
+            elif pagina == "Notas Fiscais":
                 RelatoriosPage(content_frame, usuario_logado=usuario_logado, perfil=perfil).pack(fill="both", expand=True)
             elif pagina == "Historico":
                 HistoricoPage(content_frame, usuario_logado=usuario_logado).pack(fill="both", expand=True)

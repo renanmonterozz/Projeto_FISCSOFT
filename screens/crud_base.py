@@ -1,11 +1,55 @@
 import _path  # noqa: F401
 
+from tkinter import messagebox
+
 import customtkinter as ctk
+
 from config.styles import COLORS, FONTS
+from database.conexaodb import Database
 
 
 class CrudBase:
     CARD_BORDER_RADIUS = 4
+
+    def build_alerta_nota(self, header, processo_tccm=None, pack_direction="right"):
+        """Exibe um sino que so aparece quando existe nota fiscal pendente de conferencia."""
+        processos = self._notas_pendentes(processo_tccm)
+        if not processos:
+            return None
+
+        texto = "Voce tem uma nova nota fiscal em " + ", ".join(processos)
+
+        btn = ctk.CTkButton(
+            header, text="\U0001f514  Nova nota fiscal",
+            height=38, corner_radius=19,
+            fg_color=COLORS["white"], hover_color=COLORS["primary_light"],
+            text_color=COLORS["warning"], border_width=1, border_color=COLORS["border"],
+            font=ctk.CTkFont(size=13, weight="bold"),
+            command=lambda: messagebox.showinfo("Notificacao", texto, parent=self),
+        )
+        if pack_direction == "right":
+            btn.pack(side="right", padx=(10, 0))
+        else:
+            btn.pack(side="left", padx=(0, 10))
+        return btn
+
+    def _notas_pendentes(self, processo_tccm=None):
+        try:
+            with Database() as db:
+                if not db.conexao:
+                    return []
+                if processo_tccm:
+                    sql = """SELECT DISTINCT processo FROM "nota fiscal"
+                             WHERE processo = ? AND status_nota NOT IN ('Aprovada', 'Rejeitada')"""
+                    params = (processo_tccm,)
+                else:
+                    sql = """SELECT DISTINCT processo FROM "nota fiscal"
+                             WHERE status_nota NOT IN ('Aprovada', 'Rejeitada')"""
+                    params = ()
+                r = db.executar(sql, params)
+                return [row[0] for row in r.fetchall()] if r else []
+        except Exception:
+            return []
 
     def build_card(self, parent, **kwargs):
         return ctk.CTkFrame(
@@ -17,9 +61,14 @@ class CrudBase:
             **kwargs,
         )
 
-    def build_header(self, title, subtitle):
+    def build_header(self, title, subtitle, alerta_nota=True, processo_tccm=None):
         header = ctk.CTkFrame(self, fg_color="transparent")
         header.pack(fill="x", padx=30, pady=(30, 20))
+
+        if alerta_nota:
+            if processo_tccm is None:
+                processo_tccm = getattr(self, "processo_tccm", None)
+            self.build_alerta_nota(header, processo_tccm)
 
         ctk.CTkLabel(
             header, text=title,
@@ -101,12 +150,17 @@ class CrudBase:
         btn.pack(side="left", padx=(0, 8))
         return btn
 
-    def build_table(self, pad_y=(0, 30)):
+    def build_table(self, pad_y=(0, 30), height=None):
         self.table_frame = ctk.CTkFrame(
             self, fg_color=COLORS["white"], corner_radius=4,
             border_width=1, border_color=COLORS["border"]
         )
-        self.table_frame.pack(fill="both", expand=True, padx=30, pady=pad_y)
+        if height:
+            self.table_frame.configure(height=height)
+            self.table_frame.pack(fill="x", padx=30, pady=pad_y)
+            self.table_frame.pack_propagate(False)
+        else:
+            self.table_frame.pack(fill="both", expand=True, padx=30, pady=pad_y)
         return self.table_frame
 
     def build_table_header(self, parent, columns, weights, has_checkbox=True, alignments=None):
