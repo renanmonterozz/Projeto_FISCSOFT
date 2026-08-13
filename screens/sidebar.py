@@ -26,6 +26,8 @@ class Sidebar(ctk.CTkFrame):
         self.configure(fg_color="#FAFAFA", corner_radius=0)
         self.on_navigate = on_navigate
         self.on_sair = on_sair
+        self.pagina_atual = None
+        self.btns_navegacao = {}
 
         # --- Topo: logo + botoes de navegacao ---
         logo_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -45,7 +47,7 @@ class Sidebar(ctk.CTkFrame):
         # `page_name` is the identifier passed to the navigate handler
         self.nav_items = [
             ("Menu Principal", "casa.png", "Menu Principal"),
-            ("Registros", "nota.png", "Itens"),
+            ("Registros", "registro.png", "Itens"),
             ("Destinacao", "destinacao.png", "Destinacao"),
             ("Usuários", "usuarios.png", "Agente"),
             ("Notas Fiscais", "relatorios.png", "Notas Fiscais"),
@@ -80,6 +82,7 @@ class Sidebar(ctk.CTkFrame):
                 command=lambda p=page_name: self._navigate(p),
             )
             btn.pack(fill="x", pady=4)
+            self.btns_navegacao[page_name] = btn
 
         # --- Fundo: sempre colado na parte inferior ---
         separador = ctk.CTkFrame(self, fg_color=COLORS["border"], height=1, corner_radius=0)
@@ -120,6 +123,14 @@ class Sidebar(ctk.CTkFrame):
         ).place(relx=0, rely=0, relwidth=1, relheight=1)
 
     def _navigate(self, page_name: str):
+        if self.pagina_atual and self.pagina_atual in self.btns_navegacao:
+            btn_antigo = self.btns_navegacao[self.pagina_atual]
+            btn_antigo.configure(fg_color="transparent", text_color=COLORS["nav_text"])
+
+        self.pagina_atual = page_name
+        if page_name in self.btns_navegacao:
+            self.btns_navegacao[page_name].configure(fg_color="#00674F", text_color="#FFF9BE")
+
         if self.on_navigate:
             self.on_navigate(page_name)
 
