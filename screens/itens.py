@@ -111,7 +111,10 @@ class ItensPage(CrudBase, ctk.CTkFrame):
                     r = db.executar(
                         "SELECT DISTINCT i.id, i.nome, i.descricao, i.tipo, i.justificativa, i.unidade_medida, "
                         "i.quantidade_prevista, "
-                        "COALESCE((SELECT SUM(p.quantidade) FROM produtos p WHERE p.itens_id = i.id), 0) "
+                        "COALESCE((SELECT SUM(p.quantidade) FROM produtos p "
+                        "INNER JOIN \"nota fiscal\" nf ON nf.nota_fiscal = p.\"nota fiscal_nota_fiscal\" "
+                        "AND nf.\"agente ibama_matricula\" = p.\"nota fiscal_agente ibama_matricula\" "
+                        "WHERE p.itens_id = i.id AND nf.status_nota = 'Aprovada'), 0) "
                         "FROM itens i "
                         "WHERE i.processo = ? "
                         "   OR i.notas_fiscais IN ("
@@ -133,7 +136,10 @@ class ItensPage(CrudBase, ctk.CTkFrame):
                 try:
                     r = db.executar(
                         "SELECT id, nome, descricao, tipo, justificativa, unidade_medida, quantidade_prevista, "
-                        "COALESCE((SELECT SUM(p.quantidade) FROM produtos p WHERE p.itens_id = itens.id), 0) "
+                        "COALESCE((SELECT SUM(p.quantidade) FROM produtos p "
+                        "INNER JOIN \"nota fiscal\" nf ON nf.nota_fiscal = p.\"nota fiscal_nota_fiscal\" "
+                        "AND nf.\"agente ibama_matricula\" = p.\"nota fiscal_agente ibama_matricula\" "
+                        "WHERE p.itens_id = itens.id AND nf.status_nota = 'Aprovada'), 0) "
                         "FROM itens ORDER BY id"
                     )
                 except Exception:

@@ -359,6 +359,8 @@ class LoginApp(ctk.CTk):
         main_app.title("FISCSOFT - Acesso Externo")
         main_app.configure(fg_color=COLORS["white"])
         main_app.after(0, main_app.state, "zoomed")
+        main_app.update_idletasks()
+        main_app.state("zoomed")
         main_app.usuario_logado = self.usuario_logado
         main_app.id_infrator = self.id_infrator
 
@@ -421,6 +423,8 @@ class LoginApp(ctk.CTk):
         welcome_app.title("FISCSOFT - Bem-vindo")
         welcome_app.configure(fg_color=COLORS["bg"])
         welcome_app.after(0, welcome_app.state, "zoomed")
+        welcome_app.update_idletasks()
+        welcome_app.state("zoomed")
         welcome_app.usuario_logado = self.usuario_logado
         welcome_app.perfil = perfil
         welcome_app.processo_tccm = processo_tccm
@@ -454,7 +458,9 @@ class LoginApp(ctk.CTk):
                 return
             win = ctk.CTkToplevel(welcome_app)
             win.title("Cadastro de TCCM")
-            win.geometry("900x650")
+            win.after(0, win.state, "zoomed")
+            win.update_idletasks()
+            win.state("zoomed")
             win.configure(fg_color=COLORS["bg"])
             win.transient(welcome_app)
             win.grab_set()
@@ -494,6 +500,8 @@ class LoginApp(ctk.CTk):
         main_app.title("FISCSOFT" if perfil == "admin" else "FISCSOFT - Usuario")
         main_app.configure(fg_color=COLORS["white"])
         main_app.after(0, main_app.state, "zoomed")
+        main_app.update_idletasks()
+        main_app.state("zoomed")
         main_app.usuario_logado = self.usuario_logado
         main_app.perfil = perfil
 

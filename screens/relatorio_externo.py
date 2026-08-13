@@ -415,7 +415,7 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
             btn_detalhes.place(relx=0.89, rely=0.15, relwidth=0.10, relheight=0.7)
 
         self.lbl_total.configure(text=f"Total de Registros: {len(dados)}")
-        valor_total = sum(d["valor_total"] for d in dados)
+        valor_total = sum(d["valor_total"] for d in dados if d.get("status") == "Aprovada")
         self.lbl_valor_total.configure(
             text=f"Valor Total: R$ {valor_total:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
         )
@@ -557,7 +557,7 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
         texto += f"Periodo: {periodo_label}\n"
         texto += f"Total de Notas Fiscais: {len(dados_nf)}\n"
 
-        valor_total_geral = sum(nf["valor_total"] for nf in dados_nf)
+        valor_total_geral = sum(nf["valor_total"] for nf in dados_nf if nf.get("status") == "Aprovada")
         texto += f"Valor Total: R$ {valor_total_geral:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") + "\n"
         texto += "\n"
 
@@ -585,7 +585,10 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
         texto += "=" * 50 + "\n"
         texto += f"Total de Itens: {sum(len(itens) for itens in itens_por_nf.values())}\n"
         valor_total_itens = sum(
-            item["subtotal"] for itens in itens_por_nf.values() for item in itens
+            item["subtotal"]
+            for nf in dados_nf
+            if nf.get("status") == "Aprovada"
+            for item in itens_por_nf.get(nf["nota_fiscal"], [])
         )
         texto += f"Valor Total Itens: R$ {valor_total_itens:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") + "\n"
 
