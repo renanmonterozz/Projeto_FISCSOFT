@@ -35,17 +35,43 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         row = ctk.CTkFrame(inner, fg_color="transparent")
         row.pack(fill="x")
 
+        # semestre filter: Todos or Semestre Atual
+        from datetime import datetime as _dt
+        ano_atual = _dt.now().year
+        self.semestre_option = "Todos"
+        self.combo_semestre = ctk.CTkComboBox(
+            row, values=["Todos", "Semestre Atual"], height=38, width=180,
+            border_width=1, border_color=COLORS["border"], corner_radius=4,
+            fg_color=COLORS["white"], text_color=COLORS["text"],
+            button_color=COLORS["primary"], button_hover_color=COLORS["primary_hover"],
+            dropdown_fg_color=COLORS["white"], dropdown_hover_color=COLORS["primary_light"],
+            command=lambda v: self._on_semestre_changed(v)
+        )
+        self.combo_semestre.pack(side="left", padx=(0, 10))
+        try:
+            self.combo_semestre.set("Todos")
+        except Exception:
+            pass
+
         self.entry_busca = self.build_search_entry(row, "Buscar por item, descricao ou tipo...", 340)
 
         btn_frame = self.build_btn_frame(row)
         self.build_action_btn(btn_frame, "  Pesquisar", carregar_icone("lupa.png"), self.pesquisar)
         self.build_action_btn(btn_frame, "  Limpar", carregar_icone("apagar.png"), self.limpar_filtros)
+        # export per-semester button
+        self.build_action_btn(btn_frame, "  Exportar por Semestre", None, self.exportar_por_semestre)
 
         if self.pode_editar:
             self.build_action_btn(btn_frame, "  Novo Item", carregar_icone("mais.png"),
                                   self.abrir_formulario, fg_color=COLORS["primary"],
                                   hover_color=COLORS["primary_hover"], text_color="white",
                                   border=False, bold=True)
+
+    def _on_semestre_changed(self, val):
+        self.semestre_option = val
+        # reload items with new semester filter
+        self.itens = self.carregar_do_banco()
+        self.render_rows()
 
     def _build_table(self):
         CrudBase.build_table(self, pad_y=(0, 30), height=self.table_height)
@@ -105,21 +131,58 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         with Database() as db:
             if not db.conexao:
                 return []
+            # Determine if semester filter is active
+            semestre_range = None
+            if getattr(self, 'semestre_option', 'Todos') == 'Semestre Atual':
+                from datetime import datetime as _dt
+                now = _dt.now()
+                year = now.year
+                if now.month <= 6:
+                    inicio = f"{year}-01-01"
+                    fim = f"{year}-06-30"
+                    sem_num = 1
+                else:
+                    inicio = f"{year}-07-01"
+                    fim = f"{year}-12-31"
+                    sem_num = 2
+                semestre_range = (inicio, fim)
+                sem_year = year
+
+            # Build SQL with optional semestre filtering for qtd_entregue
+            def sum_subquery(sem_range=None):
+                if sem_range:
+                    return "COALESCE((SELECT SUM(p.quantidade) FROM produtos p JOIN \"nota fiscal\" nf ON p.\"nota fiscal_nota_fiscal\" = nf.nota_fiscal WHERE p.itens_id = i.id AND nf.data >= ? AND nf.data <= ?), 0)"
+                else:
+                    return "COALESCE((SELECT SUM(p.quantidade) FROM produtos p WHERE p.itens_id = i.id), 0)"
 
             if self.processo_tccm:
                 try:
-                    r = db.executar(
-                        "SELECT DISTINCT i.id, i.nome, i.descricao, i.tipo, i.justificativa, i.unidade_medida, "
-                        "i.quantidade_prevista, "
-                        "COALESCE((SELECT SUM(p.quantidade) FROM produtos p WHERE p.itens_id = i.id), 0) "
-                        "FROM itens i "
-                        "WHERE i.processo = ? "
-                        "   OR i.notas_fiscais IN ("
-                        "  SELECT nf.nota_fiscal FROM \"nota fiscal\" nf WHERE nf.processo = ?"
-                        ") ORDER BY i.id",
-                        (self.processo_tccm, self.processo_tccm)
-                    )
+                    if semestre_range:
+                        sql = (
+                            "SELECT DISTINCT i.id, i.nome, i.descricao, i.tipo, i.justificativa, i.unidade_medida, "
+                            "COALESCE((SELECT quantidade_prevista FROM item_semestre WHERE itens_id = i.id AND ano = ? AND semestre = ?), i.quantidade_prevista) as quantidade_prevista, "
+                            + sum_subquery(semestre_range) + " "
+                            "FROM itens i "
+                            "WHERE i.processo = ? "
+                            "   OR i.notas_fiscais IN ("
+                            "  SELECT nf.nota_fiscal FROM \"nota fiscal\" nf WHERE nf.processo = ? AND nf.data >= ? AND nf.data <= ?"
+                            ") ORDER BY i.id"
+                        )
+                        params = (sem_year, sem_num, self.processo_tccm, self.processo_tccm, semestre_range[0], semestre_range[1])
+                    else:
+                        sql = (
+                            "SELECT DISTINCT i.id, i.nome, i.descricao, i.tipo, i.justificativa, i.unidade_medida, "
+                            "i.quantidade_prevista, " + sum_subquery(None) + " "
+                            "FROM itens i "
+                            "WHERE i.processo = ? "
+                            "   OR i.notas_fiscais IN ("
+                            "  SELECT nf.nota_fiscal FROM \"nota fiscal\" nf WHERE nf.processo = ?"
+                            ") ORDER BY i.id"
+                        )
+                        params = (self.processo_tccm, self.processo_tccm)
+                    r = db.executar(sql, params)
                 except Exception:
+                    # fallback simple query
                     r = db.executar(
                         "SELECT DISTINCT i.id, i.nome, i.descricao, i.categoria, NULL, '', 0, 0 "
                         "FROM itens i "
@@ -131,11 +194,22 @@ class ItensPage(CrudBase, ctk.CTkFrame):
                     )
             else:
                 try:
-                    r = db.executar(
-                        "SELECT id, nome, descricao, tipo, justificativa, unidade_medida, quantidade_prevista, "
-                        "COALESCE((SELECT SUM(p.quantidade) FROM produtos p WHERE p.itens_id = itens.id), 0) "
-                        "FROM itens ORDER BY id"
-                    )
+                    if semestre_range:
+                        sql = (
+                            "SELECT id, nome, descricao, tipo, justificativa, unidade_medida, "
+                            "COALESCE((SELECT quantidade_prevista FROM item_semestre WHERE itens_id = itens.id AND ano = ? AND semestre = ?), quantidade_prevista) as quantidade_prevista, "
+                            + sum_subquery(semestre_range) +
+                            " FROM itens ORDER BY id"
+                        )
+                        params = (sem_year, sem_num, semestre_range[0], semestre_range[1])
+                        r = db.executar(sql, params)
+                    else:
+                        sql = (
+                            "SELECT id, nome, descricao, tipo, justificativa, unidade_medida, quantidade_prevista, "
+                            + sum_subquery(None) +
+                            " FROM itens ORDER BY id"
+                        )
+                        r = db.executar(sql)
                 except Exception:
                     r = db.executar(
                         "SELECT id, nome, descricao, categoria, NULL, '', 0, 0 "
@@ -182,9 +256,17 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         just = item.get("justificativa", "")
         just_text = (just[:60] + "...") if len(just) > 60 else just
 
-        prevista = item.get("quantidade_prevista", 0) or 0
-        entregue = item.get("qtd_entregue", 0) or 0
-        progresso = min(entregue / prevista, 1.0) if prevista else 0
+        try:
+            prevista = float(item.get("quantidade_prevista", 0) or 0)
+        except Exception:
+            prevista = 0.0
+        try:
+            entregue = float(item.get("qtd_entregue", 0) or 0)
+        except Exception:
+            entregue = 0.0
+        progresso = 0.0
+        if prevista > 0:
+            progresso = min(max(entregue / prevista, 0.0), 1.0)
 
         valores = [
             item["nome"],
@@ -242,6 +324,83 @@ class ItensPage(CrudBase, ctk.CTkFrame):
             ]
         self.render_rows()
 
+    def exportar_por_semestre(self):
+        from tkinter import filedialog
+        try:
+            import openpyxl
+            from openpyxl.styles import Font
+        except Exception:
+            messagebox.showerror("Erro", "Biblioteca openpyxl nao encontrada.", parent=self)
+            return
+
+        # load items (respecting current processo_tccm if set)
+        with Database() as db:
+            if not db.conexao:
+                messagebox.showerror("Erro", "Nao foi possivel conectar ao banco.", parent=self)
+                return
+            try:
+                if self.processo_tccm:
+                    r = db.executar("SELECT id, nome, descricao, tipo, justificativa, unidade_medida FROM itens WHERE processo = ? ORDER BY id", (self.processo_tccm,))
+                else:
+                    r = db.executar("SELECT id, nome, descricao, tipo, justificativa, unidade_medida FROM itens ORDER BY id")
+                items = [dict(id=row[0], nome=row[1], descricao=row[2], tipo=row[3], justificativa=row[4], unidade_medida=row[5]) for row in (r.fetchall() if r else [])]
+            except Exception:
+                items = []
+
+            if not items:
+                messagebox.showwarning("Atencao", "Nenhum item para exportar.", parent=self)
+                return
+
+            ids = [i["id"] for i in items]
+            # collect distinct semesters
+            q_marks = ",".join("?" for _ in ids)
+            sem_rows = db.executar(f"SELECT DISTINCT ano, semestre FROM item_semestre WHERE itens_id IN ({q_marks}) ORDER BY ano, semestre", tuple(ids))
+            sems = sem_rows.fetchall() if sem_rows else []
+            sem_list = [(r[0], r[1]) for r in sems]
+
+            # map (itens_id -> {(ano,sem): qty})
+            sem_map = {}
+            if ids:
+                rows = db.executar(f"SELECT itens_id, ano, semestre, quantidade_prevista FROM item_semestre WHERE itens_id IN ({q_marks})", tuple(ids))
+                if rows:
+                    for r in rows.fetchall():
+                        iid, ano, sem, q = r[0], r[1], r[2], r[3]
+                        sem_map.setdefault(iid, {})[(ano, sem)] = q
+
+        caminho = filedialog.asksaveasfilename(title="Exportar itens por semestre", defaultextension=".xlsx", filetypes=[("Planilha Excel", "*.xlsx")], initialfile="itens_por_semestre.xlsx")
+        if not caminho:
+            return
+
+        try:
+            wb = openpyxl.Workbook()
+            ws = wb.active
+            ws.title = "Itens por Semestre"
+            # headers
+            base_headers = ["Nome", "Descricao", "Tipo", "Justificativa", "Unidade de Medida", "Total Prevista"]
+            sem_headers = [f"{a}-S{b}" for a, b in sem_list]
+            headers = base_headers + sem_headers
+            ws.append(headers)
+            for cel in ws[1]:
+                cel.font = Font(bold=True)
+
+            for it in items:
+                row = [it.get("nome"), it.get("descricao"), it.get("tipo"), it.get("justificativa"), it.get("unidade_medida")] 
+                totals = 0
+                row_sem = []
+                m = sem_map.get(it["id"], {})
+                for a, b in sem_list:
+                    v = m.get((a, b), 0)
+                    row_sem.append(v)
+                    totals += (v or 0)
+                row = row + [totals] + row_sem
+                ws.append(row)
+            wb.save(caminho)
+        except Exception as e:
+            messagebox.showerror("Erro", f"Falha ao exportar: {e}", parent=self)
+            return
+
+        messagebox.showinfo("Sucesso", f"Planilha exportada: {caminho}", parent=self)
+
     def limpar_filtros(self):
         self.entry_busca.delete(0, "end")
         self.itens = self._todos_os_itens[:]
@@ -253,8 +412,8 @@ class ItensPage(CrudBase, ctk.CTkFrame):
             nid = c.fetchone()[0] if c else 1
             codigo_interno = f"IT-{nid:03d}"
         db.executar(
-            "INSERT INTO itens (nome, descricao, codigo_interno, tipo, justificativa, unidade_medida, status) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO itens (nome, descricao, codigo_interno, tipo, justificativa, unidade_medida, quantidade_prevista, status, processo) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 data.get("nome", "")[:200],
                 data.get("descricao", "")[:200],
@@ -262,9 +421,27 @@ class ItensPage(CrudBase, ctk.CTkFrame):
                 data.get("tipo", ""),
                 data.get("justificativa", ""),
                 data.get("unidade_medida", ""),
+                data.get("quantidade_prevista", 0),
                 "Ativo",
+                data.get("processo"),
             ),
         )
+        # try to persist per-semester quantidade
+        try:
+            cur = db.executar("SELECT last_insert_rowid()")
+            lr = cur.fetchone()
+            item_id = int(lr[0]) if lr else None
+            if item_id:
+                from datetime import datetime as _dt
+                now = _dt.now()
+                ano = now.year
+                semestre = 1 if now.month <= 6 else 2
+                db.executar(
+                    "INSERT OR REPLACE INTO item_semestre (itens_id, ano, semestre, quantidade_prevista, processo) VALUES (?, ?, ?, ?, ?)",
+                    (item_id, ano, semestre, data.get("quantidade_prevista", 0), data.get("processo")),
+                )
+        except Exception:
+            pass
         db.commitar()
 
     def _inserir_item(self, data, codigo_interno=None):
@@ -279,16 +456,29 @@ class ItensPage(CrudBase, ctk.CTkFrame):
             if not db.conexao:
                 return False
             db.executar(
-                "UPDATE itens SET nome=?, descricao=?, tipo=?, justificativa=?, unidade_medida=? WHERE id=?",
+                "UPDATE itens SET nome=?, descricao=?, tipo=?, justificativa=?, unidade_medida=?, quantidade_prevista=? WHERE id=?",
                 (
                     data.get("nome", "")[:200],
                     data.get("descricao", "")[:200],
                     data.get("tipo", ""),
                     data.get("justificativa", ""),
                     data.get("unidade_medida", ""),
+                    data.get("quantidade_prevista", 0),
                     item_id,
                 ),
             )
+            # update per-semester table for current semester
+            try:
+                from datetime import datetime as _dt
+                now = _dt.now()
+                ano = now.year
+                semestre = 1 if now.month <= 6 else 2
+                db.executar(
+                    "INSERT OR REPLACE INTO item_semestre (itens_id, ano, semestre, quantidade_prevista, processo) VALUES (?, ?, ?, ?, ?)",
+                    (item_id, ano, semestre, data.get("quantidade_prevista", 0), data.get("processo")),
+                )
+            except Exception:
+                pass
             db.commitar()
         return True
 
