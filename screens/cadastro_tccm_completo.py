@@ -343,8 +343,8 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
 
         ctk.CTkLabel(form_inner, text="Tipo de Material*",
                       font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                      text_color=COLORS["text_muted"]).grid(row=0, column=1, sticky="w", padx=(0, 6), pady=(0, 4))
-        self.entry_item_tipo = ctk.CTkComboBox(form_inner, values=["Consumivel", "Permanente"],
+                      text_color=COLORS["text_muted"]).grid(row=0, column=2, sticky="w", padx=(0, 6))
+        self.entry_item_tipo = ComboBoxComSeta(form_inner, values=["Consumivel", "Permanente"],
                                                height=38, corner_radius=6, state="readonly",
                                                fg_color=COLORS["white"], border_color=COLORS["border"],
                                                button_color=COLORS["primary"],
@@ -369,8 +369,8 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
 
         ctk.CTkLabel(row_bottom, text="Unidade de Medida*",
                       font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                      text_color=COLORS["text_muted"]).grid(row=0, column=1, sticky="w", padx=(0, 6), pady=(0, 4))
-        self.entry_item_unidade = ctk.CTkComboBox(row_bottom, values=["Unidade", "Caixa", "Litro", "Kg"],
+                      text_color=COLORS["text_muted"]).grid(row=0, column=5, sticky="w", padx=(0, 6))
+        self.entry_item_unidade = ctk.CTkComboBox(form_inner, values=["Unidade", "Caixa", "Litro", "Kg"],
                                                   height=38, corner_radius=6, state="readonly",
                                                   fg_color=COLORS["white"], border_color=COLORS["border"],
                                                   button_color=COLORS["primary"],

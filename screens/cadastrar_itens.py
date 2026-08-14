@@ -5,6 +5,7 @@ from tkinter import messagebox
 
 from config.styles import COLORS, FONTS
 from database.conexaodb import Database
+from screens.widgets import ComboBoxComSeta
 from utils import registrar_log
 
 
@@ -156,7 +157,7 @@ class CadastrarItensWindow(ctk.CTkToplevel):
             text_color=COLORS["text"],
         ).pack(anchor="w", pady=(0, 4))
 
-        combo = ctk.CTkComboBox(
+        combo = ComboBoxComSeta(
             frame, values=values, height=36,
             corner_radius=4, border_width=1,
             border_color=COLORS["border"],

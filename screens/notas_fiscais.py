@@ -59,9 +59,18 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
         # periodo field removed; selection will be done via the calendar popup
         self.entry_status = ComboBoxComSeta(
             row,
-            values=["Todos", "Aprovada", "Pendente", "Rejeitada", "Em exigência"],
+            values=["Todos", "Aprovada", "Pendente", "Rejeitada", "Em exigencia"],
             width=160,
             height=38,
+            border_width=1,
+            border_color=COLORS["primary"],
+            corner_radius=4,
+            fg_color=COLORS["white"],
+            text_color=COLORS["text"],
+            button_color=COLORS["primary"],
+            button_hover_color=COLORS["primary_hover"],
+            dropdown_fg_color=COLORS["white"],
+            dropdown_hover_color=COLORS["primary_light"],
         )
         self.entry_status.pack(side="left", padx=(0, 10))
         try:

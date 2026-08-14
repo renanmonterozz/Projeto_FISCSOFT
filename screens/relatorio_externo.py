@@ -6,7 +6,7 @@ from tkinter import messagebox
 from config.styles import COLORS, FONTS
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
-from screens.widgets import CalendarioPopup
+from screens.widgets import CalendarioPopup, ComboBoxComSeta
 
 
 
@@ -39,7 +39,7 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
 
 
         # use the same style as in Cadastrar Notas
-        self.combo_processo = ctk.CTkComboBox(
+        self.combo_processo = ComboBoxComSeta(
             col_processo, values=["Todos"], height=38, width=300,
             border_width=1, border_color=COLORS["border"], corner_radius=4,
             fg_color=COLORS["white"], text_color=COLORS["text"],

@@ -5,6 +5,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+<<<<<<< HEAD
 
 def _resolve_db_path():
     candidates = []
@@ -21,6 +22,24 @@ def _resolve_db_path():
 
 
 DB_PATH = _resolve_db_path()
+=======
+from pathlib import Path
+import sys
+
+
+def obter_caminho_banco():
+    if getattr(sys, "frozen", False):
+        # Executando pelo .exe
+        base_dir = Path(sys.executable).resolve().parent
+    else:
+        # Executando pelo Python
+        base_dir = Path(__file__).resolve().parents[1]
+
+    return base_dir / "data" / "fiscsoft.db"
+
+
+DB_PATH = obter_caminho_banco()
+>>>>>>> main
 
 
 class Database:

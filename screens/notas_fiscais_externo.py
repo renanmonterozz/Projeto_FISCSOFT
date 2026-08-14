@@ -8,6 +8,7 @@ from tkinter import filedialog, messagebox, ttk
 from datetime import datetime
 
 import customtkinter as ctk
+from screens.widgets import ComboBoxComSeta
 
 try:
     from PyPDF2 import PdfReader
@@ -91,7 +92,7 @@ class NotasFiscaisExterno(ctk.CTkFrame):
             text_color=COLORS["text_muted"],
         ).pack(anchor="w", pady=(0, 3))
 
-        self.combo_processo = ctk.CTkComboBox(
+        self.combo_processo = ComboBoxComSeta(
             col_processo, values=["Carregando..."],
             height=38, border_width=1, border_color=COLORS["border"],
             corner_radius=4, fg_color=COLORS["white"], text_color=COLORS["text"],
@@ -229,7 +230,7 @@ class NotasFiscaisExterno(ctk.CTkFrame):
 
         self.itens_tccm = []
         nomes_itens = ["Selecione um processo primeiro"]
-        self.combo_item = ctk.CTkComboBox(
+        self.combo_item = ComboBoxComSeta(
             col_item, values=nomes_itens,
             height=34, border_width=1, border_color=COLORS["border"],
             corner_radius=4, fg_color=COLORS["white"], text_color=COLORS["text"],
