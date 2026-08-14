@@ -171,6 +171,7 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
                              fg_color=COLORS["white"], text_color=COLORS["text"],
                              placeholder_text="ex: 4")
         entry.pack(fill="x")
+        entry.bind("<FocusOut>", lambda _event: self._normalizar_quantidades_semestre())
         self.entries_tccm["semestres"] = entry
 
         col_e = ctk.CTkFrame(row1, fg_color="transparent")
@@ -300,30 +301,22 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
                       font=ctk.CTkFont(size=FONTS["size_subtitle"]),
                       text_color=COLORS["text_muted"]).pack(anchor="w", pady=(4, 0))
 
-        ctk.CTkButton(
-            header, text="Exportar Planilha", height=36, corner_radius=6,
-            fg_color=COLORS["dark"], hover_color=COLORS["dark_hover"],
-            text_color="white", font=ctk.CTkFont(size=12, weight="bold"),
-            command=self._exportar_planilha,
-        ).pack(side="right", padx=(10, 0))
-
         form_card = ctk.CTkFrame(container, fg_color=COLORS["white"], corner_radius=8,
                                   border_width=1, border_color=COLORS["border"])
         form_card.pack(fill="x", padx=30, pady=(0, 15))
 
         form_inner = ctk.CTkFrame(form_card, fg_color="transparent")
         form_inner.pack(fill="x", padx=30, pady=20)
-        form_inner.grid_columnconfigure(0, weight=2)
-        form_inner.grid_columnconfigure(1, weight=2)
+
+        form_inner.grid_columnconfigure(0, weight=1)
+        form_inner.grid_columnconfigure(1, weight=1)
         form_inner.grid_columnconfigure(2, weight=1)
-        form_inner.grid_columnconfigure(3, weight=2)
+        form_inner.grid_columnconfigure(3, weight=1)
         form_inner.grid_columnconfigure(4, weight=1)
-        form_inner.grid_columnconfigure(5, weight=1)
-        form_inner.grid_columnconfigure(6, weight=0)
 
         ctk.CTkLabel(form_inner, text="Nome do Item*",
                       font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                      text_color=COLORS["text_muted"]).grid(row=0, column=0, sticky="w", padx=(0, 6))
+                      text_color=COLORS["text_muted"]).grid(row=0, column=0, sticky="w", padx=(0, 6), pady=(0, 4))
         self.entry_item_nome = ctk.CTkEntry(form_inner, height=38, corner_radius=6,
                                             border_width=1, border_color=COLORS["border"],
                                             fg_color=COLORS["white"], text_color=COLORS["text"],
@@ -332,12 +325,21 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
 
         ctk.CTkLabel(form_inner, text="Descricao",
                       font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                      text_color=COLORS["text_muted"]).grid(row=0, column=1, sticky="w", padx=(0, 6))
+                      text_color=COLORS["text_muted"]).grid(row=2, column=0, sticky="w", padx=(0, 6), pady=(12, 4))
         self.entry_item_desc = ctk.CTkEntry(form_inner, height=38, corner_radius=6,
                                             border_width=1, border_color=COLORS["border"],
                                             fg_color=COLORS["white"], text_color=COLORS["text"],
                                             placeholder_text="Descricao do item")
-        self.entry_item_desc.grid(row=1, column=1, sticky="ew", padx=(0, 6))
+        self.entry_item_desc.grid(row=3, column=0, sticky="ew", padx=(0, 6))
+
+        ctk.CTkLabel(form_inner, text="Justificativa*",
+                      font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
+                      text_color=COLORS["text_muted"]).grid(row=4, column=0, sticky="w", padx=(0, 6), pady=(12, 4))
+        self.entry_item_just = ctk.CTkEntry(form_inner, height=38, corner_radius=6,
+                                            border_width=1, border_color=COLORS["border"],
+                                            fg_color=COLORS["white"], text_color=COLORS["text"],
+                                            placeholder_text="Justificativa do item")
+        self.entry_item_just.grid(row=5, column=0, sticky="ew", padx=(0, 6))
 
         ctk.CTkLabel(form_inner, text="Tipo de Material*",
                       font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
@@ -347,42 +349,40 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
                                                fg_color=COLORS["white"], border_color=COLORS["border"],
                                                button_color=COLORS["primary"],
                                                dropdown_fg_color=COLORS["white"])
-        self.entry_item_tipo.grid(row=1, column=2, sticky="ew", padx=(0, 6))
+        self.entry_item_tipo.grid(row=1, column=1, sticky="ew", padx=(0, 6))
 
-        ctk.CTkLabel(form_inner, text="Justificativa*",
-                      font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                      text_color=COLORS["text_muted"]).grid(row=0, column=3, sticky="w", padx=(0, 6))
-        self.entry_item_just = ctk.CTkEntry(form_inner, height=38, corner_radius=6,
-                                            border_width=1, border_color=COLORS["border"],
-                                            fg_color=COLORS["white"], text_color=COLORS["text"],
-                                            placeholder_text="Justificativa do item")
-        self.entry_item_just.grid(row=1, column=3, sticky="ew", padx=(0, 6))
+        row_bottom = ctk.CTkFrame(form_inner, fg_color="transparent")
+        row_bottom.grid(row=6, column=0, columnspan=4, sticky="ew", pady=(18, 0))
+        row_bottom.grid_columnconfigure(0, weight=1)
+        row_bottom.grid_columnconfigure(1, weight=1)
+        row_bottom.grid_columnconfigure(2, weight=1)
+        row_bottom.grid_columnconfigure(3, weight=0)
 
-        ctk.CTkLabel(form_inner, text="Qtd.*",
+        ctk.CTkLabel(row_bottom, text="Qtd.*",
                       font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                      text_color=COLORS["text_muted"]).grid(row=0, column=4, sticky="w", padx=(0, 6))
-        self.entry_item_qtd = ctk.CTkEntry(form_inner, height=38, corner_radius=6,
+                      text_color=COLORS["text_muted"]).grid(row=0, column=0, sticky="w", padx=(0, 6), pady=(0, 4))
+        self.entry_item_qtd = ctk.CTkEntry(row_bottom, height=38, corner_radius=6,
                                            border_width=1, border_color=COLORS["border"],
                                            fg_color=COLORS["white"], text_color=COLORS["text"],
                                            placeholder_text="0")
-        self.entry_item_qtd.grid(row=1, column=4, sticky="ew", padx=(0, 6))
+        self.entry_item_qtd.grid(row=1, column=0, sticky="ew", padx=(0, 6))
 
-        ctk.CTkLabel(form_inner, text="Unidade de Medida*",
+        ctk.CTkLabel(row_bottom, text="Unidade de Medida*",
                       font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
                       text_color=COLORS["text_muted"]).grid(row=0, column=5, sticky="w", padx=(0, 6))
-        self.entry_item_unidade = ComboBoxComSeta(form_inner, values=["Unidade", "Caixa", "Litro", "Kg"],
+        self.entry_item_unidade = ctk.CTkComboBox(form_inner, values=["Unidade", "Caixa", "Litro", "Kg"],
                                                   height=38, corner_radius=6, state="readonly",
                                                   fg_color=COLORS["white"], border_color=COLORS["border"],
                                                   button_color=COLORS["primary"],
                                                   dropdown_fg_color=COLORS["white"])
-        self.entry_item_unidade.grid(row=1, column=5, sticky="ew", padx=(0, 6))
+        self.entry_item_unidade.grid(row=1, column=1, sticky="ew", padx=(0, 6))
 
         ctk.CTkButton(
-            form_inner, text="+ Adicionar", height=38, width=110, corner_radius=6,
+            row_bottom, text="+ Adicionar", height=38, width=110, corner_radius=6,
             fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
             text_color="white", font=ctk.CTkFont(size=12, weight="bold"),
             command=self._adicionar_item,
-        ).grid(row=1, column=6, padx=(6, 0))
+        ).grid(row=1, column=3, sticky="e", padx=(6, 0))
 
         self.itens_container = ctk.CTkFrame(container, fg_color="transparent")
         self.itens_container.pack(fill="x", padx=30, pady=(0, 20))
@@ -441,6 +441,30 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
         if widget:
             widget.pack(fill="both", expand=True)
 
+    def _obter_total_semestres(self):
+        sem_field = self.entries_tccm.get("semestres")
+        if not sem_field:
+            return 1
+        try:
+            valor = sem_field.get().strip()
+            return max(1, int(valor)) if valor else 1
+        except ValueError:
+            return 1
+
+    def _normalizar_quantidades_semestre(self):
+        semestres_total = self._obter_total_semestres()
+        for item in self.itens_lista:
+            valores = list(item.get("quantidades_semestre") or [])
+            if semestres_total > 1:
+                if len(valores) < semestres_total:
+                    valores.extend([0] * (semestres_total - len(valores)))
+                elif len(valores) > semestres_total:
+                    valores = valores[:semestres_total]
+            else:
+                valores = [int(item.get("quantidade") or 0)]
+            item["quantidades_semestre"] = valores
+            item["quantidade"] = sum(valores) if valores else int(item.get("quantidade") or 0)
+
     def _adicionar_item(self):
         nome = self.entry_item_nome.get().strip()
         desc = self.entry_item_desc.get().strip()
@@ -459,14 +483,7 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
             messagebox.showerror("Erro", "Quantidade deve ser um numero inteiro!", parent=self)
             return
 
-        # determine number of semesters from TCCM data
-        semestres_total = 1
-        sem_field = self.entries_tccm.get("semestres")
-        if sem_field:
-            try:
-                semestres_total = int(sem_field.get().strip()) if sem_field.get().strip() else 1
-            except Exception:
-                semestres_total = 1
+        semestres_total = self._obter_total_semestres()
 
         quantidades_sem = None
         if semestres_total > 1:
@@ -481,10 +498,11 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
             "justificativa": just,
             "unidade_medida": unidade or "Unidade",
         }
-        if quantidades_sem:
+        if quantidades_sem is not None:
             item_obj["quantidades_semestre"] = quantidades_sem
             item_obj["quantidade"] = sum(quantidades_sem)
         else:
+            item_obj["quantidades_semestre"] = [qtd_val]
             item_obj["quantidade"] = qtd_val
 
         self.itens_lista.append(item_obj)
@@ -520,9 +538,10 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
         hdr.grid_columnconfigure(2, weight=2)
         hdr.grid_columnconfigure(3, weight=1)
         hdr.grid_columnconfigure(4, weight=1)
-        hdr.grid_columnconfigure(5, weight=0)
+        hdr.grid_columnconfigure(5, weight=1)
+        hdr.grid_columnconfigure(6, weight=0)
 
-        for i, col in enumerate(["Nome", "Tipo de Material", "Justificativa", "Qtd.", "Unidade de Medida", ""]):
+        for i, col in enumerate(["Nome", "Tipo de Material", "Justificativa", "Qtd.", "Unidade de Medida", "Semestres", ""]):
             ctk.CTkLabel(hdr, text=col,
                           font=ctk.CTkFont(size=11, weight="bold"),
                           text_color=COLORS["text_muted"]).grid(row=0, column=i, sticky="w", padx=10)
@@ -537,7 +556,8 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
             row.grid_columnconfigure(2, weight=2)
             row.grid_columnconfigure(3, weight=1)
             row.grid_columnconfigure(4, weight=1)
-            row.grid_columnconfigure(5, weight=0)
+            row.grid_columnconfigure(5, weight=1)
+            row.grid_columnconfigure(6, weight=0)
 
             total_q = item.get("quantidade") or 0
             dados = [item["nome"], item["tipo"], item["justificativa"],
@@ -548,19 +568,30 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
                               font=ctk.CTkFont(size=11),
                               text_color=cor, anchor="w").grid(row=0, column=i, sticky="w", padx=10)
 
-            ctk.CTkButton(
-                row, text="\u2715", width=28, height=26, corner_radius=4,
-                fg_color=COLORS["danger"], hover_color=COLORS["danger_hover"],
-                text_color="white", font=ctk.CTkFont(size=11),
-                command=lambda idx=idx: self._remover_item(idx),
-            ).grid(row=0, column=5, padx=(6, 10))
-            # edit semestres (define quantities per semester)
+            sem_total = self._obter_total_semestres()
+            qtd_sem = item.get("quantidades_semestre") or [total_q]
+            if len(qtd_sem) < sem_total:
+                qtd_sem = qtd_sem + [0] * (sem_total - len(qtd_sem))
+            elif len(qtd_sem) > sem_total:
+                qtd_sem = qtd_sem[:sem_total]
+            sem_label = f"{len(qtd_sem)}x" if sem_total > 1 else "1x"
+            ctk.CTkLabel(row, text=sem_label,
+                          font=ctk.CTkFont(size=11),
+                          text_color=COLORS["text_muted"], anchor="w").grid(row=0, column=5, sticky="w", padx=10)
+
             ctk.CTkButton(
                 row, text="Semestres", width=100, height=26, corner_radius=4,
                 fg_color=COLORS["border"], hover_color=COLORS["hover"],
                 text_color=COLORS["text"], font=ctk.CTkFont(size=11),
                 command=lambda idx=idx: self._abrir_editar_semestres(idx),
             ).grid(row=0, column=5, padx=(6, 10))
+
+            ctk.CTkButton(
+                row, text="\u2715", width=28, height=26, corner_radius=4,
+                fg_color=COLORS["danger"], hover_color=COLORS["danger_hover"],
+                text_color="white", font=ctk.CTkFont(size=11),
+                command=lambda idx=idx: self._remover_item(idx),
+            ).grid(row=0, column=6, padx=(0, 10))
 
     def _exportar_planilha(self):
         """Exporta os itens (adicionados no formulario ou ja salvos no banco)
@@ -801,16 +832,9 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
         if idx < 0 or idx >= len(self.itens_lista):
             return
         item = self.itens_lista[idx]
-        sem_field = self.entries_tccm.get("semestres")
-        sem_total = 1
-        if sem_field:
-            try:
-                sem_total = int(sem_field.get().strip()) if sem_field.get().strip() else 1
-            except Exception:
-                sem_total = 1
+        sem_total = self._obter_total_semestres()
 
         existing = item.get("quantidades_semestre") or [0] * sem_total
-        # adjust length
         if len(existing) < sem_total:
             existing = existing + [0] * (sem_total - len(existing))
         elif len(existing) > sem_total:
