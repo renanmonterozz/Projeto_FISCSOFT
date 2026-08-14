@@ -4,7 +4,22 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "fiscsoft.db")
+from pathlib import Path
+import sys
+
+
+def obter_caminho_banco():
+    if getattr(sys, "frozen", False):
+        # Executando pelo .exe
+        base_dir = Path(sys.executable).resolve().parent
+    else:
+        # Executando pelo Python
+        base_dir = Path(__file__).resolve().parents[1]
+
+    return base_dir / "data" / "fiscsoft.db"
+
+
+DB_PATH = obter_caminho_banco()
 
 
 class Database:
