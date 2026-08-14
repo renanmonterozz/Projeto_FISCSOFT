@@ -78,7 +78,7 @@ class CadastrarItensWindow(ctk.CTkToplevel):
         qtd_frame.grid_columnconfigure(0, weight=1)
         qtd_frame.grid(row=0, column=1, padx=(0, 15), sticky="ew")
 
-        ctk.CTkLabel(qtd_frame, text="Qtd. Prevista (por semestre)*", font=ctk.CTkFont(size=12), text_color=COLORS["text"]).pack(anchor="w", pady=(0, 4))
+        ctk.CTkLabel(qtd_frame, text="Qtd. Prevista para o TCCM*", font=ctk.CTkFont(size=12), text_color=COLORS["text"]).pack(anchor="w", pady=(0, 4))
         self.entry_qtd = ctk.CTkEntry(qtd_frame, height=36, corner_radius=4, border_width=1, border_color=COLORS["border"], fg_color=COLORS["white"], text_color=COLORS["text"]) 
         self.entry_qtd.pack(fill="x", side="left", expand=True)
 
