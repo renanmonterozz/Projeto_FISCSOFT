@@ -1,10 +1,26 @@
 import sqlite3
 import os
+import sys
 import logging
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "fiscsoft.db")
+
+def _resolve_db_path():
+    candidates = []
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        candidates.append(os.path.join(sys._MEIPASS, "data", "fiscsoft.db"))
+        candidates.append(os.path.join(os.path.dirname(os.path.abspath(sys.executable)), "data", "fiscsoft.db"))
+    candidates.append(os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "fiscsoft.db"))
+
+    for candidate in candidates:
+        parent = os.path.dirname(candidate)
+        if parent and os.path.isdir(parent):
+            return candidate
+    return candidates[0]
+
+
+DB_PATH = _resolve_db_path()
 
 
 class Database:

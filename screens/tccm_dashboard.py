@@ -752,6 +752,7 @@ class TccmDetalhesPage(CrudBase, ctk.CTkFrame):
         self.on_voltar = on_voltar
         self.usuario_logado = usuario_logado
         self.perfil = perfil
+        self.is_post_login = True
 
         self.tccm_data = None
         self._carregar_dados()
@@ -972,6 +973,7 @@ class TccmDashboardPage(CrudBase, ctk.CTkFrame):
         self.configure(fg_color=COLORS["bg"])
         self.usuario_logado = usuario_logado
         self.perfil = perfil
+        self.is_post_login = True
         self.pode_criar_tccm = pode_acao(perfil, "criar_tccm")
 
         self.tccms_todos = []

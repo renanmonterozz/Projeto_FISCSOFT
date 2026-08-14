@@ -17,11 +17,11 @@ class CrudBase:
         if not getattr(self, "is_post_login", False):
             return None
 
-        processos = self._notas_pendentes(processo_tccm)
-        if not processos:
+        pendentes = self._notas_pendentes(processo_tccm)
+        if not pendentes:
             return None
 
-        texto = "Voce tem uma nova nota fiscal em " + ", ".join(processos)
+        texto = self._texto_alerta_notas(pendentes)
 
         btn = ctk.CTkButton(
             header, text="\U0001f514  Nova nota fiscal",
@@ -60,22 +60,36 @@ class CrudBase:
         return btn
 
     def _notas_pendentes(self, processo_tccm=None):
+        """Retorna lista de (processo, quantidade) de notas fiscais pendentes de conferencia."""
         try:
             with Database() as db:
                 if not db.conexao:
                     return []
                 if processo_tccm:
-                    sql = """SELECT DISTINCT processo FROM "nota fiscal"
-                             WHERE processo = ? AND status_nota NOT IN ('Aprovada', 'Rejeitada')"""
+                    sql = """SELECT processo, COUNT(*) FROM "nota fiscal"
+                             WHERE processo = ? AND status_nota NOT IN ('Aprovada', 'Rejeitada')
+                             GROUP BY processo"""
                     params = (processo_tccm,)
                 else:
-                    sql = """SELECT DISTINCT processo FROM "nota fiscal"
-                             WHERE status_nota NOT IN ('Aprovada', 'Rejeitada')"""
+                    sql = """SELECT processo, COUNT(*) FROM "nota fiscal"
+                             WHERE status_nota NOT IN ('Aprovada', 'Rejeitada')
+                             GROUP BY processo"""
                     params = ()
                 r = db.executar(sql, params)
-                return [row[0] for row in r.fetchall()] if r else []
+                return [(row[0], row[1]) for row in r.fetchall()] if r else []
         except Exception:
             return []
+
+    def _texto_alerta_notas(self, pendentes):
+        """Monta texto do alerta informando quantas notas foram anexadas e em qual processo."""
+        if len(pendentes) == 1:
+            processo, qtd = pendentes[0]
+            palavra = "nota fiscal" if qtd == 1 else "notas fiscais"
+            anexada = "anexada" if qtd == 1 else "anexadas"
+            return f"Voce tem {qtd} {palavra} {anexada} no processo {processo}"
+        total = sum(q for _, q in pendentes)
+        partes = "; ".join(f"{q} no processo {p}" for p, q in pendentes)
+        return f"Voce tem {total} notas fiscais anexadas: {partes}"
 
     def build_card(self, parent, **kwargs):
         return ctk.CTkFrame(
@@ -304,11 +318,11 @@ class CrudBase:
 
         # refresh alerta visibility
         try:
-            processos = self._notas_pendentes(processo_tccm)
+            pendentes = self._notas_pendentes(processo_tccm)
         except Exception:
-            processos = []
+            pendentes = []
 
-        if not processos:
+        if not pendentes:
             if hasattr(self, '_alerta_btn') and self._alerta_btn:
                 try:
                     self._alerta_btn.destroy()
@@ -316,7 +330,7 @@ class CrudBase:
                     pass
                 self._alerta_btn = None
         else:
-            texto = "Voce tem uma nova nota fiscal em " + ", ".join(processos)
+            texto = self._texto_alerta_notas(pendentes)
             if hasattr(self, '_alerta_btn') and self._alerta_btn:
                 try:
                     self._alerta_btn.configure(command=lambda: messagebox.showinfo("Notificacao", texto, parent=self))
