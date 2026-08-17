@@ -23,9 +23,69 @@ class LayoutSystem:
         return max(1, int(round(value * ratio)))
 
     @staticmethod
+    def responsive(value, *, parent=None, width=None, height=None):
+        """Retorna um valor dimensionado de acordo com a janela ativa do widget.
+
+        Quando o contêiner ainda não foi exibido, mantém o valor original para evitar
+        problemas de dimensionamento antes do primeiro draw.
+        """
+        if value is None:
+            return None
+
+        if parent is not None:
+            try:
+                w = parent.winfo_width()
+                h = parent.winfo_height()
+            except Exception:
+                w = width
+                h = height
+            if w and w > 1:
+                width = w
+            if h and h > 1:
+                height = h
+
+        if width is None and height is None:
+            return value
+
+        return LayoutSystem.scale(value, width=width, height=height)
+
+    @staticmethod
+    def normalize_padding(padding, *, parent=None):
+        if padding is None:
+            return (0, 0)
+        if not isinstance(padding, (tuple, list)):
+            return (padding, padding)
+        if len(padding) != 2:
+            return (padding[0], padding[0])
+
+        pad_x, pad_y = padding
+        return (
+            LayoutSystem.responsive(
+                pad_x,
+                parent=parent,
+                width=parent.winfo_width() if hasattr(parent, "winfo_width") else None,
+            ),
+            LayoutSystem.responsive(
+                pad_y,
+                parent=parent,
+                height=parent.winfo_height() if hasattr(parent, "winfo_height") else None,
+            ),
+        )
+
+    @staticmethod
     def page_container(parent, *, padding_x=None, padding_y=None, bg_color=None):
         padding_x = LAYOUT["page_padding_x"] if padding_x is None else padding_x
         padding_y = LAYOUT["page_padding_y"] if padding_y is None else padding_y
+        padding_x = LayoutSystem.responsive(
+            padding_x,
+            parent=parent,
+            width=parent.winfo_width() if hasattr(parent, "winfo_width") else None,
+        )
+        padding_y = LayoutSystem.responsive(
+            padding_y,
+            parent=parent,
+            height=parent.winfo_height() if hasattr(parent, "winfo_height") else None,
+        )
         return ctk.CTkFrame(
             parent,
             fg_color=bg_color or COLORS["bg"],
@@ -45,12 +105,21 @@ class LayoutSystem:
             "border_color": border_color or COLORS["border"],
         }
         if width is not None:
-            frame_kwargs["width"] = width
+            frame_kwargs["width"] = LayoutSystem.responsive(
+                value=width,
+                parent=parent,
+                width=parent.winfo_width() if hasattr(parent, "winfo_width") else None,
+            )
         if height is not None:
-            frame_kwargs["height"] = height
+            frame_kwargs["height"] = LayoutSystem.responsive(
+                value=height,
+                parent=parent,
+                height=parent.winfo_height() if hasattr(parent, "winfo_height") else None,
+            )
 
         panel = ctk.CTkFrame(parent, **frame_kwargs)
-        panel.pack(fill=fill, expand=expand, padx=padding[0], pady=padding[1])
+        pad_x, pad_y = LayoutSystem.normalize_padding(padding, parent=parent)
+        panel.pack(fill=fill, expand=expand, padx=pad_x, pady=pad_y)
         return panel
 
     @staticmethod
@@ -105,7 +174,13 @@ class LayoutSystem:
         frame.grid(row=0, column=column, padx=(0, 15), sticky="ew")
         frame.grid_columnconfigure(0, weight=weight)
         if width is not None:
-            frame.configure(width=width)
+            frame.configure(
+                width=LayoutSystem.responsive(
+                    value=width,
+                    parent=parent,
+                    width=parent.winfo_width() if hasattr(parent, "winfo_width") else None,
+                )
+            )
 
         label = ctk.CTkLabel(
             frame,
@@ -117,7 +192,11 @@ class LayoutSystem:
 
         entry = ctk.CTkEntry(
             frame,
-            height=height or LAYOUT["field_height"],
+            height=LayoutSystem.responsive(
+                value=height or LAYOUT["field_height"],
+                parent=parent,
+                height=parent.winfo_height() if hasattr(parent, "winfo_height") else None,
+            ),
             corner_radius=LAYOUT["field_radius"],
             border_width=1,
             border_color=COLORS["border"],
@@ -138,7 +217,13 @@ class LayoutSystem:
         frame.grid(row=0, column=column, padx=(0, 15), sticky="ew")
         frame.grid_columnconfigure(0, weight=weight)
         if width is not None:
-            frame.configure(width=width)
+            frame.configure(
+                width=LayoutSystem.responsive(
+                    value=width,
+                    parent=parent,
+                    width=parent.winfo_width() if hasattr(parent, "winfo_width") else None,
+                )
+            )
 
         ctk.CTkLabel(
             frame,
@@ -148,7 +233,11 @@ class LayoutSystem:
         ).pack(anchor="w", pady=(0, 4))
 
         combo_kwargs = {
-            "height": LAYOUT["field_height"],
+            "height": LayoutSystem.responsive(
+                value=LAYOUT["field_height"],
+                parent=parent,
+                height=parent.winfo_height() if hasattr(parent, "winfo_height") else None,
+            ),
             "corner_radius": LAYOUT["field_radius"],
             "border_width": 1,
             "border_color": COLORS["border"],
@@ -169,6 +258,61 @@ class LayoutSystem:
         return combo
 
     @staticmethod
+    def button(parent, text, *, command=None, width=None, height=None, fg_color=None, hover_color=None,
+               text_color=None, border_width=0, border_color=None, corner_radius=None, font_size=None,
+               font_weight=None, compound=None, image=None):
+        button_kwargs = {
+            "text": text,
+            "command": command,
+            "fg_color": fg_color or COLORS["primary"],
+            "hover_color": hover_color or COLORS["primary_hover"],
+            "text_color": text_color or COLORS["white"],
+            "border_width": border_width,
+            "border_color": border_color or COLORS["border"],
+            "corner_radius": corner_radius if corner_radius is not None else LAYOUT["field_radius"],
+            "font": ctk.CTkFont(size=font_size or FONTS["size_body"], weight=font_weight or "normal"),
+            "compound": compound,
+            "image": image,
+        }
+        if width is not None:
+            button_kwargs["width"] = LayoutSystem.responsive(
+                value=width,
+                parent=parent,
+                width=parent.winfo_width() if hasattr(parent, "winfo_width") else None,
+            )
+        if height is not None:
+            button_kwargs["height"] = LayoutSystem.responsive(
+                value=height,
+                parent=parent,
+                height=parent.winfo_height() if hasattr(parent, "winfo_height") else None,
+            )
+        else:
+            button_kwargs["height"] = LayoutSystem.responsive(
+                value=LAYOUT["field_height"],
+                parent=parent,
+                height=parent.winfo_height() if hasattr(parent, "winfo_height") else None,
+            )
+
+        return ctk.CTkButton(parent, **button_kwargs)
+
+    @staticmethod
+    def label(parent, text, *, font_size=None, weight="normal", text_color=None, anchor="w", justify=None,
+              fg_color=None, bg_color=None):
+        label_kwargs = {
+            "text": text,
+            "font": ctk.CTkFont(size=font_size or FONTS["size_body"], weight=weight),
+            "text_color": text_color or COLORS["text"],
+            "anchor": anchor,
+            "justify": justify,
+        }
+        if fg_color is not None:
+            label_kwargs["fg_color"] = fg_color
+        if bg_color is not None:
+            label_kwargs["bg_color"] = bg_color
+        label = ctk.CTkLabel(parent, **label_kwargs)
+        return label
+
+    @staticmethod
     def table_shell(parent, *, header_title=None, columns=None, weights=None, height=None, padding=(0, 0),
                     with_actions=True, border_color=None):
         table = ctk.CTkFrame(
@@ -177,7 +321,15 @@ class LayoutSystem:
             corner_radius=LAYOUT["panel_radius"],
             border_width=1,
             border_color=border_color or COLORS["border"],
-            height=height,
+            height=(
+                LayoutSystem.responsive(
+                    value=height,
+                    parent=parent,
+                    height=parent.winfo_height() if hasattr(parent, "winfo_height") else None,
+                )
+                if height is not None
+                else None
+            ),
         )
         table.pack(fill="both", expand=True, padx=padding[0], pady=padding[1])
         table.pack_propagate(False)
