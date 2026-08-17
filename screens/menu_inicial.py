@@ -30,8 +30,6 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
         self.usuario_logado = usuario_logado
         self.perfil = perfil
         self.processo_tccm = processo_tccm
-        # mark this page as the post-login main screen so alerts show here
-        self.is_post_login = True
 
         if processo_tccm:
             titulo = f"TCCM - {processo_tccm}"

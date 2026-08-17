@@ -1,25 +1,26 @@
 import sqlite3
 import os
+import sys
 import logging
 
 logger = logging.getLogger(__name__)
 
-from pathlib import Path
-import sys
+
+def _resolve_db_path():
+    candidates = []
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        candidates.append(os.path.join(sys._MEIPASS, "data", "fiscsoft.db"))
+        candidates.append(os.path.join(os.path.dirname(os.path.abspath(sys.executable)), "data", "fiscsoft.db"))
+    candidates.append(os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "fiscsoft.db"))
+
+    for candidate in candidates:
+        parent = os.path.dirname(candidate)
+        if parent and os.path.isdir(parent):
+            return candidate
+    return candidates[0]
 
 
-def obter_caminho_banco():
-    if getattr(sys, "frozen", False):
-        # Executando pelo .exe
-        base_dir = Path(sys.executable).resolve().parent
-    else:
-        # Executando pelo Python
-        base_dir = Path(__file__).resolve().parents[1]
-
-    return base_dir / "data" / "fiscsoft.db"
-
-
-DB_PATH = obter_caminho_banco()
+DB_PATH = _resolve_db_path()
 
 
 class Database:
@@ -317,10 +318,6 @@ def criar_schema():
         ('PROC-2026-002', 'SEI-002/2026', '2026-02-01', 4, 3000.00, 4000.00, '2026-12-31', 6, 8000.00, 'pendente', 0, 2),
         ('PROC-2026-003', 'SEI-003/2026', '2026-03-10', 2, 800.00, 1000.00, '2026-12-31', 6, 2500.00, 'pendente', 0, 3),
         ('PROC-2026-004', 'SEI-004/2026', '2026-01-20', 4, 2200.00, 3000.00, '2026-12-31', 6, 6500.00, 'pendente', 0, 4);
-
-    INSERT OR IGNORE INTO itens (id, nome, descricao, codigo_interno, categoria, tipo, justificativa, unidade_medida, semestre, quantidade_prevista, status, notas_fiscais, criado_em)
-    VALUES
-        
 
     INSERT OR IGNORE INTO locais (id, cep, endereco, instituicao, responsavel, telefone)
     VALUES

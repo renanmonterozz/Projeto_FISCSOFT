@@ -1,7 +1,24 @@
 import os
+import sys
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+def _resolve_base_dir():
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        meipass = os.path.normpath(sys._MEIPASS)
+        if os.path.isdir(os.path.join(meipass, "assets", "imagens")):
+            return meipass
+        exe_dir = os.path.dirname(os.path.abspath(sys.executable))
+        if os.path.isdir(os.path.join(exe_dir, "assets", "imagens")):
+            return exe_dir
+    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+BASE_DIR = _resolve_base_dir()
 ASSETS_DIR = os.path.join(BASE_DIR, "assets", "imagens")
+if not os.path.isdir(ASSETS_DIR):
+    fallback = os.path.join(os.path.dirname(BASE_DIR), "assets", "imagens")
+    if os.path.isdir(fallback):
+        ASSETS_DIR = fallback
 
 _LIGHT_COLORS = {
     "primary": "#16A34A",

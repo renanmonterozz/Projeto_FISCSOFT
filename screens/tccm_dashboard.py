@@ -752,6 +752,7 @@ class TccmDetalhesPage(CrudBase, ctk.CTkFrame):
         self.on_voltar = on_voltar
         self.usuario_logado = usuario_logado
         self.perfil = perfil
+        self.is_post_login = True
 
         self.tccm_data = None
         self._carregar_dados()
@@ -972,6 +973,7 @@ class TccmDashboardPage(CrudBase, ctk.CTkFrame):
         self.configure(fg_color=COLORS["bg"])
         self.usuario_logado = usuario_logado
         self.perfil = perfil
+        self.is_post_login = True
         self.pode_criar_tccm = pode_acao(perfil, "criar_tccm")
 
         self.tccms_todos = []
@@ -991,7 +993,7 @@ class TccmDashboardPage(CrudBase, ctk.CTkFrame):
                       font=ctk.CTkFont(size=FONTS["size_title"], weight="bold"),
                       text_color=COLORS["text"]).pack(side="left")
 
-        ctk.CTkLabel(left, text="  Visao consolidada dos Termos de Coordenacao e Controle de Material",
+        ctk.CTkLabel(left, text="  Visão consolidada do controle de Termo de Cooperação e Controle de Multas",
                       font=ctk.CTkFont(size=FONTS["size_subtitle"]),
                       text_color=COLORS["text_muted"]).pack(side="left", padx=(8, 0))
 
