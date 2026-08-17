@@ -8,7 +8,7 @@ from config.styles import COLORS, FONTS
 class VisualizarUsuarioWindow(ctk.CTkToplevel):
     def __init__(self, master, usuario):
         super().__init__(master)
-        colors = COLORS()
+        colors = COLORS
         self.usuario = usuario
 
         self.title("Visualizacao de Agente IBAMA")
@@ -53,7 +53,7 @@ class VisualizarUsuarioWindow(ctk.CTkToplevel):
         self._build_botao_editar(content)
 
     def _build_section_label(self, parent, text):
-        colors = COLORS()
+        colors = COLORS
         ctk.CTkLabel(
             parent, text=text,
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
@@ -61,7 +61,7 @@ class VisualizarUsuarioWindow(ctk.CTkToplevel):
         ).pack(anchor="w", padx=20, pady=(15, 5))
 
     def _build_field_row(self, parent, fields, pad_top=0):
-        colors = COLORS()
+        colors = COLORS
         row = ctk.CTkFrame(parent, fg_color="transparent")
         row.pack(fill="x", padx=20, pady=(pad_top, 0))
 
@@ -107,7 +107,7 @@ class VisualizarUsuarioWindow(ctk.CTkToplevel):
         ])
 
     def _build_botao_editar(self, parent):
-        colors = COLORS()
+        colors = COLORS
         btn_frame = ctk.CTkFrame(parent, fg_color="transparent")
         btn_frame.pack(fill="x", padx=20, pady=(20, 20))
 

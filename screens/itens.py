@@ -157,22 +157,6 @@ class ItensPage(CrudBase, ctk.CTkFrame):
 
             if self.processo_tccm:
                 try:
-<<<<<<< HEAD
-                    r = db.executar(
-                        "SELECT DISTINCT i.id, i.nome, i.descricao, i.tipo, i.justificativa, i.unidade_medida, "
-                        "i.quantidade_prevista, "
-                        "COALESCE((SELECT SUM(p.quantidade) FROM produtos p "
-                        "INNER JOIN \"nota fiscal\" nf ON nf.nota_fiscal = p.\"nota fiscal_nota_fiscal\" "
-                        "AND nf.\"agente ibama_matricula\" = p.\"nota fiscal_agente ibama_matricula\" "
-                        "WHERE p.itens_id = i.id AND nf.status_nota = 'Aprovada'), 0) "
-                        "FROM itens i "
-                        "WHERE i.processo = ? "
-                        "   OR i.notas_fiscais IN ("
-                        "  SELECT nf.nota_fiscal FROM \"nota fiscal\" nf WHERE nf.processo = ?"
-                        ") ORDER BY i.id",
-                        (self.processo_tccm, self.processo_tccm)
-                    )
-=======
                     if semestre_range:
                         sql = (
                             "SELECT DISTINCT i.id, i.nome, i.descricao, i.tipo, i.justificativa, i.unidade_medida, "
@@ -197,7 +181,6 @@ class ItensPage(CrudBase, ctk.CTkFrame):
                         )
                         params = (self.processo_tccm, self.processo_tccm)
                     r = db.executar(sql, params)
->>>>>>> main
                 except Exception:
                     # fallback simple query
                     r = db.executar(
@@ -211,16 +194,6 @@ class ItensPage(CrudBase, ctk.CTkFrame):
                     )
             else:
                 try:
-<<<<<<< HEAD
-                    r = db.executar(
-                        "SELECT id, nome, descricao, tipo, justificativa, unidade_medida, quantidade_prevista, "
-                        "COALESCE((SELECT SUM(p.quantidade) FROM produtos p "
-                        "INNER JOIN \"nota fiscal\" nf ON nf.nota_fiscal = p.\"nota fiscal_nota_fiscal\" "
-                        "AND nf.\"agente ibama_matricula\" = p.\"nota fiscal_agente ibama_matricula\" "
-                        "WHERE p.itens_id = itens.id AND nf.status_nota = 'Aprovada'), 0) "
-                        "FROM itens ORDER BY id"
-                    )
-=======
                     if semestre_range:
                         sql = (
                             "SELECT id, nome, descricao, tipo, justificativa, unidade_medida, "
@@ -237,7 +210,6 @@ class ItensPage(CrudBase, ctk.CTkFrame):
                             " FROM itens ORDER BY id"
                         )
                         r = db.executar(sql)
->>>>>>> main
                 except Exception:
                     r = db.executar(
                         "SELECT id, nome, descricao, categoria, NULL, '', 0, 0 "

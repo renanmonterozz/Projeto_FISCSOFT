@@ -88,7 +88,7 @@ _DARK_COLORS = {
 
 _current_theme = "light"
 
-def COLORS() -> dict:
+def _get_colors() -> dict:
     """Retorna as cores do tema atual."""
     return _DARK_COLORS if _current_theme == "dark" else _LIGHT_COLORS
 
@@ -103,7 +103,7 @@ def toggle_theme() -> str:
     return _current_theme
 
 # Alias para compatibilidade - agora é uma referência dinâmica
-COLORS = COLORS()
+COLORS = _get_colors()
 
 FONTS = {
     "family": "Inter",

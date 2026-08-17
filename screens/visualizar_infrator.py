@@ -8,7 +8,7 @@ from config.styles import COLORS, FONTS
 class VisualizarInfratorWindow(ctk.CTkToplevel):
     def __init__(self, master, infrator):
         super().__init__(master)
-        colors = COLORS()
+        colors = COLORS
         self.infrator = infrator
 
         self.title("Visualizacao de Infrator")
@@ -53,7 +53,7 @@ class VisualizarInfratorWindow(ctk.CTkToplevel):
         self._build_botao_editar(content)
 
     def _build_section_label(self, parent, text):
-        colors = COLORS()
+        colors = COLORS
         ctk.CTkLabel(
             parent, text=text,
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
@@ -61,7 +61,7 @@ class VisualizarInfratorWindow(ctk.CTkToplevel):
         ).pack(anchor="w", padx=20, pady=(15, 5))
 
     def _build_field_row(self, parent, fields, pad_top=0):
-        colors = COLORS()
+        colors = COLORS
         row = ctk.CTkFrame(parent, fg_color="transparent")
         row.pack(fill="x", padx=20, pady=(pad_top, 0))
 
@@ -100,7 +100,7 @@ class VisualizarInfratorWindow(ctk.CTkToplevel):
         ], pad_top=10)
 
     def _build_botao_editar(self, parent):
-        colors = COLORS()
+        colors = COLORS
         btn_frame = ctk.CTkFrame(parent, fg_color="transparent")
         btn_frame.pack(fill="x", padx=20, pady=(20, 20))
 

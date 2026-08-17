@@ -128,6 +128,7 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
         self.atualizar_cards()
 
     def build_notas_table(self):
+        colors = COLORS
         self.colunas_place = [
             (0.00, 0.12, "w"),      # Numero da NF
             (0.14, 0.26, "w"),      # Chave de acesso (44 chars)
@@ -260,7 +261,7 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
                 return []
 
     def _render_rows(self):
-        colors = COLORS()
+        colors = COLORS
         for widget in self.table_body.winfo_children():
             widget.destroy()
 

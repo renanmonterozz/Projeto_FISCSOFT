@@ -15,7 +15,7 @@ class CadastrarInfratorWindow(ctk.CTkToplevel):
         self.title("FISCSOFT - Cadastrar Infrator")
         self.geometry("820x700")
         self.resizable(False, False)
-        self.configure(fg_color=COLORS()["border"])
+        self.configure(fg_color=COLORS["border"])
         self.grab_set()
 
         self.build_ui()
@@ -24,7 +24,7 @@ class CadastrarInfratorWindow(ctk.CTkToplevel):
             self.preencher_campos()
 
     def build_ui(self):
-        colors = COLORS()
+        colors = COLORS
         container = ctk.CTkFrame(
             self, fg_color=colors["white"], corner_radius=4,
             border_width=1, border_color=colors["border"]
@@ -117,7 +117,7 @@ class CadastrarInfratorWindow(ctk.CTkToplevel):
         self.entry_telefone.insert(0, i.get("telefone", ""))
 
     def _criar_campo(self, parent, label, col, weight=1, show=None):
-        colors = COLORS()
+        colors = COLORS
         parent.grid_columnconfigure(col, weight=weight)
 
         frame = ctk.CTkFrame(parent, fg_color="transparent")
