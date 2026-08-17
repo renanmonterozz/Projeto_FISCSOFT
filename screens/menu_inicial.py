@@ -7,6 +7,7 @@ from datetime import datetime as _dt
 import customtkinter as ctk
 from PIL import Image
 
+from config.layout_system import LayoutSystem
 from config.styles import ASSETS_DIR, COLORS, FONTS
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
@@ -139,16 +140,17 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
             (0.92, 0.06, "center"), # Status
         ]
 
-        section = ctk.CTkFrame(
-            self, fg_color=COLORS["white"], corner_radius=4,
-            border_width=1, border_color=COLORS["border"]
+        section = LayoutSystem.panel(
+            self,
+            height=340 if self.processo_tccm else None,
+            fill="x" if self.processo_tccm else "both",
+            expand=not self.processo_tccm,
+            padding=(30, (0, 30)),
+            fg_color=COLORS["white"],
+            border_color=COLORS["border"],
         )
         if self.processo_tccm:
-            section.configure(height=340)
-            section.pack(fill="x", padx=30, pady=(0, 30))
             section.pack_propagate(False)
-        else:
-            section.pack(fill="both", expand=True, padx=30, pady=(0, 30))
 
         header_frame = ctk.CTkFrame(section, fg_color="transparent")
         header_frame.pack(fill="x", padx=20, pady=(15, 10))

@@ -4,6 +4,7 @@ from tkinter import messagebox
 
 import customtkinter as ctk
 
+from config.layout_system import LayoutSystem
 from config.styles import COLORS, FONTS
 from database.conexaodb import Database
 
@@ -109,11 +110,13 @@ class CrudBase:
         ).pack(anchor="w", pady=(4, 0))
 
     def build_filter_container(self):
-        container = ctk.CTkFrame(
-            self, fg_color=COLORS["white"], corner_radius=4,
-            border_width=1, border_color=COLORS["border"]
+        container = LayoutSystem.panel(
+            self,
+            fill="x",
+            padding=(30, (0, 20)),
+            fg_color=COLORS["white"],
+            border_color=COLORS["border"],
         )
-        container.pack(fill="x", padx=30, pady=(0, 20))
         inner = ctk.CTkFrame(container, fg_color="transparent")
         inner.pack(fill="x", padx=20, pady=14)
         return inner

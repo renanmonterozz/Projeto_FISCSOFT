@@ -48,3 +48,18 @@ FONTS = {
     "size_body": 13,
     "size_small": 12,
 }
+
+LAYOUT = {
+    "base_width": 1920,
+    "base_height": 1080,
+    "page_padding_x": 30,
+    "page_padding_y": 20,
+    "panel_radius": 4,
+    "panel_border": 1,
+    "field_height": 38,
+    "field_radius": 4,
+    "table_header_height": 44,
+    "row_height": 52,
+    "section_spacing": 14,
+    "card_padding": 20,
+}

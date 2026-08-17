@@ -5,6 +5,7 @@ from tkinter import messagebox
 from PIL import Image
 import os
 
+from config.layout_system import LayoutSystem
 from config.styles import COLORS, FONTS, ASSETS_DIR
 from config.permissoes import normalizar_perfil
 from database.conexaodb import Database
@@ -36,11 +37,14 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
             self.preencher_campos()
 
     def build_ui(self):
-        container = ctk.CTkFrame(
-            self, fg_color=COLORS["white"], corner_radius=4,
-            border_width=1, border_color=COLORS["border"]
+        container = LayoutSystem.panel(
+            self,
+            fill="both",
+            expand=True,
+            padding=(20, 20),
+            fg_color=COLORS["white"],
+            border_color=COLORS["border"],
         )
-        container.pack(fill="both", expand=True, padx=20, pady=20)
 
         header = ctk.CTkFrame(container, fg_color="transparent")
         header.pack(fill="x", padx=25, pady=(20, 5))
@@ -59,11 +63,14 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
             text_color=COLORS["text"],
         ).pack(anchor="w", pady=(2, 0))
 
-        form = ctk.CTkFrame(
-            container, fg_color=COLORS["white"], corner_radius=4,
-            border_width=1, border_color=COLORS["border"]
+        form = LayoutSystem.panel(
+            container,
+            fill="both",
+            expand=True,
+            padding=(25, (15, 30)),
+            fg_color=COLORS["white"],
+            border_color=COLORS["border"],
         )
-        form.pack(fill="both", expand=True, padx=25, pady=(15, 30))
 
         ctk.CTkLabel(
             form, text="Dados Pessoais",
@@ -71,15 +78,13 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
             text_color=COLORS["text"],
         ).pack(anchor="w", padx=20, pady=(18, 8))
 
-        row1 = ctk.CTkFrame(form, fg_color="transparent")
-        row1.pack(fill="x", padx=20, pady=(0, 10))
+        row1 = LayoutSystem.form_row(form, padding_x=20, padding_y=(0, 10), columns=3)
 
         self.entry_nome = self._criar_campo(row1, "Nome Completo*", 0, weight=3)
         self.entry_cpf = self._criar_campo(row1, "CPF*", 1, weight=1)
         self.entry_email = self._criar_campo(row1, "E-mail*", 2, weight=2)
 
-        row2 = ctk.CTkFrame(form, fg_color="transparent")
-        row2.pack(fill="x", padx=20, pady=(0, 15))
+        row2 = LayoutSystem.form_row(form, padding_x=20, padding_y=(0, 15), columns=2)
 
         self.entry_telefone = self._criar_campo(row2, "Telefone", 0, weight=2)
         self.entry_matricula = self._criar_campo(row2, "Matricula*", 1, weight=2)
@@ -90,15 +95,13 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
             text_color=COLORS["text"],
         ).pack(anchor="w", padx=20, pady=(5, 8))
 
-        row3 = ctk.CTkFrame(form, fg_color="transparent")
-        row3.pack(fill="x", padx=20, pady=(0, 10))
+        row3 = LayoutSystem.form_row(form, padding_x=20, padding_y=(0, 10), columns=3)
 
         self.entry_login = self._criar_campo(row3, "Login*", 0, weight=1)
         self.entry_senha = self._criar_campo(row3, "Senha*", 1, weight=1, show="*")
         self.entry_confirmar = self._criar_campo(row3, "Confirmar Senha*", 2, weight=1, show="*")
 
-        row4 = ctk.CTkFrame(form, fg_color="transparent")
-        row4.pack(fill="x", padx=20, pady=(0, 15))
+        row4 = LayoutSystem.form_row(form, padding_x=20, padding_y=(0, 15), columns=1)
 
         self.combo_perfil = self._criar_combobox(row4, "Perfil*", 0,
                                                  ["Administrador", "Agente", "Operador"],
@@ -152,51 +155,30 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
         self.combo_perfil.set(PERFIL_DISPLAY.get(perfil_atual, "Operador"))
 
     def _criar_campo(self, parent, label, col, weight=1, show=None):
-        parent.grid_columnconfigure(col, weight=weight)
-
-        frame = ctk.CTkFrame(parent, fg_color="transparent")
-        frame.grid(row=0, column=col, padx=(0, 15), sticky="ew")
-
-        ctk.CTkLabel(
-            frame, text=label,
-            font=ctk.CTkFont(size=12),
-            text_color=COLORS["text"],
-        ).pack(anchor="w", pady=(0, 4))
-
-        entry = ctk.CTkEntry(
-            frame, height=36, corner_radius=4,
-            border_width=1, border_color=COLORS["border"],
-            fg_color=COLORS["white"], text_color=COLORS["text"],
-            placeholder_text_color=COLORS["text_muted"],
+        label_text = label.rstrip("*")
+        return LayoutSystem.field(
+            parent,
+            label_text,
+            column=col,
+            weight=weight,
             show=show,
+            required=label.endswith("*"),
         )
-        entry.pack(fill="x")
-        return entry
 
     def _criar_combobox(self, parent, label, col, values, default=None):
-        parent.grid_columnconfigure(col, weight=1)
-
-        frame = ctk.CTkFrame(parent, fg_color="transparent")
-        frame.grid(row=0, column=col, padx=(0, 15), sticky="ew")
-
-        ctk.CTkLabel(
-            frame, text=label,
-            font=ctk.CTkFont(size=12),
-            text_color=COLORS["text"],
-        ).pack(anchor="w", pady=(0, 4))
-
-        combo = ComboBoxComSeta(
-            frame, values=values, height=36,
-            corner_radius=4, border_width=1,
-            border_color=COLORS["border"],
-            fg_color=COLORS["white"], button_color=COLORS["border"],
+        return LayoutSystem.combobox_field(
+            parent,
+            label.rstrip("*"),
+            values,
+            column=col,
+            weight=1,
+            default=default if default is not None else values[0],
+            border_width=1,
+            button_color=COLORS["border"],
             button_hover_color=COLORS["hover"],
             dropdown_fg_color=COLORS["white"],
             text_color=COLORS["text"],
         )
-        combo.pack(fill="x")
-        combo.set(default if default is not None else values[0])
-        return combo
 
     def salvar(self):
         nome = self.entry_nome.get()
