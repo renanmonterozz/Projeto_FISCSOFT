@@ -1,5 +1,3 @@
-import _path  # noqa: F401
-
 from tkinter import messagebox
 
 import customtkinter as ctk
