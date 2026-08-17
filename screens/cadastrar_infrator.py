@@ -3,7 +3,7 @@ import _path  # noqa: F401
 import customtkinter as ctk
 from tkinter import messagebox
 
-from config.styles import get_colors, FONTS
+from config.styles import COLORS, FONTS
 from database.conexaodb import Database
 from utils import hash_password, registrar_log
 
@@ -15,7 +15,7 @@ class CadastrarInfratorWindow(ctk.CTkToplevel):
         self.title("FISCSOFT - Cadastrar Infrator")
         self.geometry("820x700")
         self.resizable(False, False)
-        self.configure(fg_color=get_colors()["border"])
+        self.configure(fg_color=COLORS()["border"])
         self.grab_set()
 
         self.build_ui()
@@ -24,7 +24,7 @@ class CadastrarInfratorWindow(ctk.CTkToplevel):
             self.preencher_campos()
 
     def build_ui(self):
-        colors = get_colors()
+        colors = COLORS()
         container = ctk.CTkFrame(
             self, fg_color=colors["white"], corner_radius=4,
             border_width=1, border_color=colors["border"]
@@ -117,7 +117,7 @@ class CadastrarInfratorWindow(ctk.CTkToplevel):
         self.entry_telefone.insert(0, i.get("telefone", ""))
 
     def _criar_campo(self, parent, label, col, weight=1, show=None):
-        colors = get_colors()
+        colors = COLORS()
         parent.grid_columnconfigure(col, weight=weight)
 
         frame = ctk.CTkFrame(parent, fg_color="transparent")

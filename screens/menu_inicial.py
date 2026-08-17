@@ -260,7 +260,7 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
                 return []
 
     def _render_rows(self):
-        colors = get_colors()
+        colors = COLORS()
         for widget in self.table_body.winfo_children():
             widget.destroy()
 
