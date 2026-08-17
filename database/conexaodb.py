@@ -319,10 +319,6 @@ def criar_schema():
         ('PROC-2026-003', 'SEI-003/2026', '2026-03-10', 2, 800.00, 1000.00, '2026-12-31', 6, 2500.00, 'pendente', 0, 3),
         ('PROC-2026-004', 'SEI-004/2026', '2026-01-20', 4, 2200.00, 3000.00, '2026-12-31', 6, 6500.00, 'pendente', 0, 4);
 
-    INSERT OR IGNORE INTO itens (id, nome, descricao, codigo_interno, categoria, tipo, justificativa, unidade_medida, semestre, quantidade_prevista, status, notas_fiscais, criado_em)
-    VALUES
-        
-
     INSERT OR IGNORE INTO locais (id, cep, endereco, instituicao, responsavel, telefone)
     VALUES
         (1, '70040-010', 'Esplanada dos Ministerios, Bloco D, Brasilia-DF', 'IBAMA - Sede', 'Joao Silva', '61-36747000'),

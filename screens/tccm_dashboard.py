@@ -993,7 +993,7 @@ class TccmDashboardPage(CrudBase, ctk.CTkFrame):
                       font=ctk.CTkFont(size=FONTS["size_title"], weight="bold"),
                       text_color=COLORS["text"]).pack(side="left")
 
-        ctk.CTkLabel(left, text="  Visao consolidada dos Termos de Coordenacao e Controle de Material",
+        ctk.CTkLabel(left, text="  Visão consolidada do controle de Termo de Cooperação e Controle de Multas",
                       font=ctk.CTkFont(size=FONTS["size_subtitle"]),
                       text_color=COLORS["text_muted"]).pack(side="left", padx=(8, 0))
 
