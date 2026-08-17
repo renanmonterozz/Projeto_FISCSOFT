@@ -2,12 +2,13 @@ import _path  # noqa: F401
 
 import customtkinter as ctk
 
-from config.styles import COLORS, FONTS
+from config.styles import get_colors, FONTS
 
 
 class VisualizarInfratorWindow(ctk.CTkToplevel):
     def __init__(self, master, infrator):
         super().__init__(master)
+        colors = get_colors()
         self.infrator = infrator
 
         self.title("Visualizacao de Infrator")
@@ -16,13 +17,13 @@ class VisualizarInfratorWindow(ctk.CTkToplevel):
             (self.winfo_screenheight() - 680) // 2
         ))
         self.resizable(False, False)
-        self.configure(fg_color=COLORS["white"])
+        self.configure(fg_color=colors["white"])
         self.transient(master)
         self.grab_set()
 
         main_container = ctk.CTkFrame(
-            self, fg_color=COLORS["white"], corner_radius=4,
-            border_width=1, border_color=COLORS["border"]
+            self, fg_color=colors["white"], corner_radius=4,
+            border_width=1, border_color=colors["border"]
         )
         main_container.pack(fill="both", expand=True, padx=20, pady=20)
 
@@ -33,18 +34,18 @@ class VisualizarInfratorWindow(ctk.CTkToplevel):
             top_bar,
             text="Visualizacao de Infrator",
             font=ctk.CTkFont(size=FONTS["size_title"], weight="bold"),
-            text_color=COLORS["primary"]
+            text_color=colors["primary"]
         ).pack(anchor="w")
 
         ctk.CTkLabel(
             top_bar, text="Consulte os dados do infrator",
             font=ctk.CTkFont(size=FONTS["size_body"]),
-            text_color=COLORS["text_muted"]
+            text_color=colors["text_muted"]
         ).pack(anchor="w", pady=(2, 0))
 
         content = ctk.CTkFrame(
-            main_container, fg_color=COLORS["white"], corner_radius=4,
-            border_width=1, border_color=COLORS["border"]
+            main_container, fg_color=colors["white"], corner_radius=4,
+            border_width=1, border_color=colors["border"]
         )
         content.pack(fill="both", expand=True, padx=25, pady=(15, 20))
 
@@ -52,13 +53,15 @@ class VisualizarInfratorWindow(ctk.CTkToplevel):
         self._build_botao_editar(content)
 
     def _build_section_label(self, parent, text):
+        colors = get_colors()
         ctk.CTkLabel(
             parent, text=text,
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
-            text_color=COLORS["text"]
+            text_color=colors["text"]
         ).pack(anchor="w", padx=20, pady=(15, 5))
 
     def _build_field_row(self, parent, fields, pad_top=0):
+        colors = get_colors()
         row = ctk.CTkFrame(parent, fg_color="transparent")
         row.pack(fill="x", padx=20, pady=(pad_top, 0))
 
@@ -71,13 +74,13 @@ class VisualizarInfratorWindow(ctk.CTkToplevel):
             ctk.CTkLabel(
                 field_frame, text=label,
                 font=ctk.CTkFont(size=FONTS["size_small"]),
-                text_color=COLORS["text_muted"], anchor="w"
+                text_color=colors["text_muted"], anchor="w"
             ).pack(anchor="w")
 
             entry = ctk.CTkEntry(
                 field_frame, height=34, corner_radius=4,
-                border_width=1, border_color=COLORS["border"],
-                fg_color=COLORS["bg"], text_color=COLORS["text"],
+                border_width=1, border_color=colors["border"],
+                fg_color=colors["bg"], text_color=colors["text"],
                 font=ctk.CTkFont(size=FONTS["size_body"]),
                 state="normal"
             )
@@ -97,6 +100,7 @@ class VisualizarInfratorWindow(ctk.CTkToplevel):
         ], pad_top=10)
 
     def _build_botao_editar(self, parent):
+        colors = get_colors()
         btn_frame = ctk.CTkFrame(parent, fg_color="transparent")
         btn_frame.pack(fill="x", padx=20, pady=(20, 20))
 
@@ -104,8 +108,8 @@ class VisualizarInfratorWindow(ctk.CTkToplevel):
             btn_frame,
             text="Editar Infrator",
             height=40, corner_radius=4,
-            fg_color=COLORS["primary"],
-            hover_color=COLORS["primary_hover"],
+            fg_color=colors["primary"],
+            hover_color=colors["primary_hover"],
             text_color="white", border_width=0,
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             command=self._on_editar

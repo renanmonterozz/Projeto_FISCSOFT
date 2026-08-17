@@ -3,7 +3,7 @@ import _path  # noqa: F401
 import customtkinter as ctk
 from tkinter import messagebox
 
-from config.styles import COLORS, FONTS
+from config.styles import get_colors, FONTS
 from database.conexaodb import Database
 from utils import hash_password, registrar_log
 
@@ -15,7 +15,7 @@ class CadastrarInfratorWindow(ctk.CTkToplevel):
         self.title("FISCSOFT - Cadastrar Infrator")
         self.geometry("820x700")
         self.resizable(False, False)
-        self.configure(fg_color=COLORS["border"])
+        self.configure(fg_color=get_colors()["border"])
         self.grab_set()
 
         self.build_ui()
@@ -24,9 +24,10 @@ class CadastrarInfratorWindow(ctk.CTkToplevel):
             self.preencher_campos()
 
     def build_ui(self):
+        colors = get_colors()
         container = ctk.CTkFrame(
-            self, fg_color=COLORS["white"], corner_radius=4,
-            border_width=1, border_color=COLORS["border"]
+            self, fg_color=colors["white"], corner_radius=4,
+            border_width=1, border_color=colors["border"]
         )
         container.pack(fill="both", expand=True, padx=20, pady=20)
 
@@ -37,26 +38,26 @@ class CadastrarInfratorWindow(ctk.CTkToplevel):
             header,
             text="Cadastro / Edicao de Infrator",
             font=ctk.CTkFont(size=20, weight="bold"),
-            text_color=COLORS["primary"],
+            text_color=colors["primary"],
         ).pack(anchor="w")
 
         ctk.CTkLabel(
             header,
             text="Informe os dados do infrator.",
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
-            text_color=COLORS["text"],
+            text_color=colors["text"],
         ).pack(anchor="w", pady=(2, 0))
 
         form = ctk.CTkFrame(
-            container, fg_color=COLORS["white"], corner_radius=4,
-            border_width=1, border_color=COLORS["border"]
+            container, fg_color=colors["white"], corner_radius=4,
+            border_width=1, border_color=colors["border"]
         )
         form.pack(fill="both", expand=True, padx=25, pady=(15, 30))
 
         ctk.CTkLabel(
             form, text="Dados Pessoais",
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
-            text_color=COLORS["text"],
+            text_color=colors["text"],
         ).pack(anchor="w", padx=20, pady=(18, 8))
 
         row1 = ctk.CTkFrame(form, fg_color="transparent")
@@ -74,7 +75,7 @@ class CadastrarInfratorWindow(ctk.CTkToplevel):
         ctk.CTkLabel(
             form, text="Dados de Acesso",
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
-            text_color=COLORS["text"],
+            text_color=colors["text"],
         ).pack(anchor="w", padx=20, pady=(5, 8))
 
         row3 = ctk.CTkFrame(form, fg_color="transparent")
@@ -90,7 +91,7 @@ class CadastrarInfratorWindow(ctk.CTkToplevel):
             btn_frame,
             text="  Salvar Infrator",
             height=40, corner_radius=4,
-            fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
+            fg_color=colors["primary"], hover_color=colors["primary_hover"],
             text_color="white", border_width=0,
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             compound="left",
@@ -101,9 +102,9 @@ class CadastrarInfratorWindow(ctk.CTkToplevel):
             btn_frame,
             text="Cancelar",
             height=40, corner_radius=4,
-            fg_color=COLORS["border"], hover_color=COLORS["hover"],
-            text_color=COLORS["text"], border_width=1,
-            border_color=COLORS["border"],
+            fg_color=colors["border"], hover_color=colors["hover"],
+            text_color=colors["text"], border_width=1,
+            border_color=colors["border"],
             font=ctk.CTkFont(size=FONTS["size_body"]),
             command=self.destroy,
         ).pack(side="right")
@@ -116,6 +117,7 @@ class CadastrarInfratorWindow(ctk.CTkToplevel):
         self.entry_telefone.insert(0, i.get("telefone", ""))
 
     def _criar_campo(self, parent, label, col, weight=1, show=None):
+        colors = get_colors()
         parent.grid_columnconfigure(col, weight=weight)
 
         frame = ctk.CTkFrame(parent, fg_color="transparent")
@@ -124,14 +126,14 @@ class CadastrarInfratorWindow(ctk.CTkToplevel):
         ctk.CTkLabel(
             frame, text=label,
             font=ctk.CTkFont(size=12),
-            text_color=COLORS["text"],
+            text_color=colors["text"],
         ).pack(anchor="w", pady=(0, 4))
 
         entry = ctk.CTkEntry(
             frame, height=36, corner_radius=4,
-            border_width=1, border_color=COLORS["border"],
-            fg_color=COLORS["white"], text_color=COLORS["text"],
-            placeholder_text_color=COLORS["text_muted"],
+            border_width=1, border_color=colors["border"],
+            fg_color=colors["white"], text_color=colors["text"],
+            placeholder_text_color=colors["text_muted"],
             show=show,
         )
         entry.pack(fill="x")
