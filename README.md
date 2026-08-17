@@ -95,3 +95,52 @@ python main.py            # Sistema interno e externo (infratores via CPF)
 - pandas - Leitura de planilhas Excel
 - bcrypt - Hash seguro de senhas
 - pywinstyles - Estilo visual em janelas Windows
+
+## Gerar executável (Windows)
+
+Fornecemos um script simples para criar um executável usando PyInstaller.
+
+1. Ative o ambiente virtual conforme a seção *Instalacao*.
+2. Instale dependências de build:
+```bash
+pip install -r requirements-exe.txt
+```
+3. Execute o script `build_exe.bat` (no Windows) a partir da raiz do projeto:
+```bat
+build_exe.bat
+```
+
+O build padrão gera um diretório `dist\FISCSOFT` contendo o executável e recursos.
+Se preferir um único arquivo, edite `build_exe.bat` trocando `--onedir` por `--onefile`.
+
+## Criar instalador Windows (Inno Setup / NSIS)
+
+Após gerar `dist\FISCSOFT`, você pode empacotar um instalador profissional com Inno Setup ou NSIS.
+
+1. Instale uma das ferramentas:
+	- Inno Setup: https://jrsoftware.org/isinfo.php (inclui `ISCC.exe`)
+	- NSIS: https://nsis.sourceforge.io/ (inclui `makensis.exe`)
+
+2. A partir da raiz do projeto execute:
+```bat
+build_installer.bat
+```
+
+O script tenta usar o Inno Setup (`ISCC`) primeiro e, se não encontrado, o NSIS (`makensis`).
+
+O Inno Setup gerará um arquivo `.exe` conforme definido em `installer.iss`. O NSIS usa `installer_nsi.nsi`.
+
+Observações:
+- Customize `installer.iss` e `installer_nsi.nsi` para ajustar ícones, chaves de registro, páginas adicionais ou ações pós-instalação.
+- Ambos os instaladores criam atalho no menu Iniciar e um ícone na área de trabalho por padrão.
+
+Nota sobre o ícone do projeto
+
+Coloque o ícone do projeto em `assets/imagens/logo_fiscsoft.ico` para integrá-lo automaticamente ao executável e ao instalador.
+Se você só tiver `logo_fiscsoft.png`, pode converter para `.ico` usando ferramentas online ou o ImageMagick:
+
+```bash
+magick convert assets/imagens/logo_fiscsoft.png -resize 256x256 assets/imagens/logo_fiscsoft.ico
+```
+
+O `build_exe.bat` detecta automaticamente `assets/imagens/logo_fiscsoft.ico` e o usa como ícone do exe e o copia para `dist\FISCSOFT` para que os scripts do instalador o encontrem.
