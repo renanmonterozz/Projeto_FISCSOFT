@@ -77,6 +77,38 @@ ACOES_POR_PERFIL = {
 # Paginas do sistema externo (infrator) — unico perfil disponivel.
 PAGINAS_EXTERNO = {"Menu Inicial", "Cadastrar Notas", "Relatorio"}
 
+PAGINA_ALIASES = {
+    "menu principal": "Menu Principal",
+    "menu inicial": "Menu Principal",
+    "registro": "Itens",
+    "registros": "Itens",
+    "itens": "Itens",
+    "locais cadastrados": "Locais Cadastrados",
+    "usuarios": "Agente",
+    "usuários": "Agente",
+    "usuario": "Agente",
+    "usuario externo": "Agente",
+    "agente": "Agente",
+    "destinacao": "Destinacao",
+    "notas fiscais": "Notas Fiscais",
+    "nota fiscal": "Notas Fiscais",
+    "historico": "Historico",
+    "histórico": "Historico",
+    "dashboard tccm": "Dashboard TCCM",
+    "cadastro tccm": "Cadastro TCCM",
+    "cadastro": "Cadastro TCCM",
+}
+
+
+def normalizar_pagina(pagina):
+    """Converte aliases visuais de menu para o nome canonico do sistema."""
+    if pagina is None:
+        return None
+    chave = str(pagina).strip()
+    if not chave:
+        return chave
+    return PAGINA_ALIASES.get(chave.casefold(), chave)
+
 
 def normalizar_perfil(perfil):
     """Converte o valor gravado no banco (ex.: 'Administrador') na chave canonica."""
@@ -93,7 +125,7 @@ def paginas_do_perfil(perfil):
 
 def pode_acessar(perfil, pagina):
     """True se o perfil pode acessar a pagina."""
-    return pagina in paginas_do_perfil(perfil)
+    return normalizar_pagina(pagina) in paginas_do_perfil(perfil)
 
 
 def pode_acao(perfil, acao):

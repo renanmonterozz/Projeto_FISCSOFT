@@ -49,66 +49,106 @@ class Database:
             logger.error("Erro ao conectar ao banco: %s", e)
             return False
 
+    def _quote_ident(self, nome):
+        nome_limpo = str(nome).strip()
+        if nome_limpo.startswith('"') and nome_limpo.endswith('"'):
+            nome_limpo = nome_limpo[1:-1]
+        return '"' + nome_limpo.replace('"', '""') + '"'
+
+    def _tabela_existe(self, nome_tabela):
+        cursor = self.conexao.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name = ?",
+            (str(nome_tabela).strip().strip('"'),),
+        )
+        return cursor.fetchone() is not None
+
+    def _coluna_existe(self, nome_tabela, nome_coluna):
+        quoted = self._quote_ident(nome_tabela)
+        cursor = self.conexao.execute(f"PRAGMA table_info({quoted})")
+        colunas = [linha[1] for linha in cursor.fetchall()]
+        return str(nome_coluna).lower() in {str(col).lower() for col in colunas}
+
     def _migrar(self):
         migracoes = [
-            ("ALTER TABLE itens ADD COLUMN processo VARCHAR(100)", "itens.processo"),
-            ('ALTER TABLE tccm ADD COLUMN documento_sei TEXT', "tccm.documento_sei"),
-            ('ALTER TABLE tccm ADD COLUMN data_inicio DATE', "tccm.data_inicio"),
-            ('ALTER TABLE tccm ADD COLUMN semestres INTEGER NOT NULL DEFAULT 1', "tccm.semestres"),
-            ('ALTER TABLE "nota fiscal" ADD COLUMN arquivo TEXT', '"nota fiscal".arquivo'),
+            ("itens", "processo", "ALTER TABLE itens ADD COLUMN processo VARCHAR(100)"),
+            ("tccm", "documento_sei", 'ALTER TABLE tccm ADD COLUMN documento_sei TEXT'),
+            ("tccm", "data_inicio", 'ALTER TABLE tccm ADD COLUMN data_inicio DATE'),
+            ("tccm", "semestres", 'ALTER TABLE tccm ADD COLUMN semestres INTEGER NOT NULL DEFAULT 1'),
+            ('nota fiscal', "arquivo", 'ALTER TABLE "nota fiscal" ADD COLUMN arquivo TEXT'),
         ]
-        for sql, nome in migracoes:
+        for tabela, coluna, sql in migracoes:
+            if self._coluna_existe(tabela, coluna):
+                continue
             try:
                 self.conexao.execute(sql)
                 self.conexao.commit()
-                logger.info("Migracao aplicada: %s", nome)
+                logger.info("Migracao aplicada: %s.%s", tabela, coluna)
             except sqlite3.OperationalError as e:
-                if "duplicate column name" in str(e).lower():
-                    continue
-                logger.debug("Migracao ignorada para %s: %s", nome, e)
+                logger.debug("Migracao ignorada para %s.%s: %s", tabela, coluna, e)
 
         # Create item_semestre table and migrate existing quantidade_prevista into current semester
-        try:
-            self.conexao.execute(
-                """
-                CREATE TABLE IF NOT EXISTS item_semestre (
-                    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                    itens_id INTEGER NOT NULL,
-                    ano INTEGER NOT NULL,
-                    semestre INTEGER NOT NULL,
-                    quantidade_prevista INTEGER NOT NULL DEFAULT 0,
-                    processo TEXT,
-                    UNIQUE (itens_id, ano, semestre),
-                    FOREIGN KEY (itens_id) REFERENCES itens (id)
-                );
-                """
-            )
-            self.conexao.commit()
-            logger.info("Migracao aplicada: item_semestre table")
+        if not self._tabela_existe("item_semestre"):
+            try:
+                self.conexao.execute(
+                    """
+                    CREATE TABLE item_semestre (
+                        id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        itens_id INTEGER NOT NULL,
+                        ano INTEGER NOT NULL,
+                        semestre INTEGER NOT NULL,
+                        quantidade_prevista INTEGER NOT NULL DEFAULT 0,
+                        processo TEXT,
+                        UNIQUE (itens_id, ano, semestre),
+                        FOREIGN KEY (itens_id) REFERENCES itens (id)
+                    );
+                    """
+                )
+                self.conexao.commit()
+                logger.info("Migracao aplicada: item_semestre table")
+            except Exception as e:
+                logger.debug("item_semestre table migration ignored: %s", e)
+
+        if self._tabela_existe("item_semestre"):
             try:
                 from datetime import datetime as _dt
                 now = _dt.now()
                 ano = now.year
                 semestre = 1 if now.month <= 6 else 2
-                # migrate non-zero previsao into current semester
-                self.conexao.execute(
-                    "INSERT OR IGNORE INTO item_semestre (itens_id, ano, semestre, quantidade_prevista, processo) "
-                    "SELECT id, ?, ?, quantidade_prevista, processo FROM itens WHERE quantidade_prevista IS NOT NULL AND quantidade_prevista != 0",
+                cursor = self.conexao.execute(
+                    "SELECT COUNT(*) FROM item_semestre WHERE ano = ? AND semestre = ?",
                     (ano, semestre),
                 )
-                self.conexao.commit()
-                logger.info("Migracao aplicada: item_semestre data migrated for current semester")
+                if cursor.fetchone()[0] == 0:
+                    self.conexao.execute(
+                        "INSERT OR IGNORE INTO item_semestre (itens_id, ano, semestre, quantidade_prevista, processo) "
+                        "SELECT id, ?, ?, quantidade_prevista, processo FROM itens WHERE quantidade_prevista IS NOT NULL AND quantidade_prevista != 0",
+                        (ano, semestre),
+                    )
+                    self.conexao.commit()
+                    logger.info("Migracao aplicada: item_semestre data migrated for current semester")
             except Exception as e:
                 logger.debug("item_semestre data migration skipped: %s", e)
-        except Exception as e:
-            logger.debug("item_semestre table migration ignored: %s", e)
 
         self._migrar_perfis()
 
     def _migrar_perfis(self):
         """Normaliza os valores da coluna perfil para os nomes padrao
-        (Administrador / Agente / Operador)."""
+        (Administrador / Agente / Operador). A migração é executada uma única vez por marcador."""
         try:
+            if not self._tabela_existe('schema_migrations'):
+                self.conexao.execute(
+                    "CREATE TABLE IF NOT EXISTS schema_migrations (name TEXT NOT NULL UNIQUE, applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)"
+                )
+                self.conexao.commit()
+
+            migracao = 'perfil_normalizacao_2026_08_18'
+            cursor = self.conexao.execute(
+                'SELECT 1 FROM schema_migrations WHERE name = ?',
+                (migracao,),
+            )
+            if cursor.fetchone() is not None:
+                return
+
             normalizacoes = [
                 ("Administrador", ("admin", "administrador")),
                 ("Agente", ("agente",)),
@@ -126,6 +166,11 @@ class Database:
                         (novo, *antigos),
                     )
                     logger.info("Migracao aplicada: perfis '%s' -> '%s'", "/".join(antigos), novo)
+
+            self.conexao.execute(
+                'INSERT INTO schema_migrations (name) VALUES (?)',
+                (migracao,),
+            )
             self.conexao.commit()
         except sqlite3.Error:
             pass

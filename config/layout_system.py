@@ -12,6 +12,18 @@ class LayoutSystem:
     @staticmethod
     def scale(value, *, width=None, height=None, min_ratio=0.82, max_ratio=1.15):
         """Escala valores para manter proporções em 1920x1080 e 1366x768."""
+        if isinstance(value, (tuple, list)):
+            return type(value)(
+                LayoutSystem.scale(
+                    item,
+                    width=width,
+                    height=height,
+                    min_ratio=min_ratio,
+                    max_ratio=max_ratio,
+                )
+                for item in value
+            )
+
         if width is None and height is None:
             return value
         target = width if width is not None else height
@@ -31,6 +43,17 @@ class LayoutSystem:
         """
         if value is None:
             return None
+
+        if isinstance(value, (tuple, list)):
+            return type(value)(
+                LayoutSystem.responsive(
+                    item,
+                    parent=parent,
+                    width=width,
+                    height=height,
+                )
+                for item in value
+            )
 
         if parent is not None:
             try:

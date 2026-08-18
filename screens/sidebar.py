@@ -5,7 +5,7 @@ from PIL import Image
 import os
 
 from config.styles import ASSETS_DIR, COLORS, FONTS
-from config.permissoes import paginas_do_perfil
+from config.permissoes import normalizar_pagina, paginas_do_perfil
 
 
 def carregar_icone(caminho: str, tamanho_max: int = 20):
@@ -61,7 +61,7 @@ class Sidebar(ctk.CTkFrame):
 
         for entry in self.nav_items:
             display_text, img_path, page_name = entry
-            # permissions check must use the page identifier (existing names)
+            page_name = normalizar_pagina(page_name)
             if paginas_permitidas is not None and page_name not in paginas_permitidas:
                 continue
 

@@ -14,7 +14,7 @@ import customtkinter as ctk
 
 from config.layout_system import LayoutSystem
 from config.styles import ASSETS_DIR, COLORS, FONTS
-from config.permissoes import PAGINAS_EXTERNO, normalizar_perfil, paginas_do_perfil, pode_acao
+from config.permissoes import PAGINAS_EXTERNO, normalizar_pagina, normalizar_perfil, paginas_do_perfil, pode_acao
 from database.conexaodb import Database
 from screens.sidebar import Sidebar
 from screens.menu_inicial import MenuInicialPage
@@ -99,6 +99,24 @@ class LoginApp(ctk.CTk):
         self.label_titulo.place(relx=0.5, rely=0.78, anchor="center")
         pywinstyles.set_opacity(self.label_titulo, color="#000001")
 
+        self.label_credencial = ctk.CTkLabel(
+            self,
+            text="Entrar com Usuário e Senha",
+            font=ctk.CTkFont(size=18, weight="bold"),
+            text_color="#FFF9BE",
+            bg_color="#000001",
+        )
+        self.label_credencial.place(relx=0.5, rely=0.79, anchor="center")
+
+        self.label_certificado = ctk.CTkLabel(
+            self,
+            text="Entrar com Certificado Digital",
+            font=ctk.CTkFont(size=18, weight="bold"),
+            text_color="#FFF9BE",
+            bg_color="#000001",
+        )
+        self.label_certificado.place(relx=0.5, rely=0.89, anchor="center")
+
         # --- Botão único: Fazer Login ---
         self.btn_entrar = LayoutSystem.button(
             self,
@@ -115,7 +133,7 @@ class LoginApp(ctk.CTk):
             font_size=19,
             font_weight="normal",
         )
-        self.btn_entrar.place(relx=0.5, rely=0.865, anchor="center")
+        self.btn_entrar.place(relx=0.5, rely=0.85, anchor="center")
         pywinstyles.set_opacity(self.btn_entrar, color="#000001")
 
         # --- Botao: Entrar com Certificado Digital ---
@@ -134,33 +152,44 @@ class LoginApp(ctk.CTk):
             font_size=19,
             font_weight="normal",
         )
-        self.btn_certificado.place(relx=0.5, rely=0.945, anchor="center")
+        self.btn_certificado.place(relx=0.5, rely=0.94, anchor="center")
         pywinstyles.set_opacity(self.btn_certificado, color="#000001")
 
     def _ajustar_imagem_fundo(self):
-        if self._img_pil is None:
+        try:
+            if self._img_pil is None:
+                return
+            if not self.winfo_exists():
+                return
+            if not hasattr(self, "bg_label") or not self.bg_label.winfo_exists():
+                return
+
+            w = self.winfo_width()
+            h = self.winfo_height()
+            if w <= 1 or h <= 1:
+                self.after(100, self._ajustar_imagem_fundo)
+                return
+
+            img_w, img_h = self._img_pil.size
+            scale = max(w / img_w, h / img_h)
+            new_w = int(img_w * scale)
+            new_h = int(img_h * scale)
+
+            resized = self._img_pil.resize((new_w, new_h), Image.LANCZOS)
+            left = (new_w - w) // 2
+            top = (new_h - h) // 2
+            cropped = resized.crop((left, top, left + w, top + h))
+
+            img = ctk.CTkImage(light_image=cropped, dark_image=cropped, size=(w, h))
+            self.bg_label.configure(image=img)
+            self.bg_label.image = img
+        except (TclError, RuntimeError):
+            # A janela ja foi destruida ou o widget foi removido. Ignora sem derrubar o fluxo.
             return
-        w = self.winfo_width()
-        h = self.winfo_height()
-        if w <= 1 or h <= 1:
-            self.after(100, self._ajustar_imagem_fundo)
-            return
-
-        img_w, img_h = self._img_pil.size
-        scale = max(w / img_w, h / img_h)
-        new_w = int(img_w * scale)
-        new_h = int(img_h * scale)
-
-        resized = self._img_pil.resize((new_w, new_h), Image.LANCZOS)
-        left = (new_w - w) // 2
-        top = (new_h - h) // 2
-        cropped = resized.crop((left, top, left + w, top + h))
-
-        img = ctk.CTkImage(light_image=cropped, dark_image=cropped, size=(w, h))
-        self.bg_label.configure(image=img)
-        self.bg_label.image = img
 
     def _mostrar_formulario_unificado(self):
+        self.label_credencial.place_forget()
+        self.label_certificado.place_forget()
         self.btn_entrar.place_forget()
         self.btn_certificado.place_forget()
 
@@ -320,11 +349,16 @@ class LoginApp(ctk.CTk):
         self._abrir_tela_externa()
 
     def _on_sair_click(self):
-        self.frame_login.place_forget()
-        self.btn_entrar.place(relx=0.5, rely=0.865, anchor="center")
-        self.btn_certificado.place(relx=0.5, rely=0.945, anchor="center")
+        if hasattr(self, "frame_login"):
+            self.frame_login.place_forget()
+        self.label_credencial.place(relx=0.5, rely=0.79, anchor="center")
+        self.label_certificado.place(relx=0.5, rely=0.89, anchor="center")
+        self.btn_entrar.place(relx=0.5, rely=0.85, anchor="center")
+        self.btn_certificado.place(relx=0.5, rely=0.94, anchor="center")
 
     def _login_certificado(self):
+        self.label_credencial.place_forget()
+        self.label_certificado.place_forget()
         self.btn_entrar.place_forget()
         self.btn_certificado.place_forget()
         try:
@@ -332,8 +366,10 @@ class LoginApp(ctk.CTk):
 
             if not sucesso:
                 messagebox.showerror("Erro", mensagem)
-                self.btn_entrar.place(relx=0.5, rely=0.865, anchor="center")
-                self.btn_certificado.place(relx=0.5, rely=0.945, anchor="center")
+                self.label_credencial.place(relx=0.5, rely=0.79, anchor="center")
+                self.label_certificado.place(relx=0.5, rely=0.89, anchor="center")
+                self.btn_entrar.place(relx=0.5, rely=0.85, anchor="center")
+                self.btn_certificado.place(relx=0.5, rely=0.94, anchor="center")
                 return
 
             self.usuario_logado = dados["nome"]
@@ -363,13 +399,21 @@ class LoginApp(ctk.CTk):
     @staticmethod
     def _fechar_janela(app):
         try:
-            app.quit()
-            app.destroy()
+            if app is None:
+                return
+            if hasattr(app, "winfo_exists") and app.winfo_exists():
+                app.quit()
+                app.destroy()
         except TclError:
             pass
+        except RuntimeError:
+            pass
 
-    def _retornar_para_login(self):
+    def _retornar_para_login(self, janela_atual=None):
+        if janela_atual is not None:
+            self._fechar_janela(janela_atual)
         self._fechar_janela(self)
+
         app = LoginApp()
         _suprimir_erro_tcl()
         app.mainloop()
@@ -427,7 +471,7 @@ class LoginApp(ctk.CTk):
                 ).pack(fill="both", expand=True)
  
         def logout():
-            self._retornar_para_login()
+            self._retornar_para_login(main_app)
  
         sidebar = SidebarExterno(main_app, width=210, on_navigate=navegar, on_sair=logout)
         sidebar.pack(side="left", fill="y")
@@ -471,7 +515,7 @@ class LoginApp(ctk.CTk):
         content.pack(fill="both", expand=True, padx=30, pady=(15, 20))
 
         def _logout_welcome():
-            self._retornar_para_login()
+            self._retornar_para_login(welcome_app)
 
         def _abrir_cadastro_tccm():
             if not pode_acao(perfil, "criar_tccm"):
@@ -533,6 +577,7 @@ class LoginApp(ctk.CTk):
             if processo_tccm is None:
                 processo_tccm = _processo_tccm
 
+            pagina = normalizar_pagina(pagina)
             if pagina not in permissoes:
                 messagebox.showwarning("Acesso Negado", "Voce nao tem permissao para acessar esta pagina.")
                 return
@@ -586,7 +631,7 @@ class LoginApp(ctk.CTk):
                 ).pack(expand=True)
 
         def logout():
-            self._retornar_para_login()
+            self._retornar_para_login(main_app)
 
         sidebar = Sidebar(main_app, width=210, on_navigate=navegar, on_sair=logout, perfil=perfil)
         sidebar.pack(side="left", fill="y")
