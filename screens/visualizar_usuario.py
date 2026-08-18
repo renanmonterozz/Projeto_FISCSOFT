@@ -9,6 +9,7 @@ from config.styles import COLORS, FONTS
 class VisualizarUsuarioWindow(ctk.CTkToplevel):
     def __init__(self, master, usuario):
         super().__init__(master)
+        colors = COLORS
         self.usuario = usuario
 
         self.title("Visualizacao de Agente IBAMA")
@@ -17,7 +18,7 @@ class VisualizarUsuarioWindow(ctk.CTkToplevel):
             (self.winfo_screenheight() - 680) // 2
         ))
         self.resizable(False, False)
-        self.configure(fg_color=COLORS["white"])
+        self.configure(fg_color=colors["white"])
         self.transient(master)
         self.grab_set()
 
@@ -36,13 +37,13 @@ class VisualizarUsuarioWindow(ctk.CTkToplevel):
         ctk.CTkLabel(
             top_bar, text="Visualizacao de Agente IBAMA",
             font=ctk.CTkFont(size=20, weight="bold"),
-            text_color=COLORS["primary"]
+            text_color=colors["primary"]
         ).pack(anchor="w")
 
         ctk.CTkLabel(
             top_bar, text="Consulte os dados do agente",
             font=ctk.CTkFont(size=FONTS["size_body"]),
-            text_color=COLORS["text_muted"]
+            text_color=colors["text_muted"]
         ).pack(anchor="w", pady=(2, 0))
 
         content = LayoutSystem.panel(
@@ -59,13 +60,15 @@ class VisualizarUsuarioWindow(ctk.CTkToplevel):
         self._build_botao_editar(content)
 
     def _build_section_label(self, parent, text):
+        colors = COLORS
         ctk.CTkLabel(
             parent, text=text,
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
-            text_color=COLORS["text"]
+            text_color=colors["text"]
         ).pack(anchor="w", padx=20, pady=(15, 5))
 
     def _build_field_row(self, parent, fields, pad_top=0):
+        colors = COLORS
         row = ctk.CTkFrame(parent, fg_color="transparent")
         row.pack(fill="x", padx=20, pady=(pad_top, 0))
 
@@ -78,13 +81,13 @@ class VisualizarUsuarioWindow(ctk.CTkToplevel):
             ctk.CTkLabel(
                 field_frame, text=label,
                 font=ctk.CTkFont(size=FONTS["size_small"]),
-                text_color=COLORS["text_muted"], anchor="w"
+                text_color=colors["text_muted"], anchor="w"
             ).pack(anchor="w")
 
             entry = ctk.CTkEntry(
                 field_frame, height=34, corner_radius=4,
-                border_width=1, border_color=COLORS["border"],
-                fg_color="#F5F5F5", text_color=COLORS["text"],
+                border_width=1, border_color=colors["border"],
+                fg_color="#F5F5F5", text_color=colors["text"],
                 font=ctk.CTkFont(size=FONTS["size_body"]),
                 state="normal"
             )
@@ -111,6 +114,7 @@ class VisualizarUsuarioWindow(ctk.CTkToplevel):
         ])
 
     def _build_botao_editar(self, parent):
+        colors = COLORS
         btn_frame = ctk.CTkFrame(parent, fg_color="transparent")
         btn_frame.pack(fill="x", padx=20, pady=(20, 20))
 
@@ -118,8 +122,8 @@ class VisualizarUsuarioWindow(ctk.CTkToplevel):
             btn_frame,
             text="Editar Usuario",
             height=40, corner_radius=4,
-            fg_color=COLORS["primary"],
-            hover_color=COLORS["primary_hover"],
+            fg_color=colors["primary"],
+            hover_color=colors["primary_hover"],
             text_color="white", border_width=0,
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             command=self._on_editar

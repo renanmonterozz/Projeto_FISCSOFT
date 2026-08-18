@@ -433,14 +433,8 @@ class LoginApp(ctk.CTk):
         main_app.title("FISCSOFT - Acesso Externo")
         main_app.configure(fg_color=COLORS["white"])
         main_app.after(0, main_app.state, "zoomed")
-        sessao = self._criar_sessao(
-            usuario_logado=self.usuario_logado,
-            id_infrator=self.id_infrator,
-            perfil="operador",
-        )
-        main_app.usuario_logado = sessao.usuario_logado
-        main_app.id_infrator = sessao.id_infrator
-        main_app.session = sessao
+        main_app.usuario_logado = self.usuario_logado
+        main_app.id_infrator = self.id_infrator
 
         def navegar(pagina: str):
             if pagina not in PAGINAS_EXTERNO:
@@ -490,16 +484,9 @@ class LoginApp(ctk.CTk):
         welcome_app.title("FISCSOFT - Bem-vindo")
         welcome_app.configure(fg_color=COLORS["bg"])
         welcome_app.after(0, welcome_app.state, "zoomed")
-
-        sessao = self._criar_sessao(
-            usuario_logado=self.usuario_logado,
-            perfil=perfil,
-            processo_tccm=processo_tccm,
-        )
-        welcome_app.usuario_logado = sessao.usuario_logado
-        welcome_app.perfil = sessao.perfil
-        welcome_app.processo_tccm = sessao.processo_tccm
-        welcome_app.session = sessao
+        welcome_app.usuario_logado = self.usuario_logado
+        welcome_app.perfil = perfil
+        welcome_app.processo_tccm = processo_tccm
 
         header = ctk.CTkFrame(welcome_app, fg_color="transparent")
         header.pack(fill="x", padx=30, pady=(20, 0))
@@ -523,7 +510,9 @@ class LoginApp(ctk.CTk):
                 return
             win = ctk.CTkToplevel(welcome_app)
             win.title("Cadastro de TCCM")
-            win.geometry("900x650")
+            win.after(0, win.state, "zoomed")
+            win.update_idletasks()
+            win.state("zoomed")
             win.configure(fg_color=COLORS["bg"])
             win.transient(welcome_app)
             win.grab_set()
@@ -559,15 +548,10 @@ class LoginApp(ctk.CTk):
         main_app.title("FISCSOFT" if perfil == "admin" else "FISCSOFT - Usuario")
         main_app.configure(fg_color=COLORS["white"])
         main_app.after(0, main_app.state, "zoomed")
-
-        sessao = self._criar_sessao(
-            usuario_logado=self.usuario_logado,
-            perfil=perfil,
-            processo_tccm=processo_tccm,
-        )
-        main_app.usuario_logado = sessao.usuario_logado
-        main_app.perfil = sessao.perfil
-        main_app.session = sessao
+        main_app.update_idletasks()
+        main_app.state("zoomed")
+        main_app.usuario_logado = self.usuario_logado
+        main_app.perfil = perfil
 
         permissoes = paginas_do_perfil(perfil)
 

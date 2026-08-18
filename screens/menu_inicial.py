@@ -7,8 +7,12 @@ from datetime import datetime as _dt
 import customtkinter as ctk
 from PIL import Image
 
+<<<<<<< HEAD
 from config.layout_system import LayoutSystem
 from config.styles import ASSETS_DIR, COLORS, FONTS
+=======
+from config.styles import COLORS, FONTS
+>>>>>>> main
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
 
@@ -24,10 +28,57 @@ def _fmt_date(val):
         return str(val)
 
 
+class ToolTip:
+    def __init__(self, widget, itens, master=None):
+        self.widget = widget
+        self.itens = itens
+        self.tooltip_window = None
+        self.master = master
+        self.widget.bind("<Enter>", self.mostrar)
+        self.widget.bind("<Leave>", self.esconder)
+
+    def mostrar(self, event=None):
+        if not self.itens:
+            return
+        self.esconder()
+        x = self.widget.winfo_rootx() + 25
+        y = self.widget.winfo_rooty() + 25
+
+        import tkinter as tk
+        self.tooltip_window = tw = tk.Toplevel(self.widget)
+        tw.wm_overrideredirect(True)
+        tw.wm_geometry(f"+{x}+{y}")
+        tw.configure(bg=COLORS["white"])
+
+        frame = ctk.CTkFrame(tw, fg_color=COLORS["white"], corner_radius=4,
+                             border_width=1, border_color=COLORS["border"])
+        frame.pack()
+
+        ctk.CTkLabel(
+            frame, text="Itens da NF",
+            font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
+            text_color=COLORS["text"]
+        ).pack(anchor="w", padx=6, pady=(4, 2))
+
+        for item in self.itens:
+            ctk.CTkLabel(
+                frame, text=f"\u2022 {item['nome']} | {item['unidade']} | {item['quantidade']}",
+                font=ctk.CTkFont(size=FONTS["size_small"]),
+                text_color=COLORS["text"]
+            ).pack(anchor="w", padx=6, pady=1)
+
+        ctk.CTkLabel(frame, text="", height=4).pack()
+
+    def esconder(self, event=None):
+        if self.tooltip_window:
+            self.tooltip_window.destroy()
+            self.tooltip_window = None
+
+
 class MenuInicialPage(CrudBase, ctk.CTkFrame):
     def __init__(self, master, usuario_logado=None, perfil="admin", processo_tccm=None, **kwargs):
         super().__init__(master, **kwargs)
-        self.configure(fg_color=COLORS["bg"])
+        self.configure(fg_color=COLORS["bg"]) 
         self.usuario_logado = usuario_logado
         self.perfil = perfil
         self.processo_tccm = processo_tccm
@@ -50,6 +101,7 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
         self.build_notas_table()
 
     def build_stats_cards(self):
+        colors = COLORS
         cards_frame = ctk.CTkFrame(self, fg_color="transparent")
         cards_frame.pack(fill="x", padx=30, pady=(0, 20))
 
@@ -64,8 +116,8 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
 
         for i, (titulo, subtitulo, valor) in enumerate(card_data):
             card = ctk.CTkFrame(
-                cards_frame, fg_color=COLORS["white"], corner_radius=4,
-                border_width=1, border_color=COLORS["border"]
+                cards_frame, fg_color=colors["white"], corner_radius=4,
+                border_width=1, border_color=colors["border"]
             )
             card.grid(row=0, column=i, padx=5, sticky="nsew")
             cards_frame.columnconfigure(i, weight=1)
@@ -74,7 +126,7 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
             inner.pack(fill="x", padx=15, pady=15)
 
             icon_circle = ctk.CTkFrame(
-                inner, fg_color=COLORS["primary_light"],
+                inner, fg_color=colors["primary_light"],
                 width=48, height=48, corner_radius=24
             )
             icon_circle.pack(side="left", padx=(0, 12))
@@ -108,19 +160,19 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
             ctk.CTkLabel(
                 text_frame, text=titulo,
                 font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
-                text_color=COLORS["text"], anchor="w"
+                text_color=colors["text"], anchor="w"
             ).pack(anchor="w")
 
             ctk.CTkLabel(
                 text_frame, text=subtitulo,
                 font=ctk.CTkFont(size=FONTS["size_small"]),
-                text_color=COLORS["text_muted"], anchor="w"
+                text_color=colors["text_muted"], anchor="w"
             ).pack(anchor="w")
 
             lbl_valor = ctk.CTkLabel(
                 card, text=valor,
                 font=ctk.CTkFont(size=22, weight="bold"),
-                text_color=COLORS["text"]
+                text_color=colors["text"]
             )
             lbl_valor.pack(pady=(0, 15))
             self.stat_labels[titulo] = lbl_valor
@@ -128,14 +180,14 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
         self.atualizar_cards()
 
     def build_notas_table(self):
+        colors = COLORS
         self.colunas_place = [
-            (0.00, 0.12, "w"),      # Numero da NF
-            (0.14, 0.26, "w"),      # Chave de acesso (44 chars)
-            (0.42, 0.12, "center"), # Data de Emissao
-            (0.56, 0.06, "center"), # Itens
-            (0.64, 0.12, "center"), # Valor Total
-            (0.78, 0.12, "w"),      # Usuario
-            (0.92, 0.06, "center"), # Status
+            (0.00, 0.14, "w"),      # Numero da NF
+            (0.18, 0.14, "center"), # Data de Emissao
+            (0.34, 0.10, "center"), # Itens
+            (0.47, 0.14, "center"), # Valor Total
+            (0.64, 0.20, "w"),      # Infrator
+            (0.87, 0.11, "center"), # Status
         ]
 
         section = LayoutSystem.panel(
@@ -154,7 +206,7 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
         header_frame.pack(fill="x", padx=20, pady=(15, 10))
 
         dot = ctk.CTkFrame(
-            header_frame, fg_color=COLORS["primary"],
+            header_frame, fg_color=colors["primary"],
             width=12, height=12, corner_radius=6
         )
         dot.pack(side="left", padx=(0, 8))
@@ -163,12 +215,12 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
         ctk.CTkLabel(
             header_frame, text="Notas Fiscais Recebidas",
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
-            text_color=COLORS["text"]
+            text_color=colors["text"]
         ).pack(side="left")
 
         columns = [
-            "Numero da NF", "Chave de acesso", "Data de Emissao",
-            "Itens", "Valor Total(R$)", "Usuario", "Status"
+            "Numero da NF", "Data de Emissao",
+            "Itens", "Valor Total(R$)", "Infrator", "Status"
         ]
         header = ctk.CTkFrame(section, fg_color=COLORS["table_header"], height=40, corner_radius=0)
         header.pack(fill="x", padx=15, pady=(5, 0))
@@ -185,7 +237,7 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
             ).place(relx=relx, relwidth=relwidth, rely=0, relheight=1)
 
         self.table_body = ctk.CTkScrollableFrame(
-            section, fg_color=COLORS["white"], corner_radius=0
+            section, fg_color=colors["white"], corner_radius=0
         )
         self.table_body.pack(fill="both", expand=True, padx=15, pady=(0, 5))
 
@@ -195,14 +247,14 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
         self.lbl_total_registros = ctk.CTkLabel(
             footer, text="Total de Registros: 0",
             font=ctk.CTkFont(size=FONTS["size_small"]),
-            text_color=COLORS["text_muted"]
+            text_color=colors["text_muted"]
         )
         self.lbl_total_registros.pack(side="left")
 
         self.lbl_valor_total = ctk.CTkLabel(
             footer, text="Valor Total: R$ 0,00",
             font=ctk.CTkFont(size=FONTS["size_small"]),
-            text_color=COLORS["text_muted"]
+            text_color=colors["text_muted"]
         )
         self.lbl_valor_total.pack(side="right")
 
@@ -215,30 +267,42 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
                 return []
 
             if self.processo_tccm:
-                sql = """SELECT nf.nota_fiscal, nf.chave_de_acesso, nf.data,
+                sql = """SELECT nf.nota_fiscal, nf.data,
                                 nf.valor_total, nf.status_nota,
-                                a.nome_agente,
-                                COUNT(p.lote) as qtd_itens
+                                i.nome_infrator,
+                                COUNT(DISTINCT p.lote) as qtd_itens,
+                                GROUP_CONCAT(
+                                    p.nome_item || '|' || COALESCE(p.quantidade, 0) || '|' || COALESCE(it.unidade_medida, 'un'),
+                                    ';; '
+                                ) as itens_detalhes
                          FROM "nota fiscal" nf
-                         LEFT JOIN "agente ibama" a ON a.matricula = nf."agente ibama_matricula"
+                         LEFT JOIN tccm t ON t.processo = nf.processo
+                         LEFT JOIN infrator i ON i.id_infrator = t."infrator_id_infrator"
                          LEFT JOIN produtos p ON p."nota fiscal_nota_fiscal" = nf.nota_fiscal
                             AND p."nota fiscal_agente ibama_matricula" = nf."agente ibama_matricula"
+                         LEFT JOIN itens it ON it.id = p.itens_id
                          WHERE nf.processo = ?
-                         GROUP BY nf.nota_fiscal, nf.chave_de_acesso, nf.data,
-                                nf.valor_total, nf.status_nota, a.nome_agente
+                         GROUP BY nf.nota_fiscal, nf.data,
+                                nf.valor_total, nf.status_nota, i.nome_infrator
                          ORDER BY nf.data DESC"""
                 params = (self.processo_tccm,)
             else:
-                sql = """SELECT nf.nota_fiscal, nf.chave_de_acesso, nf.data,
+                sql = """SELECT nf.nota_fiscal, nf.data,
                                 nf.valor_total, nf.status_nota,
-                                a.nome_agente,
-                                COUNT(p.lote) as qtd_itens
+                                i.nome_infrator,
+                                COUNT(DISTINCT p.lote) as qtd_itens,
+                                GROUP_CONCAT(
+                                    p.nome_item || '|' || COALESCE(p.quantidade, 0) || '|' || COALESCE(it.unidade_medida, 'un'),
+                                    ';; '
+                                ) as itens_detalhes
                          FROM "nota fiscal" nf
-                         LEFT JOIN "agente ibama" a ON a.matricula = nf."agente ibama_matricula"
+                         LEFT JOIN tccm t ON t.processo = nf.processo
+                         LEFT JOIN infrator i ON i.id_infrator = t."infrator_id_infrator"
                          LEFT JOIN produtos p ON p."nota fiscal_nota_fiscal" = nf.nota_fiscal
                             AND p."nota fiscal_agente ibama_matricula" = nf."agente ibama_matricula"
-                         GROUP BY nf.nota_fiscal, nf.chave_de_acesso, nf.data,
-                                nf.valor_total, nf.status_nota, a.nome_agente
+                         LEFT JOIN itens it ON it.id = p.itens_id
+                         GROUP BY nf.nota_fiscal, nf.data,
+                                nf.valor_total, nf.status_nota, i.nome_infrator
                          ORDER BY nf.data DESC"""
                 params = ()
 
@@ -247,20 +311,31 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
                 notas = []
                 if resultados:
                     for row in resultados.fetchall():
+                        itens_lista = []
+                        if row[6]:
+                            for item_str in row[6].split(";; "):
+                                partes = item_str.split("|")
+                                if len(partes) == 3:
+                                    itens_lista.append({
+                                        "nome": partes[0],
+                                        "quantidade": int(partes[1]) if partes[1] else 0,
+                                        "unidade": partes[2] or "un"
+                                    })
                         notas.append({
                             "nota_fiscal": row[0] or "--",
-                            "chave_de_acesso": row[1] or "--",
-                            "data": _fmt_date(row[2]),
-                            "valor_total": float(row[3]) if row[3] else 0,
-                            "status": row[4] or "Pendente",
-                            "usuario": row[5] or "--",
-                            "qtd_itens": row[6] if row[6] else 0,
+                            "data": _fmt_date(row[1]),
+                            "valor_total": float(row[2]) if row[2] else 0,
+                            "status": row[3] or "Pendente",
+                            "infrator": row[4] or "--",
+                            "qtd_itens": row[5] if row[5] else 0,
+                            "itens_detalhes": itens_lista,
                         })
                 return notas
             except Exception:
                 return []
 
     def _render_rows(self):
+        colors = COLORS
         for widget in self.table_body.winfo_children():
             widget.destroy()
 
@@ -268,7 +343,7 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
             ctk.CTkLabel(
                 self.table_body, text="Nenhuma nota fiscal cadastrada",
                 font=ctk.CTkFont(size=FONTS["size_body"]),
-                text_color=COLORS["text_muted"]
+                text_color=colors["text_muted"]
             ).pack(pady=30)
             return
 
@@ -283,31 +358,41 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
             cols.pack(side="left", fill="x", expand=True, padx=(10, 0))
 
             if nota["status"] == "Aprovada":
-                status_color = COLORS["success_dark"]
+                status_color = colors["success_dark"]
                 status_text = "\u2714"
             elif nota["status"] == "Rejeitada":
-                status_color = COLORS["danger"]
+                status_color = colors["danger"]
                 status_text = "\u2718"
             else:
-                status_color = COLORS["warning"]
+                status_color = colors["warning"]
                 status_text = "\u26A0"
 
             dados = [
                 (nota["nota_fiscal"], COLORS["text"]),
-                (nota["chave_de_acesso"].ljust(44), COLORS["text_muted"]),
                 (nota["data"], COLORS["text_muted"]),
-                (str(nota["qtd_itens"]), COLORS["text_muted"]),
+                (str(nota["qtd_itens"]), COLORS["text_muted"], nota["itens_detalhes"]),
                 (f"R$ {nota['valor_total']:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), COLORS["text_muted"]),
-                (nota["usuario"], COLORS["text_muted"]),
+                (nota["infrator"], COLORS["text_muted"]),
                 (status_text, status_color),
             ]
 
-            for (relx, relwidth, anchor), (valor, cor) in zip(self.colunas_place, dados):
-                ctk.CTkLabel(
-                    cols, text=valor,
-                    font=ctk.CTkFont(size=FONTS["size_small"]),
-                    text_color=cor, anchor=anchor,
-                ).place(relx=relx, relwidth=relwidth, rely=0, relheight=1)
+            for (relx, relwidth, anchor), item_dado in zip(self.colunas_place, dados):
+                if len(item_dado) == 3:
+                    valor, cor, itens_detalhes = item_dado
+                    lbl = ctk.CTkLabel(
+                        cols, text=valor,
+                        font=ctk.CTkFont(size=FONTS["size_small"]),
+                        text_color=cor, anchor=anchor, cursor="hand2"
+                    )
+                    lbl.place(relx=relx, relwidth=relwidth, rely=0, relheight=1)
+                    ToolTip(lbl, itens_detalhes)
+                else:
+                    valor, cor = item_dado
+                    ctk.CTkLabel(
+                        cols, text=valor,
+                        font=ctk.CTkFont(size=FONTS["size_small"]),
+                        text_color=cor, anchor=anchor,
+                    ).place(relx=relx, relwidth=relwidth, rely=0, relheight=1)
 
         self.lbl_total_registros.configure(text=f"Total de Registros: {len(self.notas)}")
         valor_total = sum(n["valor_total"] for n in self.notas)

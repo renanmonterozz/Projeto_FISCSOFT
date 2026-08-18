@@ -1,10 +1,43 @@
 from tkinter import messagebox
 
 import customtkinter as ctk
+<<<<<<< HEAD
 
 from config.layout_system import LayoutSystem
+=======
+>>>>>>> main
 from config.styles import COLORS, FONTS
-from database.conexaodb import Database
+
+
+def _rebuild_sidebar_and_content(page):
+    """Reconstrói a sidebar e o content_frame após alternar o tema."""
+    root = page.winfo_toplevel()
+    sidebar = getattr(root, "_sidebar", None)
+    content_frame = getattr(root, "_content_frame", None)
+    navegar = getattr(root, "_navegar", None)
+
+    if sidebar:
+        sidebar.rebuild()
+    if content_frame:
+        content_frame.configure(fg_color=COLORS["bg"])
+    if navegar and content_frame:
+        for w in content_frame.winfo_children():
+            w.destroy()
+        # Re-navega para a página atual (mantém na mesma tela)
+        current_page = page.__class__.__name__
+        page_map = {
+            "MenuInicialPage": "Menu Principal",
+            "ItensPage": "Itens",
+            "UsuariosPage": "Agente",
+            "InfratoresPage": "Usuario Externo",
+            "LocaisPage": "Locais Cadastrados",
+            "RelatoriosPage": "Relatorio",
+            "RelatorioEntregaPage": "Destinacao",
+            "HistoricoPage": "Historico",
+        }
+        page_name = page_map.get(current_page)
+        if page_name:
+            navegar(page_name)
 
 
 class CrudBase:
@@ -100,25 +133,24 @@ class CrudBase:
             **kwargs,
         )
 
-    def build_header(self, title, subtitle, alerta_nota=True, processo_tccm=None):
+    def build_header(self, title, subtitle):
+        colors = COLORS
         header = ctk.CTkFrame(self, fg_color="transparent")
         header.pack(fill="x", padx=30, pady=(30, 20))
 
-        if alerta_nota:
-            if processo_tccm is None:
-                processo_tccm = getattr(self, "processo_tccm", None)
-            self.build_alerta_nota(header, processo_tccm)
+        text_frame = ctk.CTkFrame(header, fg_color="transparent")
+        text_frame.pack(side="left", fill="x", expand=True)
 
         ctk.CTkLabel(
-            header, text=title,
+            text_frame, text=title,
             font=ctk.CTkFont(size=FONTS["size_title"], weight="bold"),
-            text_color=COLORS["text"],
+            text_color=colors["text"],
         ).pack(anchor="w")
 
         ctk.CTkLabel(
-            header, text=subtitle,
+            text_frame, text=subtitle,
             font=ctk.CTkFont(size=FONTS["size_subtitle"]),
-            text_color=COLORS["text_muted"],
+            text_color=colors["text_muted"],
         ).pack(anchor="w", pady=(4, 0))
 
     def build_filter_container(self):
@@ -134,17 +166,18 @@ class CrudBase:
         return inner
 
     def build_search_entry(self, parent, placeholder, width=340):
+        colors = COLORS
         frame = ctk.CTkFrame(
-            parent, fg_color=COLORS["white"], border_width=1,
-            border_color=COLORS["border"], corner_radius=4
+            parent, fg_color=colors["white"], border_width=1,
+            border_color=colors["border"], corner_radius=4
         )
         frame.pack(side="left", padx=(0, 10))
 
         entry = ctk.CTkEntry(
             frame, placeholder_text=placeholder,
             width=width, height=38, border_width=0,
-            fg_color=COLORS["white"], text_color=COLORS["text"],
-            placeholder_text_color=COLORS["text_muted"],
+            fg_color=colors["white"], text_color=colors["text"],
+            placeholder_text_color=colors["text_muted"],
         )
         entry.pack(side="left", padx=(12, 4), pady=2)
         ctk.CTkLabel(
@@ -154,12 +187,13 @@ class CrudBase:
         return entry
 
     def build_filter_entry(self, parent, placeholder, width=200):
+        colors = COLORS
         entry = ctk.CTkEntry(
             parent, placeholder_text=placeholder,
             width=width, height=38, border_width=1,
-            border_color=COLORS["border"], corner_radius=4,
-            fg_color=COLORS["white"], text_color=COLORS["text"],
-            placeholder_text_color=COLORS["text_muted"],
+            border_color=colors["border"], corner_radius=4,
+            fg_color=colors["white"], text_color=colors["text"],
+            placeholder_text_color=colors["text_muted"],
         )
         entry.pack(side="left", padx=(0, 10))
         return entry
@@ -170,8 +204,15 @@ class CrudBase:
         return btn_frame
 
     def build_action_btn(self, parent, text, icon, command,
-                         fg_color=COLORS["white"], hover_color="#F0F0F0",
-                         text_color=COLORS["text"], border=True, bold=False):
+                         fg_color=None, hover_color=None,
+                         text_color=None, border=True, bold=False):
+        colors = COLORS
+        if fg_color is None:
+            fg_color = colors["white"]
+        if hover_color is None:
+            hover_color = colors["row_hover"]
+        if text_color is None:
+            text_color = colors["text"]
         btn = ctk.CTkButton(
             parent,
             image=icon,
@@ -180,7 +221,7 @@ class CrudBase:
             fg_color=fg_color, hover_color=hover_color,
             text_color=text_color,
             border_width=1 if border else 0,
-            border_color=COLORS["border"],
+            border_color=colors["border"],
             font=ctk.CTkFont(
                 size=FONTS["size_body"],
                 weight="bold" if bold else "normal"
@@ -192,9 +233,10 @@ class CrudBase:
         return btn
 
     def build_table(self, pad_y=(0, 30), height=None):
+        colors = COLORS
         self.table_frame = ctk.CTkFrame(
-            self, fg_color=COLORS["white"], corner_radius=4,
-            border_width=1, border_color=COLORS["border"]
+            self, fg_color=colors["white"], corner_radius=4,
+            border_width=1, border_color=colors["border"]
         )
         if height:
             self.table_frame.configure(height=height)
@@ -205,7 +247,8 @@ class CrudBase:
         return self.table_frame
 
     def build_table_header(self, parent, columns, weights, has_checkbox=True, alignments=None):
-        header = ctk.CTkFrame(parent, fg_color=COLORS["table_header"], height=44, corner_radius=0)
+        colors = COLORS
+        header = ctk.CTkFrame(parent, fg_color=colors["table_header"], height=44, corner_radius=0)
         header.pack(fill="x")
         header.pack_propagate(False)
 
@@ -226,29 +269,30 @@ class CrudBase:
             ctk.CTkLabel(
                 cols, text=col_text,
                 font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                text_color=COLORS["text_muted"],
+                text_color=colors["text_muted"],
                 anchor=alignments[i]
             ).grid(row=0, column=i, sticky="ew", padx=padx)
 
         ctk.CTkLabel(
             header, text="Açoes",
             font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-            text_color=COLORS["text_muted"],
+            text_color=colors["text_muted"],
             width=120
         ).pack(side="right", padx=(0, 15))
 
         self.table_body = ctk.CTkScrollableFrame(
-            parent, fg_color=COLORS["white"], corner_radius=0
+            parent, fg_color=colors["white"], corner_radius=0
         )
         self.table_body.pack(fill="both", expand=True)
         return self.table_body
 
     def add_data_row(self, has_checkbox=True):
+        colors = COLORS
         linha = ctk.CTkFrame(self.table_body, fg_color="transparent", height=52)
         linha.pack(fill="x")
         linha.pack_propagate(False)
 
-        ctk.CTkFrame(self.table_body, fg_color="#E0E0E0", height=1).pack(fill="x")
+        ctk.CTkFrame(self.table_body, fg_color=colors["border"], height=1).pack(fill="x")
 
         cb = None
         if has_checkbox:
@@ -262,6 +306,7 @@ class CrudBase:
         return linha, data, cb
 
     def add_action_buttons(self, parent, actions, width=120):
+        colors = COLORS
         frame = ctk.CTkFrame(parent, fg_color="transparent", width=width)
         frame.pack(side="right", padx=(0, 15))
         frame.pack_propagate(False)
@@ -270,9 +315,9 @@ class CrudBase:
             ctk.CTkButton(
                 frame,
                 text=icon, width=32, height=32,
-                corner_radius=4, fg_color=COLORS["white"],
-                hover_color="#F0F0F0", text_color=COLORS["text"],
-                border_width=1, border_color=COLORS["border"],
+                corner_radius=4, fg_color=colors["white"],
+                hover_color=colors["row_hover"], text_color=colors["text"],
+                border_width=1, border_color=colors["border"],
                 font=ctk.CTkFont(size=14),
                 command=cmd,
             ).pack(side="left", padx=2)

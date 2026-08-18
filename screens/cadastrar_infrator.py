@@ -41,14 +41,14 @@ class CadastrarInfratorWindow(ctk.CTkToplevel):
             header,
             text="Cadastro / Edicao de Infrator",
             font=ctk.CTkFont(size=20, weight="bold"),
-            text_color=COLORS["primary"],
+            text_color=colors["primary"],
         ).pack(anchor="w")
 
         ctk.CTkLabel(
             header,
             text="Informe os dados do infrator.",
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
-            text_color=COLORS["text"],
+            text_color=colors["text"],
         ).pack(anchor="w", pady=(2, 0))
 
         form = LayoutSystem.panel(
@@ -63,7 +63,7 @@ class CadastrarInfratorWindow(ctk.CTkToplevel):
         ctk.CTkLabel(
             form, text="Dados Pessoais",
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
-            text_color=COLORS["text"],
+            text_color=colors["text"],
         ).pack(anchor="w", padx=20, pady=(18, 8))
 
         row1 = LayoutSystem.form_row(form, padding_x=20, padding_y=(0, 10), columns=3)
@@ -79,7 +79,7 @@ class CadastrarInfratorWindow(ctk.CTkToplevel):
         ctk.CTkLabel(
             form, text="Dados de Acesso",
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
-            text_color=COLORS["text"],
+            text_color=colors["text"],
         ).pack(anchor="w", padx=20, pady=(5, 8))
 
         row3 = LayoutSystem.form_row(form, padding_x=20, padding_y=(0, 10), columns=2)
@@ -94,7 +94,7 @@ class CadastrarInfratorWindow(ctk.CTkToplevel):
             btn_frame,
             text="  Salvar Infrator",
             height=40, corner_radius=4,
-            fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
+            fg_color=colors["primary"], hover_color=colors["primary_hover"],
             text_color="white", border_width=0,
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             compound="left",
@@ -105,9 +105,9 @@ class CadastrarInfratorWindow(ctk.CTkToplevel):
             btn_frame,
             text="Cancelar",
             height=40, corner_radius=4,
-            fg_color=COLORS["border"], hover_color=COLORS["hover"],
-            text_color=COLORS["text"], border_width=1,
-            border_color=COLORS["border"],
+            fg_color=colors["border"], hover_color=colors["hover"],
+            text_color=colors["text"], border_width=1,
+            border_color=colors["border"],
             font=ctk.CTkFont(size=FONTS["size_body"]),
             command=self.destroy,
         ).pack(side="right")

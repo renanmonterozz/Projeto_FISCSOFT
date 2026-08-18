@@ -691,17 +691,6 @@ class NotasFiscaisExterno(ctk.CTkFrame):
             command=self._limpar_campos,
         ).pack(side="left")
 
-        voltar_container = ctk.CTkFrame(self.scroll, fg_color="transparent")
-        voltar_container.pack(fill="x", padx=30, pady=(18, 26))
-
-        ctk.CTkButton(
-            btn_container, text="  Voltar", height=40, corner_radius=6,
-            fg_color=COLORS["success_dark"], hover_color=COLORS["success_dark_hover"],
-            text_color="white", border_width=0,
-            font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
-            width=140,
-            command=self._voltar,
-        ).pack(anchor="center")
 
     def _salvar(self):
         numero = self.entry_numero.get().strip()
