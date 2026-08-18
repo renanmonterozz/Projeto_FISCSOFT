@@ -168,7 +168,7 @@ class ItensPage(CrudBase, ctk.CTkFrame):
                             "  SELECT nf.nota_fiscal FROM \"nota fiscal\" nf WHERE nf.processo = ? AND nf.data >= ? AND nf.data <= ?"
                             ") ORDER BY i.id"
                         )
-                        params = (sem_year, sem_num, self.processo_tccm, self.processo_tccm, semestre_range[0], semestre_range[1])
+                        params = (sem_year, sem_num, semestre_range[0], semestre_range[1], self.processo_tccm, self.processo_tccm, semestre_range[0], semestre_range[1])
                     else:
                         sql = (
                             "SELECT DISTINCT i.id, i.nome, i.descricao, i.tipo, i.justificativa, i.unidade_medida, "

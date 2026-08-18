@@ -81,10 +81,7 @@ class CadastrarItensWindow(ctk.CTkToplevel):
 
         ctk.CTkLabel(qtd_frame, text="Qtd. Prevista para o TCCM*", font=ctk.CTkFont(size=12), text_color=COLORS["text"]).pack(anchor="w", pady=(0, 4))
         self.entry_qtd = ctk.CTkEntry(qtd_frame, height=36, corner_radius=4, border_width=1, border_color=COLORS["border"], fg_color=COLORS["white"], text_color=COLORS["text"]) 
-        self.entry_qtd.pack(fill="x", side="left", expand=True)
-
-        self.btn_gerenciar_semestres = ctk.CTkButton(qtd_frame, text="Gerenciar Semestres", width=160, height=36, command=self._abrir_gerenciador_semestres)
-        self.btn_gerenciar_semestres.pack(side="right", padx=(8,0))
+        self.entry_qtd.pack(fill="x")
 
         btn_frame = ctk.CTkFrame(form, fg_color="transparent")
         btn_frame.pack(fill="x", padx=20, pady=(25, 20))
@@ -118,11 +115,6 @@ class CadastrarItensWindow(ctk.CTkToplevel):
         self.combo_unidade.set(it.get("unidade_medida") or "Unidade")
         self.entry_just.insert(0, it.get("justificativa") or "")
         self.entry_qtd.insert(0, str(it.get("quantidade_prevista") or 0))
-        # enable gerenciador for existing items
-        try:
-            self.btn_gerenciar_semestres.configure(state="normal")
-        except Exception:
-            pass
 
     def _criar_campo(self, parent, label, col, weight=1):
         parent.grid_columnconfigure(col, weight=weight)
@@ -221,16 +213,53 @@ class CadastrarItensWindow(ctk.CTkToplevel):
             except Exception:
                 item_id = self.item_edicao["id"] if self.item_edicao else nid
 
-            # persist per-semester quantidade in item_semestre
+            # persist per-semester quantities based on TCCM semesters
             try:
                 from datetime import datetime as _dt
-                now = _dt.now()
-                ano = now.year
-                semestre = 1 if now.month <= 6 else 2
-                db.executar(
-                    "INSERT OR REPLACE INTO item_semestre (itens_id, ano, semestre, quantidade_prevista, processo) VALUES (?, ?, ?, ?, ?)",
-                    (item_id, ano, semestre, qtd_int, self.processo_tccm),
+                r_tccm = db.executar(
+                    "SELECT data_inicio, semestres FROM tccm WHERE processo = ?",
+                    (self.processo_tccm,),
                 )
+                tccm_row = r_tccm.fetchone() if r_tccm else None
+
+                if tccm_row and tccm_row[1]:
+                    data_inicio = tccm_row[0]
+                    semestres_total = int(tccm_row[1]) or 1
+
+                    try:
+                        if hasattr(data_inicio, "year"):
+                            start_dt = data_inicio
+                        else:
+                            start_dt = _dt.strptime(str(data_inicio), "%Y-%m-%d")
+                    except Exception:
+                        start_dt = _dt.now()
+
+                    start_sem = 1 if start_dt.month <= 6 else 2
+
+                    base = qtd_int // semestres_total
+                    rem = qtd_int % semestres_total
+
+                    for i in range(semestres_total):
+                        offset = (start_sem - 1) + i
+                        ano = start_dt.year + (offset // 2)
+                        sem_num = (offset % 2) + 1
+                        qtd_sem = base + (1 if i < rem else 0)
+                        db.executar(
+                            "INSERT OR REPLACE INTO item_semestre "
+                            "(itens_id, ano, semestre, quantidade_prevista, processo) "
+                            "VALUES (?, ?, ?, ?, ?)",
+                            (item_id, ano, sem_num, qtd_sem, self.processo_tccm),
+                        )
+                else:
+                    now = _dt.now()
+                    ano = now.year
+                    semestre = 1 if now.month <= 6 else 2
+                    db.executar(
+                        "INSERT OR REPLACE INTO item_semestre "
+                        "(itens_id, ano, semestre, quantidade_prevista, processo) "
+                        "VALUES (?, ?, ?, ?, ?)",
+                        (item_id, ano, semestre, qtd_int, self.processo_tccm),
+                    )
             except Exception:
                 pass
 
@@ -239,123 +268,3 @@ class CadastrarItensWindow(ctk.CTkToplevel):
         registrar_log(self.usuario_logado or "Sistema", "edicao" if self.item_edicao else "cadastro", "itens", mensagem)
         messagebox.showinfo("Sucesso", mensagem, parent=self)
         self.destroy()
-
-    def _abrir_gerenciador_semestres(self):
-        # only for existing items
-        if not self.item_edicao:
-            messagebox.showinfo("Info", "Salve o item primeiro para gerenciar quantidades por semestre.", parent=self)
-            return
-
-        modal = ctk.CTkToplevel(self)
-        modal.title("Gerenciar Quantidades por Semestre")
-        modal.geometry("520x400")
-        modal.transient(self)
-        modal.grab_set()
-
-        frame = ctk.CTkFrame(modal, fg_color=COLORS["white"])
-        frame.pack(fill="both", expand=True, padx=12, pady=12)
-
-        # listbox for existing entries
-        list_frame = ctk.CTkFrame(frame, fg_color="transparent")
-        list_frame.pack(fill="both", expand=True)
-
-        self.sem_list = ctk.CTkScrollableFrame(list_frame, fg_color=COLORS["white"])
-        self.sem_list.pack(fill="both", expand=True, side="left")
-
-        ctrl_frame = ctk.CTkFrame(frame, fg_color="transparent")
-        ctrl_frame.pack(fill="x", pady=(8,0))
-
-        # inputs
-        ano_frame = ctk.CTkFrame(ctrl_frame, fg_color="transparent")
-        ano_frame.pack(side="left", padx=6)
-        ctk.CTkLabel(ano_frame, text="Ano", font=ctk.CTkFont(size=12), text_color=COLORS["text"]).pack(anchor="w")
-        self.input_ano = ctk.CTkEntry(ano_frame, width=80, height=28)
-        self.input_ano.pack()
-
-        sem_frame = ctk.CTkFrame(ctrl_frame, fg_color="transparent")
-        sem_frame.pack(side="left", padx=6)
-        ctk.CTkLabel(sem_frame, text="Semestre", font=ctk.CTkFont(size=12), text_color=COLORS["text"]).pack(anchor="w")
-        self.input_sem = ctk.CTkComboBox(sem_frame, values=["1","2"], width=80)
-        self.input_sem.set("1")
-        self.input_sem.pack()
-
-        qtd_frame = ctk.CTkFrame(ctrl_frame, fg_color="transparent")
-        qtd_frame.pack(side="left", padx=6)
-        ctk.CTkLabel(qtd_frame, text="Qtd.", font=ctk.CTkFont(size=12), text_color=COLORS["text"]).pack(anchor="w")
-        self.input_qtd_sem = ctk.CTkEntry(qtd_frame, width=100, height=28)
-        self.input_qtd_sem.pack()
-
-        btn_add = ctk.CTkButton(ctrl_frame, text="Adicionar/Atualizar", command=lambda: self._add_or_update_semestre(modal))
-        btn_add.pack(side="left", padx=6)
-
-        btn_refresh = ctk.CTkButton(ctrl_frame, text="Fechar", command=modal.destroy)
-        btn_refresh.pack(side="right", padx=6)
-
-        self._load_semestres_list()
-
-    def _load_semestres_list(self):
-        if not hasattr(self, 'sem_list'):
-            return
-        for w in self.sem_list.winfo_children():
-            try:
-                w.destroy()
-            except Exception:
-                pass
-        try:
-            with Database() as db:
-                if not db.conexao:
-                    return
-                rows = db.executar("SELECT ano, semestre, quantidade_prevista FROM item_semestre WHERE itens_id = ? ORDER BY ano DESC, semestre DESC", (self.item_edicao["id"],))
-                if rows:
-                    for r in rows.fetchall():
-                        ano, sem, qtd = r[0], r[1], r[2]
-                        entry = ctk.CTkFrame(self.sem_list, fg_color=COLORS["border"])
-                        entry.pack(fill="x", padx=6, pady=6)
-                        ctk.CTkLabel(entry, text=f"{ano} - S{sem}", width=120).pack(side="left", padx=(8,0))
-                        ctk.CTkLabel(entry, text=str(qtd)).pack(side="left", padx=(8,0))
-                        ctk.CTkButton(entry, text="Editar", width=80, command=lambda a=ano, s=sem: self._fill_sem_inputs(a, s)).pack(side="right", padx=6)
-                        ctk.CTkButton(entry, text="Remover", width=80, command=lambda a=ano, s=sem: self._remove_semestre(a, s)).pack(side="right")
-        except Exception:
-            pass
-
-    def _fill_sem_inputs(self, ano, sem):
-        try:
-            with Database() as db:
-                r = db.executar("SELECT quantidade_prevista FROM item_semestre WHERE itens_id = ? AND ano = ? AND semestre = ?", (self.item_edicao["id"], ano, sem))
-                row = r.fetchone() if r else None
-                if row:
-                    self.input_ano.delete(0, 'end')
-                    self.input_ano.insert(0, str(ano))
-                    self.input_sem.set(str(sem))
-                    self.input_qtd_sem.delete(0, 'end')
-                    self.input_qtd_sem.insert(0, str(row[0] or 0))
-        except Exception:
-            pass
-
-    def _add_or_update_semestre(self, modal):
-        try:
-            ano = int(self.input_ano.get())
-            sem = int(self.input_sem.get())
-            qtd = int(self.input_qtd_sem.get())
-        except Exception:
-            messagebox.showerror("Erro", "Preencha ano, semestre e quantidade correta.", parent=modal)
-            return
-        try:
-            with Database() as db:
-                if not db.conexao:
-                    messagebox.showerror("Erro", "Nao foi possivel conectar ao banco.", parent=modal)
-                    return
-                db.executar("INSERT OR REPLACE INTO item_semestre (itens_id, ano, semestre, quantidade_prevista, processo) VALUES (?, ?, ?, ?, ?)", (self.item_edicao["id"], ano, sem, qtd, self.processo_tccm))
-                db.commitar()
-            self._load_semestres_list()
-        except Exception:
-            messagebox.showerror("Erro", "Falha ao atualizar banco.", parent=modal)
-
-    def _remove_semestre(self, ano, sem):
-        try:
-            with Database() as db:
-                db.executar("DELETE FROM item_semestre WHERE itens_id = ? AND ano = ? AND semestre = ?", (self.item_edicao["id"], ano, sem))
-                db.commitar()
-            self._load_semestres_list()
-        except Exception:
-            pass
