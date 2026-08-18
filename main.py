@@ -5,12 +5,14 @@ import pywinstyles
 import logging
 import os
 import sys
+from dataclasses import dataclass
 from tkinter import TclError, messagebox
 
 from PIL import Image
 
 import customtkinter as ctk
 
+from config.layout_system import LayoutSystem
 from config.styles import ASSETS_DIR, COLORS, FONTS
 from config.permissoes import PAGINAS_EXTERNO, normalizar_perfil, paginas_do_perfil, pode_acao
 from database.conexaodb import Database
@@ -55,6 +57,14 @@ AMARELO_BOTAO = "#FFF48C"
 VERDE_POLIGONO = "#302F2F"
 
 
+@dataclass
+class SessaoUsuario:
+    usuario_logado: str = ""
+    perfil: str = "operador"
+    id_infrator: int | None = None
+    processo_tccm: str | None = None
+
+
 class LoginApp(ctk.CTk):
     def __init__(self):
         super().__init__()
@@ -76,51 +86,53 @@ class LoginApp(ctk.CTk):
         self.after(100, self._ajustar_imagem_fundo)
 
         # --- Texto "ACESSE O SISTEMA!" ---
-        self.label_titulo = ctk.CTkLabel(
+        self.label_titulo = LayoutSystem.label(
             self,
-            text="ACESSE O SISTEMA!",
-            font=("Libre Baskerville", 36),
+            "ACESSE O SISTEMA!",
+            font_size=36,
+            weight="bold",
             text_color="#FFF9BE",
+            anchor="center",
             fg_color="#000001",
-            bg_color="#000001"
+            bg_color="#000001",
         )
         self.label_titulo.place(relx=0.5, rely=0.78, anchor="center")
         pywinstyles.set_opacity(self.label_titulo, color="#000001")
 
         # --- Botão único: Fazer Login ---
-        self.btn_entrar = ctk.CTkButton(
+        self.btn_entrar = LayoutSystem.button(
             self,
-            text="Fazer Login",
+            "Fazer Login",
             width=480,
             height=50,
-            corner_radius=16,
+            command=self._mostrar_formulario_unificado,
             fg_color=VERDE_POLIGONO,
-            bg_color="#000001",
             hover_color="#211E1E",
             text_color=AMARELO_BOTAO,
-            font=ctk.CTkFont(family="Segoe UI", size=19),
             border_width=2,
             border_color="#000001",
-            command=self._mostrar_formulario_unificado
+            corner_radius=16,
+            font_size=19,
+            font_weight="normal",
         )
         self.btn_entrar.place(relx=0.5, rely=0.865, anchor="center")
         pywinstyles.set_opacity(self.btn_entrar, color="#000001")
 
         # --- Botao: Entrar com Certificado Digital ---
-        self.btn_certificado = ctk.CTkButton(
+        self.btn_certificado = LayoutSystem.button(
             self,
-            text="Entrar com Certificado Digital",
+            "Entrar com Certificado Digital",
             width=480,
             height=50,
-            corner_radius=16,
+            command=self._login_certificado,
             fg_color=VERDE_POLIGONO,
-            bg_color="#000001",
             hover_color="#211E1E",
             text_color=AMARELO_BOTAO,
-            font=ctk.CTkFont(family="Segoe UI", size=19),
             border_width=2,
             border_color="#000001",
-            command=self._login_certificado
+            corner_radius=16,
+            font_size=19,
+            font_weight="normal",
         )
         self.btn_certificado.place(relx=0.5, rely=0.945, anchor="center")
         pywinstyles.set_opacity(self.btn_certificado, color="#000001")
@@ -348,19 +360,43 @@ class LoginApp(ctk.CTk):
             self.btn_eye.configure(text="\U0001f441")
             self._senha_visivel = True
 
-    def _abrir_tela_externa(self):
+    @staticmethod
+    def _fechar_janela(app):
         try:
-            self.quit()
-            self.destroy()
+            app.quit()
+            app.destroy()
         except TclError:
             pass
+
+    def _retornar_para_login(self):
+        self._fechar_janela(self)
+        app = LoginApp()
+        _suprimir_erro_tcl()
+        app.mainloop()
+
+    def _criar_sessao(self, *, usuario_logado=None, perfil=None, id_infrator=None, processo_tccm=None):
+        return SessaoUsuario(
+            usuario_logado=usuario_logado or "",
+            perfil=perfil or "operador",
+            id_infrator=id_infrator,
+            processo_tccm=processo_tccm,
+        )
+
+    def _abrir_tela_externa(self):
+        self._fechar_janela(self)
 
         main_app = ctk.CTk()
         main_app.title("FISCSOFT - Acesso Externo")
         main_app.configure(fg_color=COLORS["white"])
         main_app.after(0, main_app.state, "zoomed")
-        main_app.usuario_logado = self.usuario_logado
-        main_app.id_infrator = self.id_infrator
+        sessao = self._criar_sessao(
+            usuario_logado=self.usuario_logado,
+            id_infrator=self.id_infrator,
+            perfil="operador",
+        )
+        main_app.usuario_logado = sessao.usuario_logado
+        main_app.id_infrator = sessao.id_infrator
+        main_app.session = sessao
 
         def navegar(pagina: str):
             if pagina not in PAGINAS_EXTERNO:
@@ -389,17 +425,10 @@ class LoginApp(ctk.CTk):
                     usuario_logado=self.usuario_logado,
                     id_infrator=self.id_infrator
                 ).pack(fill="both", expand=True)
-
+ 
         def logout():
-            try:
-                main_app.quit()
-                main_app.destroy()
-            except TclError:
-                pass
-            app = LoginApp()
-            _suprimir_erro_tcl()
-            app.mainloop()
-
+            self._retornar_para_login()
+ 
         sidebar = SidebarExterno(main_app, width=210, on_navigate=navegar, on_sair=logout)
         sidebar.pack(side="left", fill="y")
 
@@ -411,19 +440,22 @@ class LoginApp(ctk.CTk):
         main_app.mainloop()
 
     def _abrir_tela_principal(self, perfil: str = "admin", processo_tccm: str = None):
-        try:
-            self.quit()
-            self.destroy()
-        except TclError:
-            pass
+        self._fechar_janela(self)
 
         welcome_app = ctk.CTk()
         welcome_app.title("FISCSOFT - Bem-vindo")
         welcome_app.configure(fg_color=COLORS["bg"])
         welcome_app.after(0, welcome_app.state, "zoomed")
-        welcome_app.usuario_logado = self.usuario_logado
-        welcome_app.perfil = perfil
-        welcome_app.processo_tccm = processo_tccm
+
+        sessao = self._criar_sessao(
+            usuario_logado=self.usuario_logado,
+            perfil=perfil,
+            processo_tccm=processo_tccm,
+        )
+        welcome_app.usuario_logado = sessao.usuario_logado
+        welcome_app.perfil = sessao.perfil
+        welcome_app.processo_tccm = sessao.processo_tccm
+        welcome_app.session = sessao
 
         header = ctk.CTkFrame(welcome_app, fg_color="transparent")
         header.pack(fill="x", padx=30, pady=(20, 0))
@@ -439,14 +471,7 @@ class LoginApp(ctk.CTk):
         content.pack(fill="both", expand=True, padx=30, pady=(15, 20))
 
         def _logout_welcome():
-            try:
-                welcome_app.quit()
-                welcome_app.destroy()
-            except TclError:
-                pass
-            app = LoginApp()
-            _suprimir_erro_tcl()
-            app.mainloop()
+            self._retornar_para_login()
 
         def _abrir_cadastro_tccm():
             if not pode_acao(perfil, "criar_tccm"):
@@ -484,18 +509,21 @@ class LoginApp(ctk.CTk):
         welcome_app.mainloop()
 
     def _abrir_menu_principal(self, welcome_app, perfil: str, processo_tccm: str = None):
-        try:
-            welcome_app.quit()
-            welcome_app.destroy()
-        except TclError:
-            pass
+        self._fechar_janela(welcome_app)
 
         main_app = ctk.CTk()
         main_app.title("FISCSOFT" if perfil == "admin" else "FISCSOFT - Usuario")
         main_app.configure(fg_color=COLORS["white"])
         main_app.after(0, main_app.state, "zoomed")
-        main_app.usuario_logado = self.usuario_logado
-        main_app.perfil = perfil
+
+        sessao = self._criar_sessao(
+            usuario_logado=self.usuario_logado,
+            perfil=perfil,
+            processo_tccm=processo_tccm,
+        )
+        main_app.usuario_logado = sessao.usuario_logado
+        main_app.perfil = sessao.perfil
+        main_app.session = sessao
 
         permissoes = paginas_do_perfil(perfil)
 
@@ -558,14 +586,7 @@ class LoginApp(ctk.CTk):
                 ).pack(expand=True)
 
         def logout():
-            try:
-                main_app.quit()
-                main_app.destroy()
-            except TclError:
-                pass
-            app = LoginApp()
-            _suprimir_erro_tcl()
-            app.mainloop()
+            self._retornar_para_login()
 
         sidebar = Sidebar(main_app, width=210, on_navigate=navegar, on_sair=logout, perfil=perfil)
         sidebar.pack(side="left", fill="y")

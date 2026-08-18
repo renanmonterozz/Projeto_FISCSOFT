@@ -3,6 +3,7 @@ import _path  # noqa: F401
 import customtkinter as ctk
 from tkinter import messagebox
 
+from config.layout_system import LayoutSystem
 from config.styles import COLORS, FONTS
 from database.conexaodb import Database
 from screens.widgets import ComboBoxComSeta
@@ -27,11 +28,14 @@ class CadastrarItensWindow(ctk.CTkToplevel):
             self.preencher_campos()
 
     def build_ui(self):
-        container = ctk.CTkFrame(
-            self, fg_color=COLORS["white"], corner_radius=4,
-            border_width=1, border_color=COLORS["border"]
+        container = LayoutSystem.panel(
+            self,
+            fill="both",
+            expand=True,
+            padding=(20, 20),
+            fg_color=COLORS["white"],
+            border_color=COLORS["border"],
         )
-        container.pack(fill="both", expand=True, padx=20, pady=20)
 
         header = ctk.CTkFrame(container, fg_color="transparent")
         header.pack(fill="x", padx=25, pady=(20, 5))
@@ -50,31 +54,27 @@ class CadastrarItensWindow(ctk.CTkToplevel):
             text_color=COLORS["text"],
         ).pack(anchor="w", pady=(2, 0))
 
-        form = ctk.CTkFrame(
-            container, fg_color=COLORS["white"], corner_radius=4,
-            border_width=1, border_color=COLORS["border"]
+        form = LayoutSystem.panel(
+            container,
+            fill="both",
+            expand=True,
+            padding=(25, (15, 30)),
+            fg_color=COLORS["white"],
+            border_color=COLORS["border"],
         )
-        form.pack(fill="both", expand=True, padx=25, pady=(15, 30))
 
-        row1 = ctk.CTkFrame(form, fg_color="transparent")
-        row1.pack(fill="x", padx=20, pady=(18, 10))
-
+        row1 = LayoutSystem.form_row(form, padding_x=20, padding_y=(18, 10), columns=2)
         self.entry_nome = self._criar_campo(row1, "Nome do Item*", 0, weight=3)
         self.entry_desc = self._criar_campo(row1, "Descricao", 1, weight=3)
 
-        row2 = ctk.CTkFrame(form, fg_color="transparent")
-        row2.pack(fill="x", padx=20, pady=(0, 10))
-
+        row2 = LayoutSystem.form_row(form, padding_x=20, padding_y=(0, 10), columns=2)
         self.combo_tipo = self._criar_combobox(row2, "Tipo de Material*", 0,
                                                ["Consumivel", "Permanente"], default="Consumivel")
         self.combo_unidade = self._criar_combobox(row2, "Unidade de Medida*", 1,
                                                   ["Unidade", "Caixa", "Litro", "Kg"], default="Unidade")
 
-        row3 = ctk.CTkFrame(form, fg_color="transparent")
-        row3.pack(fill="x", padx=20, pady=(0, 10))
-
+        row3 = LayoutSystem.form_row(form, padding_x=20, padding_y=(0, 10), columns=2)
         self.entry_just = self._criar_campo(row3, "Justificativa*", 0, weight=3)
-        # quantidade prevista is per-semester
         qtd_frame = ctk.CTkFrame(row3, fg_color="transparent")
         qtd_frame.grid_columnconfigure(0, weight=1)
         qtd_frame.grid(row=0, column=1, padx=(0, 15), sticky="ew")
@@ -125,50 +125,28 @@ class CadastrarItensWindow(ctk.CTkToplevel):
             pass
 
     def _criar_campo(self, parent, label, col, weight=1):
-        parent.grid_columnconfigure(col, weight=weight)
-
-        frame = ctk.CTkFrame(parent, fg_color="transparent")
-        frame.grid(row=0, column=col, padx=(0, 15), sticky="ew")
-
-        ctk.CTkLabel(
-            frame, text=label,
-            font=ctk.CTkFont(size=12),
-            text_color=COLORS["text"],
-        ).pack(anchor="w", pady=(0, 4))
-
-        entry = ctk.CTkEntry(
-            frame, height=36, corner_radius=4,
-            border_width=1, border_color=COLORS["border"],
-            fg_color=COLORS["white"], text_color=COLORS["text"],
-            placeholder_text_color=COLORS["text_muted"],
+        return LayoutSystem.field(
+            parent,
+            label.rstrip("*"),
+            column=col,
+            weight=weight,
+            required=label.endswith("*"),
         )
-        entry.pack(fill="x")
-        return entry
 
     def _criar_combobox(self, parent, label, col, values, default=None):
-        parent.grid_columnconfigure(col, weight=1)
-
-        frame = ctk.CTkFrame(parent, fg_color="transparent")
-        frame.grid(row=0, column=col, padx=(0, 15), sticky="ew")
-
-        ctk.CTkLabel(
-            frame, text=label,
-            font=ctk.CTkFont(size=12),
-            text_color=COLORS["text"],
-        ).pack(anchor="w", pady=(0, 4))
-
-        combo = ComboBoxComSeta(
-            frame, values=values, height=36,
-            corner_radius=4, border_width=1,
-            border_color=COLORS["border"],
-            fg_color=COLORS["white"], button_color=COLORS["border"],
+        return LayoutSystem.combobox_field(
+            parent,
+            label.rstrip("*"),
+            values,
+            column=col,
+            weight=1,
+            default=default if default is not None else values[0],
+            border_width=1,
+            button_color=COLORS["border"],
             button_hover_color=COLORS["hover"],
             dropdown_fg_color=COLORS["white"],
             text_color=COLORS["text"],
         )
-        combo.pack(fill="x")
-        combo.set(default if default is not None else values[0])
-        return combo
 
     def salvar(self):
         nome = self.entry_nome.get().strip()
