@@ -1,31 +1,37 @@
+# Estado Atual do Projeto
 
-# Estado atual
+## Resumo
 
-## Em desenvolvimento
+O projeto já está funcionando em inicialização, com correções aplicadas para o problema de `customtkinter` relacionado a `None` em `width`/`height`, além de reforços de responsividade e padronização do layout global.
 
-- Refatoração de telas e navegação do modo interno (menu/sidebar consolidados).
+## Ajustes já aplicados
 
-## Problema atual
+- Corrigido o erro de inicialização do `CTkFrame` ao receber `width=None` / `height=None`.
+- Adicionado helper responsivo em `config/layout_system.py`:
+  - `responsive()`
+  - `normalize_padding()`
+- Centralizado uso de paddings responsivos em `page_container()` e `panel()`.
+- Padronização inicial do login através de helpers reutilizáveis:
+  - `LayoutSystem.button()`
+  - `LayoutSystem.label()`
+- Criação de `SessaoUsuario` em `main.py` para deixar o estado do usuário mais explícito.
+- Redução de duplicação em rotas de logout e fechamento de janelas em `main.py`.
 
-- Nenhum pendente. Módulos alterados verificados com `py_compile` + import.
+## Situação atual
 
-## Última alteração
+- O projeto compila e a aplicação inicia corretamente.
+- O sistema mantém o padrão visual existente, sem quebrar a arquitetura atual.
+- O layout global foi melhorado para ficar mais robusto em diferentes resoluções de tela.
 
-- Restaurado `screens/tccm_dashboard.py` (remoção anterior desfeita) com sino de notificação de notas fiscais pendentes.
-- Telas mescladas: `screens/itens_locais.py` (Itens + Locais) e `screens/usuarios_infratores.py` (Agente + Usuário Externo).
-- Renomeações: `relatorio_entrega.py` → `destinacao.py`; `relatorios.py` → `notas_fiscais.py` (menu "Notas Fiscais"); `cadastrar_tccm.py` removido.
-- `screens/crud_base.py`: sino de alerta (`build_alerta_nota`/`_notas_pendentes`) no header; `build_table` com altura configurável.
-- `screens/cadastro_tccm_completo.py`: botão "Exportar Planilha" (openpyxl).
-- Logs de auditoria passam a registrar o usuário logado.
+## Próximas etapas propostas
 
-## Próximo passo
+1. Padronizar botões e campos de formulário em telas internas.
+2. Revisar cards, títulos e subtítulos dos CRUDs para usar o mesmo padrão visual.
+3. Remover dimensões fixas redundantes e estilos duplicados em telas internas.
+4. Consolidar o uso do sistema de layout em todas as telas.
+5. Revisar fluxos de navegação internos para reduzir acoplamento visual e de comportamento.
+6. Avaliar criação de testes básicos de inicialização e autenticação.
 
-- Rodar o app e validar visualmente o fluxo interno (login agente) e externo (CPF).
+## Observação
 
-## Arquivos envolvidos
-
-- `main.py`, `screens/sidebar.py`, `config/permissoes.py`
-- `screens/crud_base.py`, `screens/menu_inicial.py`, `screens/tccm_dashboard.py`
-- `screens/itens_locais.py`, `screens/usuarios_infratores.py`
-- `screens/notas_fiscais.py`, `screens/destinacao.py`, `screens/cadastro_tccm_completo.py`
-- `screens/itens.py`, `screens/locais.py`, `screens/usuarios.py`, `screens/infratores.py`, `screens/cadastrar_itens.py`
+Estas etapas foram mantidas em arquivo para continuidade incremental, sem aplicar mudanças adicionais neste momento.

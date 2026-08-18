@@ -3,6 +3,7 @@ import _path  # noqa: F401
 import customtkinter as ctk
 from tkinter import messagebox
 
+from config.layout_system import LayoutSystem
 from config.styles import COLORS, FONTS
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
