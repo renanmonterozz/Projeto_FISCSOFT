@@ -349,7 +349,7 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
                                                fg_color=COLORS["white"], border_color=COLORS["border"],
                                                button_color=COLORS["primary"],
                                                dropdown_fg_color=COLORS["white"])
-        self.entry_item_tipo.grid(row=1, column=1, sticky="ew", padx=(0, 6))
+        self.entry_item_tipo.grid(row=1, column=2, sticky="ew", padx=(0, 6))
 
         row_bottom = ctk.CTkFrame(form_inner, fg_color="transparent")
         row_bottom.grid(row=6, column=0, columnspan=4, sticky="ew", pady=(18, 0))
@@ -367,15 +367,15 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
                                            placeholder_text="0")
         self.entry_item_qtd.grid(row=1, column=0, sticky="ew", padx=(0, 6))
 
-        ctk.CTkLabel(row_bottom, text="Unidade de Medida*",
-                      font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                      text_color=COLORS["text_muted"]).grid(row=0, column=5, sticky="w", padx=(0, 6))
+        ctk.CTkLabel(form_inner, text="Unidade de Medida*",
+                  font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
+                  text_color=COLORS["text_muted"]).grid(row=0, column=3, sticky="w", padx=(0, 6))
         self.entry_item_unidade = ctk.CTkComboBox(form_inner, values=["Unidade", "Caixa", "Litro", "Kg"],
-                                                  height=38, corner_radius=6, state="readonly",
-                                                  fg_color=COLORS["white"], border_color=COLORS["border"],
-                                                  button_color=COLORS["primary"],
-                                                  dropdown_fg_color=COLORS["white"])
-        self.entry_item_unidade.grid(row=1, column=1, sticky="ew", padx=(0, 6))
+                              height=38, corner_radius=6, state="readonly",
+                              fg_color=COLORS["white"], border_color=COLORS["border"],
+                              button_color=COLORS["primary"],
+                              dropdown_fg_color=COLORS["white"])
+        self.entry_item_unidade.grid(row=1, column=3, sticky="ew", padx=(0, 6))
 
         ctk.CTkButton(
             row_bottom, text="+ Adicionar", height=38, width=110, corner_radius=6,
