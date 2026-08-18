@@ -1174,7 +1174,7 @@ class TccmDashboardPage(CrudBase, ctk.CTkFrame):
                 return
             try:
                 sql = """SELECT t.processo, t.total_pago, t.total_devido, t.status,
-                                t.data_validade, t.intervalo,
+                                t.data_validade, t.intervalo, t.data_inicio, t.semestres,
                                 i.nome_infrator, i.cpf
                          FROM tccm t
                          LEFT JOIN infrator i ON i.id_infrator = t."infrator_id_infrator"
@@ -1191,15 +1191,17 @@ class TccmDashboardPage(CrudBase, ctk.CTkFrame):
                         else:
                             qtd_pendentes += 1
 
+                        validade_calculada = _calcular_data_validade(row[6], row[7])
+                        
                         tccms.append({
                             "processo": row[0] or "--",
                             "total_pago": tp,
                             "total_devido": td,
                             "status": status,
-                            "data_validade": _fmt_date(row[4]),
+                            "data_validade": _fmt_date(validade_calculada),
                             "intervalo": row[5] or 0,
-                            "infrator": row[6] or "--",
-                            "cpf": row[7] or "--",
+                            "infrator": row[8] or "--",
+                            "cpf": row[9] or "--",
                         })
             except Exception:
                 pass
