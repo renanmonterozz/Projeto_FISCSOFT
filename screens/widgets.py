@@ -23,11 +23,25 @@ class ComboBoxComSeta(ctk.CTkComboBox):
         self._imagem_seta_tk = None
         self._id_imagem_seta = None
         super().__init__(*args, **kwargs)
+        self.after(100, self._desenhar_imagem_seta)
 
     def _draw(self, no_color_updates=False):
         super()._draw(no_color_updates)
-        self._canvas.itemconfigure("dropdown_arrow", state="hidden")
-        self._desenhar_imagem_seta()
+        try:
+            self._canvas.itemconfigure("dropdown_arrow", state="hidden")
+        except Exception:
+            pass
+        self.after(100, self._desenhar_imagem_seta)
+
+    def configure(self, *args, **kwargs):
+        super().configure(*args, **kwargs)
+        self.after(100, self._desenhar_imagem_seta)
+        return self
+
+    def set(self, value):
+        super().set(value)
+        self.after(100, self._desenhar_imagem_seta)
+        return self
 
     def _desenhar_imagem_seta(self):
         altura = max(10, min(14, int(self._apply_widget_scaling(self._current_height * 0.38))))
