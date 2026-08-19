@@ -7,7 +7,9 @@ from config.styles import COLORS, FONTS
 from config.permissoes import pode_acao
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
+from screens.repository.locais_repository import LocaisRepository
 from screens.sidebar import carregar_icone
+from screens.service.locais_service import filtrar_locais
 from utils import registrar_log
 
 
@@ -19,6 +21,7 @@ class LocaisPage(CrudBase, ctk.CTkFrame):
         self.perfil = perfil
         self.table_height = table_height
         self.pode_editar = pode_acao(perfil, "gerenciar_locais")
+        self.repository = LocaisRepository()
         self.locais = []
         self.local_edicao = None
 
@@ -95,24 +98,7 @@ class LocaisPage(CrudBase, ctk.CTkFrame):
         self.render_rows()
 
     def carregar_do_banco(self):
-        with Database() as db:
-            if not db.conexao:
-                return []
-            sql = """SELECT id, cep, endereco, instituicao, responsavel, telefone
-                     FROM locais ORDER BY id"""
-            resultados = db.executar(sql)
-            locais = []
-            if resultados:
-                for row in resultados.fetchall():
-                    locais.append({
-                        "id": row[0],
-                        "cep": row[1],
-                        "endereco": row[2],
-                        "instituicao": row[3],
-                        "responsavel": row[4],
-                        "telefone": row[5] or "-",
-                    })
-            return locais
+        return self.repository.listar()
 
     def render_rows(self):
         for widget in self.table_body.winfo_children():
@@ -204,13 +190,7 @@ class LocaisPage(CrudBase, ctk.CTkFrame):
 
     def excluir(self, local):
         if messagebox.askyesno("Excluir", f"Deseja excluir o local da {local['instituicao']}?"):
-            with Database() as db:
-                if db.conexao:
-                    db.executar(
-                        "DELETE FROM locais WHERE id = ?",
-                        (local["id"],)
-                    )
-                    db.commitar()
+            self.repository.excluir(local["id"])
             registrar_log(
                 self.usuario_logado or "Sistema",
                 "exclusao",
@@ -221,17 +201,7 @@ class LocaisPage(CrudBase, ctk.CTkFrame):
             self.render_rows()
 
     def pesquisar(self):
-        termo = self.entry_busca.get().strip().lower()
-        if not termo:
-            self.locais = self.carregar_do_banco()
-        else:
-            self.locais = [
-                l for l in self.carregar_do_banco()
-                if termo in l["instituicao"].lower()
-                or termo in l["endereco"].lower()
-                or termo in l["cep"].lower()
-                or termo in l["responsavel"].lower()
-            ]
+        self.locais = filtrar_locais(self.carregar_do_banco(), self.entry_busca.get())
         self.render_rows()
 
     def limpar_filtros(self):

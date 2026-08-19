@@ -6,8 +6,13 @@ import customtkinter as ctk
 from PIL import Image
 
 from config.styles import ASSETS_DIR, COLORS, FONTS
-from database.conexaodb import Database
 from screens.crud_base import CrudBase
+from screens.service.dashboard_service import (
+    DashboardService,
+    formatar_data,
+    formatar_moeda_brl,
+    status_nota,
+)
 
 
 class DashboardExterno(CrudBase, ctk.CTkFrame):
@@ -16,6 +21,7 @@ class DashboardExterno(CrudBase, ctk.CTkFrame):
         self.configure(fg_color=COLORS["bg"])
         self.usuario_logado = usuario_logado
         self.id_infrator = id_infrator
+        self.service = DashboardService()
 
         self.build_header("Meu Painel", f"Bem-vindo, {usuario_logado or 'Usuario'}",alerta_nota=False)
         self.build_stats_cards()
@@ -159,30 +165,17 @@ class DashboardExterno(CrudBase, ctk.CTkFrame):
         if not self.id_infrator:
             return
 
-        with Database() as db:
-            if not db.conexao:
-                return
-
-            sql = """SELECT processo, total_devido, total_pago, status
-                     FROM tccm
-                     WHERE "infrator_id_infrator" = ?
-                     LIMIT 1"""
-            try:
-                resultado = db.executar(sql, (self.id_infrator,))
-                row = resultado.fetchone() if resultado else None
-                if row:
-                    self.tccm_labels["processo"].configure(text=row[0] or "--")
-                    valor_devido = float(row[1]) if row[1] else 0
-                    self.tccm_labels["total_devido"].configure(
-                        text=f"R$ {valor_devido:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-                    )
-                    valor_pago = float(row[2]) if row[2] else 0
-                    self.tccm_labels["total_pago"].configure(
-                        text=f"R$ {valor_pago:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-                    )
-                    self.tccm_labels["status"].configure(text=row[3] or "--")
-            except Exception:
-                pass
+        tccm = self.service.buscar_tccm(self.id_infrator)
+        if not tccm or not hasattr(self, "tccm_labels"):
+            return
+        self.tccm_labels["processo"].configure(text=tccm["processo"] or "--")
+        self.tccm_labels["total_devido"].configure(
+            text=formatar_moeda_brl(tccm["total_devido"])
+        )
+        self.tccm_labels["total_pago"].configure(
+            text=formatar_moeda_brl(tccm["total_pago"])
+        )
+        self.tccm_labels["status"].configure(text=tccm["status"] or "--")
 
     def _carregar_notas(self):
         for widget in self.table_body.winfo_children():
@@ -196,40 +189,17 @@ class DashboardExterno(CrudBase, ctk.CTkFrame):
             ).pack(pady=30)
             return
 
-        with Database() as db:
-            if not db.conexao:
-                return
-
-            sql = """SELECT nf.nota_fiscal, nf.data, nf.valor_total, nf.status_nota
-                     FROM "nota fiscal" nf
-                     JOIN tccm t ON nf.processo = t.processo
-                     WHERE t."infrator_id_infrator" = ?
-                     GROUP BY nf.nota_fiscal, nf.data, nf.valor_total, nf.status_nota
-                     ORDER BY nf.data DESC"""
-            try:
-                resultado = db.executar(sql, (self.id_infrator,))
-                notas = []
-                if resultado:
-                    for row in resultado.fetchall():
-                        raw_data = row[1]
-                        if hasattr(raw_data, "strftime"):
-                            data_fmt = raw_data.strftime("%d/%m/%Y")
-                        elif raw_data:
-                            from datetime import datetime as _dt
-                            try:
-                                data_fmt = _dt.strptime(str(raw_data), "%Y-%m-%d").strftime("%d/%m/%Y")
-                            except Exception:
-                                data_fmt = str(raw_data)
-                        else:
-                            data_fmt = "--"
-                        notas.append({
-                            "nota_fiscal": row[0] or "--",
-                            "data": data_fmt,
-                            "valor_total": float(row[2]) if row[2] else 0,
-                            "status": row[3] or "Pendente",
-                        })
-            except Exception:
-                notas = []
+        try:
+            notas = [
+                {
+                    **nota,
+                    "data": formatar_data(nota["data"]),
+                    "valor_total": float(nota["valor_total"] or 0),
+                }
+                for nota in self.service.listar_notas(self.id_infrator)
+            ]
+        except Exception:
+            notas = []
 
         if not notas:
             ctk.CTkLabel(
@@ -249,7 +219,7 @@ class DashboardExterno(CrudBase, ctk.CTkFrame):
             cols = ctk.CTkFrame(linha, fg_color="transparent")
             cols.pack(side="left", fill="x", expand=True, padx=(10, 0))
 
-            valor_formatado = f"R$ {nota['valor_total']:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+            valor_formatado = formatar_moeda_brl(nota["valor_total"])
             dados = [
                 (nota["nota_fiscal"], COLORS["text"]),
                 (nota["data"], COLORS["text_muted"]),
@@ -263,18 +233,15 @@ class DashboardExterno(CrudBase, ctk.CTkFrame):
                     text_color=cor, anchor=anchor,
                 ).place(relx=relx, relwidth=relwidth, rely=0, relheight=1)
 
-            if nota["status"] == "Aprovada":
+            status_chave, status_text = status_nota(nota["status"])
+            if status_chave == "success":
                 status_color = COLORS["success_dark"]
-                status_text = "\u2714"
-            elif nota["status"] == "Rejeitada":
+            elif status_chave == "danger":
                 status_color = COLORS["danger"]
-                status_text = "\u2718"
-            elif nota["status"] == "Correcao Solicitada":
+            elif status_chave == "correction":
                 status_color = "#D97706"
-                status_text = "\u270F"
             else:
                 status_color = COLORS["warning"]
-                status_text = "\u26A0"
 
             ctk.CTkLabel(
                 cols, text=status_text,
@@ -286,54 +253,18 @@ class DashboardExterno(CrudBase, ctk.CTkFrame):
         if not self.id_infrator:
             return
 
-        with Database() as db:
-            if not db.conexao:
-                return
+        try:
+            indicadores = self.service.buscar_indicadores(self.id_infrator)
+        except Exception:
+            indicadores = {
+                "total_tccm": 0,
+                "total_nf": 0,
+                "valor_total": 0,
+                "total_pendentes": 0,
+            }
 
-            base = '''FROM "nota fiscal" nf
-                      JOIN tccm t ON nf.processo = t.processo
-                      WHERE t."infrator_id_infrator" = ?'''
-
-            try:
-                r = db.executar(
-                    'SELECT COUNT(*) FROM tccm WHERE "infrator_id_infrator" = ?',
-                    (self.id_infrator,)
-                ).fetchone()
-                total_tccm = r[0] if r else 0
-            except Exception:
-                total_tccm = 0
-
-            try:
-                r = db.executar(
-                    f'SELECT COUNT(DISTINCT nf.nota_fiscal) {base}',
-                    (self.id_infrator,)
-                ).fetchone()
-                total_nf = r[0] if r else 0
-            except Exception:
-                total_nf = 0
-
-            try:
-                r = db.executar(
-                    f"""SELECT COALESCE(SUM(nf.valor_total), 0) {base}
-                        AND nf.status_nota = 'Aprovada'""",
-                    (self.id_infrator,)
-                ).fetchone()
-                valor_total = float(r[0]) if r else 0
-            except Exception:
-                valor_total = 0
-
-            try:
-                r = db.executar(
-                    f"""SELECT COUNT(DISTINCT nf.nota_fiscal) {base}
-                        AND nf.status_nota = 'Pendente'""",
-                    (self.id_infrator,)
-                ).fetchone()
-                total_pendentes = r[0] if r else 0
-            except Exception:
-                total_pendentes = 0
-
-        self.stat_labels["Meus TCCMs"].configure(text=str(total_tccm))
-        self.stat_labels["Notas Fiscais"].configure(text=str(total_nf))
-        valor_formatado = f"R$ {valor_total:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        self.stat_labels["Meus TCCMs"].configure(text=str(indicadores["total_tccm"]))
+        self.stat_labels["Notas Fiscais"].configure(text=str(indicadores["total_nf"]))
+        valor_formatado = formatar_moeda_brl(indicadores["valor_total"])
         self.stat_labels["Valor Total(R$)"].configure(text=valor_formatado)
-        self.stat_labels["Pendentes"].configure(text=str(total_pendentes))
+        self.stat_labels["Pendentes"].configure(text=str(indicadores["total_pendentes"]))

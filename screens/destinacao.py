@@ -9,11 +9,18 @@ import customtkinter as ctk
 
 from config.styles import COLORS, FONTS
 from config.permissoes import pode_acao
-from database.conexaodb import Database
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
+from screens.service.destinacao_service import (
+    DestinacaoService,
+    RegraDestinacaoError,
+    gerar_texto_relatorio,
+    item_display,
+    preparar_item,
+    quantidade_disponivel,
+    validar_local,
+)
 from screens.widgets import ComboBoxComSeta
-from utils import registrar_log
 
 
 class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
@@ -29,6 +36,7 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
         self.local_selecionado = None
         self.locais_catalogo = []
         self.itens_catalogo = []
+        self.service = DestinacaoService()
 
         self._carregar_locais()
         self._carregar_itens_catalogo()
@@ -51,18 +59,7 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
 
     def _carregar_locais(self):
         try:
-            with Database() as db:
-                if not db.conexao:
-                    return
-                sql = """SELECT id, cep, endereco, instituicao, responsavel, telefone
-                         FROM locais ORDER BY instituicao"""
-                resultado = db.executar(sql)
-                if resultado:
-                    self.locais_catalogo = [
-                        {"id": row[0], "cep": row[1], "endereco": row[2],
-                         "instituicao": row[3], "responsavel": row[4], "telefone": row[5]}
-                        for row in resultado.fetchall()
-                    ]
+            self.locais_catalogo = self.service.listar_locais()
         except Exception:
             self.locais_catalogo = []
 
@@ -175,48 +172,12 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
 
     def _carregar_itens_catalogo(self):
         try:
-            with Database() as db:
-                if not db.conexao:
-                    return
-                if self.processo_tccm:
-                    sql = """SELECT p.itens_id, p.nome_item, i.descricao, i.unidade_medida,
-                                    COALESCE(SUM(p.quantidade), 0)
-                             FROM produtos p
-                             JOIN "nota fiscal" nf
-                               ON nf.nota_fiscal = p."nota fiscal_nota_fiscal"
-                              AND nf."agente ibama_matricula" = p."nota fiscal_agente ibama_matricula"
-                             LEFT JOIN itens i ON i.id = p.itens_id
-                             WHERE nf.processo = ?
-                             GROUP BY p.itens_id, p.nome_item, i.descricao, i.unidade_medida
-                             ORDER BY p.nome_item"""
-                    resultado = db.executar(sql, (self.processo_tccm,))
-                    if resultado:
-                        self.itens_catalogo = [
-                            {"id": row[0], "nome": row[1],
-                             "descricao": row[2] or row[1],
-                             "unidade": row[3], "quantidade": row[4] or 0}
-                            for row in resultado.fetchall()
-                        ]
-                else:
-                    sql = """SELECT id, nome, descricao, unidade_medida
-                             FROM itens WHERE status = 'Ativo'
-                             ORDER BY nome"""
-                    resultado = db.executar(sql)
-                    if resultado:
-                        self.itens_catalogo = [
-                            {"id": row[0], "nome": row[1], "descricao": row[2],
-                             "unidade": row[3], "quantidade": 0}
-                            for row in resultado.fetchall()
-                        ]
+            self.itens_catalogo = self.service.listar_itens(self.processo_tccm)
         except Exception:
             self.itens_catalogo = []
 
     def _item_display(self, item):
-        nome = item.get("nome") or item.get("item") or ""
-        desc = item.get("descricao")
-        if desc and desc != nome:
-            return f"{nome} ({desc})"
-        return nome
+        return item_display(item)
 
     def _on_item_select(self, selection):
         if not hasattr(self, "entry_quantidade"):
@@ -499,58 +460,19 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
         ).pack(side="left", padx=6)
 
     def _quantidade_disponivel(self, item_id):
-        item = next((i for i in self.itens_catalogo if i["id"] == item_id), None)
-        if item is None:
-            return None
-        max_qtd = item.get("quantidade") or 0
-        if max_qtd <= 0:
-            return None
-        usada = sum(i["quantidade"] for i in self.itens_lista if i.get("item_id") == item_id)
-        return max(0, max_qtd - usada)
+        return quantidade_disponivel(self.itens_catalogo, self.itens_lista, item_id)
 
     def adicionar_item(self):
         display = self.combo_item.get().strip()
         qtd = self.entry_quantidade.get().strip()
 
-        if not display or "Nenhum item" in display:
-            messagebox.showwarning("Aviso", "Selecione um item do catalogo.")
-            return
-        if not qtd:
-            messagebox.showwarning("Aviso", "Preencha a quantidade.")
-            return
-
         try:
-            qtd_int = int(qtd)
-            if qtd_int <= 0:
-                raise ValueError
-        except ValueError:
-            messagebox.showwarning("Aviso", "Quantidade deve ser um numero inteiro positivo.")
+            item = preparar_item(display, qtd, self.itens_catalogo, self.itens_lista)
+        except RegraDestinacaoError as exc:
+            messagebox.showwarning("Aviso", str(exc))
             return
 
-        item_info = None
-        for item in self.itens_catalogo:
-            if self._item_display(item) == display:
-                item_info = item
-                break
-
-        if item_info is None:
-            messagebox.showwarning("Aviso", "Item nao encontrado no catalogo.")
-            return
-
-        disponivel = self._quantidade_disponivel(item_info["id"])
-        if disponivel is not None and qtd_int > disponivel:
-            messagebox.showwarning(
-                "Aviso",
-                f"Quantidade maxima permitida para '{item_info['nome']}' e {disponivel}.",
-            )
-            return
-
-        self.itens_lista.append({
-            "item_id": item_info["id"],
-            "item": item_info["nome"],
-            "descricao": item_info["descricao"],
-            "quantidade": qtd_int,
-        })
+        self.itens_lista.append(item)
         self.render_itens()
 
         self.entry_quantidade.delete(0, "end")
@@ -678,28 +600,21 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
             responsavel = entries["responsavel"].get().strip()
             telefone = entries["telefone"].get().strip()
 
-            if not all([cep, endereco, instituicao, responsavel]):
-                messagebox.showwarning("Aviso", "Preencha CEP, Endereco, Instituicao e Responsavel.")
+            try:
+                mensagem = self.service.salvar_local(
+                    cep,
+                    endereco,
+                    instituicao,
+                    responsavel,
+                    telefone,
+                    self.usuario_logado,
+                )
+            except RegraDestinacaoError as exc:
+                messagebox.showwarning("Aviso", str(exc))
                 return
-
-            with Database() as db:
-                if not db.conexao:
-                    messagebox.showerror("Erro", "Nao foi possivel conectar ao banco de dados!")
-                    return
-
-                sql = """INSERT INTO locais (cep, endereco, instituicao, responsavel, telefone)
-                         VALUES (?, ?, ?, ?, ?)"""
-                params = (cep, endereco, instituicao, responsavel, telefone or None)
-
-                db.executar(sql, params)
-                db.commitar()
-
-            registrar_log(
-                self.usuario_logado or "Sistema",
-                "cadastro",
-                "locais",
-                f"Local '{instituicao}' cadastrado via Relatorio de Entrega"
-            )
+            except Exception as exc:
+                messagebox.showerror("Erro", f"Nao foi possivel salvar o local:\n{exc}")
+                return
 
             messagebox.showinfo("Sucesso", "Local cadastrado com sucesso!")
             form.destroy()
@@ -736,22 +651,14 @@ class RelatorioEntregaPage(CrudBase, ctk.CTkFrame):
         messagebox.showinfo("Sucesso", "Relatorio salvo com sucesso!")
 
     def _gerar_texto_relatorio(self):
-        texto = "RELATORIO DE ENTREGA DE MATERIAIS\n"
-        texto += "=" * 40 + "\n\n"
-        texto += f"Processo: {self.entry_processo.get() or 'N/A'}\n"
-        texto += f"Documento SEI: {self.entry_documento_sei.get() or 'N/A'}\n"
-        texto += f"Responsavel: {self.entry_responsavel.get() or 'N/A'}\n"
         obs = self.text_obs.get("1.0", "end").strip()
-        if obs:
-            texto += f"Observacoes: {obs}\n"
-        texto += "\nITENS:\n"
-        texto += "-" * 40 + "\n"
-        for item in self.itens_lista:
-            texto += f"  {item['item']}: {item['quantidade']}\n"
-        texto += "-" * 40 + "\n"
-        total = sum(item["quantidade"] for item in self.itens_lista)
-        texto += f"Total de Itens: {total}\n"
-        return texto
+        return gerar_texto_relatorio(
+            self.entry_processo.get(),
+            self.entry_documento_sei.get(),
+            self.entry_responsavel.get(),
+            obs,
+            self.itens_lista,
+        )
 
     def baixar_pdf(self):
         if not self.itens_lista:

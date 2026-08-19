@@ -6,6 +6,7 @@ from tkinter import messagebox
 from config.styles import COLORS, FONTS
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
+from screens.service.dashboard_service import formatar_data, formatar_moeda_brl, status_nota
 from screens.widgets import CalendarioPopup, ComboBoxComSeta
 
 

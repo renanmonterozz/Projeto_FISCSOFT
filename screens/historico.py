@@ -6,6 +6,13 @@ from datetime import datetime
 from config.styles import COLORS, FONTS
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
+from screens.repository.historico_repository import HistoricoRepository
+from screens.service.historico_service import (
+    chave_cor_acao,
+    converter_data_log,
+    filtrar_logs,
+    truncar_descricao,
+)
 from screens.sidebar import carregar_icone
 
 
@@ -14,6 +21,7 @@ class HistoricoPage(CrudBase, ctk.CTkFrame):
         super().__init__(master, **kwargs)
         self.configure(fg_color=COLORS["bg"])
         self.usuario_logado = usuario_logado
+        self.repository = HistoricoRepository()
         self.logs = []
 
         self.build_header("Historico de Atividades", "Registros de todas as alteracoes realizadas no sistema")
@@ -77,31 +85,10 @@ class HistoricoPage(CrudBase, ctk.CTkFrame):
         self.render_rows()
 
     def carregar_do_banco(self):
-        with Database() as db:
-            if not db.conexao:
-                return []
-            sql = """SELECT id, usuario, acao, tabela, descricao, criado_em
-                     FROM logs ORDER BY criado_em DESC"""
-            resultados = db.executar(sql)
-            logs = []
-            if resultados:
-                for row in resultados.fetchall():
-                    criado_em = row[5]
-                    if isinstance(criado_em, str):
-                        try:
-                            criado_em = datetime.strptime(criado_em, "%Y-%m-%d %H:%M:%S")
-                        except ValueError:
-                            criado_em = None
-
-                    logs.append({
-                        "id": row[0],
-                        "usuario": row[1],
-                        "acao": row[2],
-                        "tabela": row[3],
-                        "descricao": row[4],
-                        "data_hora": criado_em,
-                    })
-            return logs
+        logs = self.repository.listar()
+        for log in logs:
+            log["data_hora"] = converter_data_log(log["data_hora"])
+        return logs
 
     def render_rows(self):
         for widget in self.table_body.winfo_children():
@@ -132,13 +119,8 @@ class HistoricoPage(CrudBase, ctk.CTkFrame):
         # pesos → relx / relwidth (idêntico ao cabeçalho)
         data_hora_str = log["data_hora"].strftime("%d/%m/%Y %H:%M") if log["data_hora"] else "--"
 
-        acao_cor = COLORS.get("primary", "#1D4D21")
-        if log["acao"] == "exclusao":
-            acao_cor = COLORS.get("danger", "#D32F2F")
-        elif log["acao"] == "edicao":
-            acao_cor = COLORS.get("warning", "#F57C00")
-
-        descricao = log["descricao"][:80] + ("..." if len(log["descricao"]) > 80 else "")
+        acao_cor = COLORS.get(chave_cor_acao(log["acao"]), "#1D4D21")
+        descricao = truncar_descricao(log["descricao"])
 
         dados = [
             (data_hora_str, COLORS["text"]),
@@ -156,17 +138,7 @@ class HistoricoPage(CrudBase, ctk.CTkFrame):
             ).place(relx=rx, relwidth=rw, rely=0, relheight=1)
 
     def pesquisar(self):
-        termo = self.entry_busca.get().strip().lower()
-        if not termo:
-            self.logs = self.carregar_do_banco()
-        else:
-            self.logs = [
-                l for l in self.carregar_do_banco()
-                if termo in l["usuario"].lower()
-                or termo in l["acao"].lower()
-                or termo in l["tabela"].lower()
-                or termo in l["descricao"].lower()
-            ]
+        self.logs = filtrar_logs(self.carregar_do_banco(), self.entry_busca.get())
         self.render_rows()
 
     def limpar_filtros(self):

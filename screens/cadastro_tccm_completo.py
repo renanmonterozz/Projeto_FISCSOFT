@@ -6,7 +6,12 @@ import customtkinter as ctk
 from tkinter import messagebox
 
 from config.styles import COLORS, FONTS
-from database.conexaodb import Database
+from screens.service.tccm_service import (
+    RegraTccmError,
+    TccmService,
+    validar_cadastro_tccm,
+    validar_item_tccm,
+)
 from screens.widgets import ComboBoxComSeta
 
 
@@ -17,6 +22,7 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
         self.on_voltar = on_voltar
         self.usuario_logado = usuario_logado
         self.perfil = perfil
+        self.service = TccmService()
 
         self.agentes = []
         self.infratores = []
@@ -390,21 +396,14 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
         self._renderizar_itens()
 
     def _carregar_dados_combobox(self):
-        with Database() as db:
-            if not db.conexao:
-                return
-            try:
-                r = db.executar("SELECT matricula, nome_agente FROM \"agente ibama\" WHERE status = 'ativo'")
-                if r:
-                    self.agentes = [(row[0], row[1]) for row in r.fetchall()]
-            except Exception:
-                self.agentes = []
-            try:
-                r = db.executar("SELECT id_infrator, nome_infrator FROM infrator")
-                if r:
-                    self.infratores = [(row[0], row[1]) for row in r.fetchall()]
-            except Exception:
-                self.infratores = []
+        try:
+            self.agentes = self.service.listar_agentes()
+        except Exception:
+            self.agentes = []
+        try:
+            self.infratores = self.service.listar_infratores()
+        except Exception:
+            self.infratores = []
 
     def _atualizar_combos(self):
         self._carregar_dados_combobox()
@@ -473,15 +472,19 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
         qtd = self.entry_item_qtd.get().strip()
         unidade = self.entry_item_unidade.get().strip()
 
-        if not all([nome, desc, just, qtd]):
-            messagebox.showwarning("Atencao", "Preencha nome, descricao, justificativa e quantidade!", parent=self)
+        try:
+            dados = validar_item_tccm(nome, desc, just, qtd)
+        except RegraTccmError as exc:
+            if "inteiro" in str(exc):
+                messagebox.showerror("Erro", str(exc), parent=self)
+            else:
+                messagebox.showwarning("Atencao", str(exc), parent=self)
             return
 
-        try:
-            qtd_val = int(qtd)
-        except ValueError:
-            messagebox.showerror("Erro", "Quantidade deve ser um numero inteiro!", parent=self)
-            return
+        nome = dados["nome"]
+        desc = dados["descricao"]
+        just = dados["justificativa"]
+        qtd_val = dados["quantidade"]
 
         semestres_total = self._obter_total_semestres()
 
@@ -606,27 +609,9 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
 
         if processo:
             try:
-                with Database() as db:
-                    if db.conexao:
-                        r = db.executar(
-                            "SELECT nome, descricao, tipo, justificativa, quantidade_prevista, unidade_medida "
-                            "FROM itens WHERE processo = ?",
-                            (processo,),
-                        )
-                        if r:
-                            rows = r.fetchall()
-                            if rows:
-                                itens = [
-                                    {
-                                        "nome": row[0],
-                                        "descricao": row[1],
-                                        "tipo": row[2],
-                                        "justificativa": row[3],
-                                        "quantidade": row[4],
-                                        "unidade_medida": row[5],
-                                    }
-                                    for row in rows
-                                ]
+                itens_salvos = self.service.listar_itens_processo(processo)
+                if itens_salvos:
+                    itens = itens_salvos
             except Exception:
                 pass
 
@@ -681,95 +666,29 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
         agente_str = self.entries_agente["agente_matricula"].get().strip()
         infrator_str = self.entries_infrator["infrator_id"].get().strip()
 
-        if not all([processo, data_inicio, semestres, total_devido]):
-            messagebox.showwarning("Atencao", "Preencha todos os campos obrigatorios na aba 'Dados do TCCM'!", parent=self)
-            return
-
-        if " - " not in agente_str:
-            messagebox.showwarning("Atencao", "Selecione um agente na aba 'Agente Responsavel'!", parent=self)
-            return
-
-        if " - " not in infrator_str:
-            messagebox.showwarning("Atencao", "Selecione um infrator na aba 'Infrator'!", parent=self)
+        try:
+            dados = validar_cadastro_tccm(
+                processo,
+                documento_sei,
+                data_inicio,
+                semestres,
+                total_devido,
+                agente_str,
+                infrator_str,
+            )
+        except RegraTccmError as exc:
+            mensagem_erro = str(exc)
+            if any(palavra in mensagem_erro for palavra in ("numero", "invalido", "invalida")):
+                messagebox.showerror("Erro", mensagem_erro, parent=self)
+            else:
+                messagebox.showwarning("Atencao", mensagem_erro, parent=self)
             return
 
         try:
-            semestres_val = int(semestres)
-        except ValueError:
-            messagebox.showerror("Erro", "Semestres deve ser um numero inteiro!", parent=self)
+            self.service.salvar(dados, self.itens_lista)
+        except Exception as exc:
+            messagebox.showerror("Erro", f"Falha ao cadastrar TCCM:\n{exc}", parent=self)
             return
-
-        try:
-            total_devido_val = float(total_devido.replace(",", "."))
-        except ValueError:
-            messagebox.showerror("Erro", "Total a ser pago invalido!", parent=self)
-            return
-
-        try:
-            data_inicio_dt = datetime.strptime(data_inicio, "%d/%m/%Y")
-            data_inicio_db = data_inicio_dt.strftime("%Y-%m-%d")
-        except ValueError:
-            messagebox.showerror("Erro", "Data invalida! Use o formato DD/MM/AAAA.", parent=self)
-            return
-
-        agente_matricula = int(agente_str.split(" - ")[0])
-        infrator_id = int(infrator_str.split(" - ")[0])
-
-        with Database() as db:
-            if not db.conexao:
-                messagebox.showerror("Erro", "Nao foi possivel conectar ao banco!", parent=self)
-                return
-            try:
-                sql = """INSERT INTO tccm
-                    (processo, documento_sei, data_inicio, semestres,
-                     total_pago, total_validado, total_devido,
-                     data_validade, intervalo, status,
-                     "agente ibama_matricula", "infrator_id_infrator")
-                    VALUES (?, ?, ?, ?, 0.00, 0.00, ?,
-                            NULL, ?, 'pendente', ?, ?)"""
-                db.executar(sql, (processo, documento_sei or None, data_inicio_db,
-                                  semestres_val, total_devido_val,
-                                  semestres_val, agente_matricula, infrator_id))
-
-                for item in self.itens_lista:
-                    # insert item and per-semester quantities
-                    total_prev = item.get("quantidade") or 0
-                    sql_item = """INSERT INTO itens (nome, descricao, codigo_interno, tipo, justificativa,
-                                                    unidade_medida, quantidade_prevista, status, processo)
-                                  VALUES (?, ?, ?, ?, ?, ?, ?, 'Ativo', ?)"""
-                    db.executar(sql_item, (item["nome"], item["descricao"],
-                                           f"{processo}-{item['nome'][:10].upper()}",
-                                           item["tipo"], item["justificativa"],
-                                           item["unidade_medida"], total_prev, processo))
-                    # get last inserted item id
-                    lr = db.executar("SELECT last_insert_rowid()").fetchone()
-                    try:
-                        item_id = int(lr[0]) if lr else None
-                    except Exception:
-                        item_id = None
-
-                    # if item has per-semester quantities, store them
-                    if item.get("quantidades_semestre"):
-                        try:
-                            # compute semester year/number based on data_inicio
-                            start_dt = datetime.strptime(data_inicio, "%d/%m/%Y")
-                        except Exception:
-                            start_dt = datetime.now()
-                        start_sem = 1 if start_dt.month <= 6 else 2
-                        for i, q in enumerate(item.get("quantidades_semestre")):
-                            # sem offset
-                            offset = (start_sem - 1) + i
-                            ano = start_dt.year + (offset // 2)
-                            sem_num = (offset % 2) + 1
-                            try:
-                                db.executar("INSERT OR REPLACE INTO item_semestre (itens_id, ano, semestre, quantidade_prevista, processo) VALUES (?, ?, ?, ?, ?)", (item_id, ano, sem_num, q, processo))
-                            except Exception:
-                                pass
-
-                db.commitar()
-            except Exception as e:
-                messagebox.showerror("Erro", f"Falha ao cadastrar TCCM:\n{e}", parent=self)
-                return
 
         messagebox.showinfo("Sucesso", "TCCM cadastrado com sucesso!", parent=self)
 

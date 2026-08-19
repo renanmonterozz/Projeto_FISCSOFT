@@ -18,6 +18,7 @@ except ImportError:
 
 from config.styles import ASSETS_DIR, ASSETS_DIR, COLORS, FONTS
 from database.conexaodb import Database
+from screens.service.notas_service import RegraNotaError, preparar_item_nota
 from screens.widgets import ComboBoxComSeta
 
 ANEXOS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "anexos")
@@ -351,51 +352,13 @@ class NotasFiscaisExterno(ctk.CTkFrame):
         qtd_str = self.entry_qtd.get().strip()
         preco_str = self.entry_preco.get().strip()
 
-        if not idx or "Nenhum item" in idx or "Selecione" in idx or "Erro" in idx:
-            messagebox.showwarning("Atencao", "Selecione um item do TCCM.")
-            return
-        if not qtd_str or not preco_str:
-            messagebox.showwarning("Atencao", "Preencha quantidade e preco unitario.")
-            return
-
         try:
-            qtd = int(qtd_str)
-            if qtd <= 0:
-                raise ValueError
-        except ValueError:
-            messagebox.showwarning("Atencao", "Quantidade invalida.")
+            item = preparar_item_nota(idx, qtd_str, preco_str, self.itens_tccm)
+        except RegraNotaError as exc:
+            messagebox.showwarning("Atencao", str(exc))
             return
 
-        try:
-            preco = float(preco_str.replace(".", "").replace(",", "."))
-            if preco <= 0:
-                raise ValueError
-        except ValueError:
-            messagebox.showwarning("Atencao", "Preco unitario invalido.")
-            return
-
-        item_idx = None
-        for i, item in enumerate(self.itens_tccm):
-            display = f"{item['nome']} ({item['descricao']})"
-            if display == idx:
-                item_idx = i
-                break
-
-        if item_idx is None:
-            messagebox.showwarning("Atencao", "Item nao encontrado no TCCM.")
-            return
-
-        item_info = self.itens_tccm[item_idx]
-        subtotal = qtd * preco
-
-        self.itens_lista.append({
-            "item_id": item_info["id"],
-            "nome": item_info["nome"],
-            "descricao": item_info["descricao"],
-            "quantidade": qtd,
-            "preco_unitario": preco,
-            "subtotal": subtotal,
-        })
+        self.itens_lista.append(item)
 
         self._render_itens()
         self.entry_qtd.delete(0, "end")

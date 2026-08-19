@@ -1,7 +1,6 @@
 import _path  # noqa: F401
 
 import os
-import calendar
 from datetime import datetime as _dt
 
 import customtkinter as ctk
@@ -11,18 +10,8 @@ from config.layout_system import LayoutSystem
 from config.styles import ASSETS_DIR, COLORS, FONTS
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
-
-
-def _fmt_date(val):
-    if not val:
-        return "--"
-    if hasattr(val, "strftime"):
-        return val.strftime("%d/%m/%Y")
-    try:
-        return _dt.strptime(str(val), "%Y-%m-%d").strftime("%d/%m/%Y")
-    except Exception:
-        return str(val)
-
+from screens.service.dashboard_service import formatar_data, formatar_moeda_brl
+from screens.service.tccm_service import calcular_data_validade
 
 class ToolTip:
     def __init__(self, widget, itens, master=None):
@@ -319,7 +308,7 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
                                     })
                         notas.append({
                             "nota_fiscal": row[0] or "--",
-                            "data": _fmt_date(row[1]),
+                            "data": formatar_data(row[1]),
                             "valor_total": float(row[2]) if row[2] else 0,
                             "status": row[3] or "Pendente",
                             "infrator": row[4] or "--",
@@ -427,28 +416,15 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
         except Exception:
             data_inicio_obj = None
 
-        # calculate data_validade = data_inicio + semestres * 6 months
-        def _add_months(dt_obj, months):
-            if not dt_obj:
-                return None
-            total = dt_obj.month - 1 + months
-            y = dt_obj.year + total // 12
-            m = total % 12 + 1
-            day = min(dt_obj.day, calendar.monthrange(y, m)[1])
-            return _dt(y, m, day)
-
         months_to_add = int(semestres) * 6 if semestres else 0
-        data_validade_obj = _add_months(data_inicio_obj, months_to_add) if months_to_add and data_inicio_obj else (row[5] if row[5] else None)
+        data_validade_obj = calcular_data_validade(data_inicio_obj, semestres) if months_to_add and data_inicio_obj else (row[5] if row[5] else None)
 
-        data_inicio = _fmt_date(data_inicio_obj)
-        data_validade = _fmt_date(data_validade_obj)
+        data_inicio = formatar_data(data_inicio_obj)
+        data_validade = formatar_data(data_validade_obj)
         total_devido = float(row[6]) if row[6] else 0
         total_pago = float(row[7]) if row[7] else 0
         pendente = max(0, total_devido - total_pago)
         pct = (total_pago / total_devido * 100) if total_devido > 0 else 0
-
-        def _fmt_brl(valor):
-            return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
         section = ctk.CTkFrame(self, fg_color=COLORS["white"], corner_radius=4,
                                 border_width=1, border_color=COLORS["border"])
@@ -489,9 +465,9 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
             ("Data Inicio", data_inicio),
             ("Semestres", f"{semestres}"),
             ("Data Validade", data_validade),
-            ("Total Devido", _fmt_brl(total_devido)),
-            ("Total Pago", _fmt_brl(total_pago)),
-            ("Total Pendente", _fmt_brl(pendente)),
+            ("Total Devido", formatar_moeda_brl(total_devido)),
+            ("Total Pago", formatar_moeda_brl(total_pago)),
+            ("Total Pendente", formatar_moeda_brl(pendente)),
         ]
 
         for i, (label, valor) in enumerate(campos):

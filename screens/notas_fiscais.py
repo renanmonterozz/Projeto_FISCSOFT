@@ -11,18 +11,8 @@ from config.permissoes import pode_acao
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
+from screens.service.dashboard_service import formatar_data
 from screens.widgets import CalendarioPopup, ComboBoxComSeta
-
-
-def _fmt_date(val):
-    if not val:
-        return "--"
-    if hasattr(val, "strftime"):
-        return val.strftime("%d/%m/%Y")
-    try:
-        return _dt.strptime(str(val), "%Y-%m-%d").strftime("%d/%m/%Y")
-    except Exception:
-        return str(val)
 
 
 COL_NF_CFG = [
@@ -324,7 +314,7 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
                         total_pago = float(row[9]) if len(row) > 9 and row[9] else 0
                         notas.append({
                             "nota_fiscal": row[0],
-                            "data": _fmt_date(row[1]),
+                            "data": formatar_data(row[1]),
                             "valor_total": float(row[2]) if row[2] else 0,
                             "interessado": row[3],
                             "cpf": row[4],

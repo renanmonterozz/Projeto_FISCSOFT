@@ -9,6 +9,7 @@ from config.permissoes import pode_acao
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
+from screens.service.itens_service import filtrar_itens
 from utils import registrar_log
 
 
@@ -310,18 +311,7 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         self.add_action_buttons(linha, acoes)
 
     def pesquisar(self):
-        busca = self.entry_busca.get().strip().lower()
-        if not busca:
-            self.itens = self._todos_os_itens[:]
-        else:
-            self.itens = [
-                i for i in self._todos_os_itens
-                if busca in i["nome"].lower()
-                or busca in i["descricao"].lower()
-                or busca in i["tipo"].lower()
-                or busca in i.get("justificativa", "").lower()
-                or busca in i.get("unidade_medida", "").lower()
-            ]
+        self.itens = filtrar_itens(self._todos_os_itens, self.entry_busca.get())
         self.render_rows()
 
     def exportar_por_semestre(self):

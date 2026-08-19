@@ -8,9 +8,12 @@ import os
 from config.layout_system import LayoutSystem
 from config.styles import COLORS, FONTS, ASSETS_DIR
 from config.permissoes import normalizar_perfil
-from database.conexaodb import Database
+from screens.service.usuario_service import (
+    RegraUsuarioError,
+    UsuarioService,
+    validar_dados_usuario,
+)
 from screens.widgets import ComboBoxComSeta
-from utils import hash_password, registrar_log
 
 
 PERFIL_DISPLAY = {
@@ -25,6 +28,7 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
         super().__init__(master)
         self.usuario_edicao = usuario
         self.usuario_logado = usuario_logado
+        self.service = UsuarioService()
         self.title("FISCSOFT - Cadastrar Agente IBAMA")
         self.geometry("820x700")
         self.resizable(False, False)
@@ -181,74 +185,36 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
         )
 
     def salvar(self):
-        nome = self.entry_nome.get()
-        cpf = self.entry_cpf.get()
-        email = self.entry_email.get()
-        telefone = self.entry_telefone.get()
-        matricula = self.entry_matricula.get()
-        login = self.entry_login.get()
-        senha = self.entry_senha.get()
-        confirmar = self.entry_confirmar.get()
-        perfil = self.combo_perfil.get()
-
-        if not all([nome, cpf, email, matricula, login, perfil]):
-            messagebox.showwarning("Atencao", "Preencha todos os campos obrigatorios!")
+        try:
+            dados = validar_dados_usuario(
+                self.entry_nome.get(),
+                self.entry_cpf.get(),
+                self.entry_email.get(),
+                self.entry_telefone.get(),
+                self.entry_matricula.get(),
+                self.entry_login.get(),
+                self.entry_senha.get(),
+                self.entry_confirmar.get(),
+                self.combo_perfil.get(),
+                em_edicao=bool(self.usuario_edicao),
+            )
+        except RegraUsuarioError as exc:
+            mensagem_erro = str(exc)
+            if "senhas" in mensagem_erro or "Matricula" in mensagem_erro:
+                messagebox.showerror("Erro", mensagem_erro)
+            else:
+                messagebox.showwarning("Atencao", mensagem_erro)
             return
-
-        if not self.usuario_edicao:
-            if not senha or not confirmar:
-                messagebox.showwarning("Atencao", "Preencha todos os campos obrigatorios!")
-                return
-            if senha != confirmar:
-                messagebox.showerror("Erro", "As senhas nao conferem!")
-                return
 
         try:
-            matricula_int = int(matricula)
-        except ValueError:
-            messagebox.showerror("Erro", "Matricula deve ser um numero!")
+            mensagem = self.service.salvar(
+                dados,
+                em_edicao=bool(self.usuario_edicao),
+                usuario_logado=self.usuario_logado,
+            )
+        except Exception as exc:
+            messagebox.showerror("Erro", f"Nao foi possivel salvar o usuario:\n{exc}")
             return
-
-        with Database() as db:
-            if not db.conexao:
-                messagebox.showerror("Erro", "Nao foi possivel conectar ao banco de dados!")
-                return
-
-            if self.usuario_edicao:
-                if senha and confirmar and senha == confirmar:
-                    senha_hash = hash_password(senha)
-                    sql = """UPDATE "agente ibama" SET
-                             nome_agente=?, cpf=?, email=?, telefone=?,
-                             login=?, senha=?, perfil=?, atualizado_por=?
-                             WHERE matricula=?"""
-                    params = (nome, cpf, email, telefone, login, senha_hash, perfil,
-                              self.usuario_logado or "", matricula_int)
-                else:
-                    sql = """UPDATE "agente ibama" SET
-                             nome_agente=?, cpf=?, email=?, telefone=?,
-                             login=?, perfil=?, atualizado_por=?
-                             WHERE matricula=?"""
-                    params = (nome, cpf, email, telefone, login, perfil,
-                              self.usuario_logado or "", matricula_int)
-                mensagem = f"Usuario '{nome}' atualizado com sucesso!"
-            else:
-                senha_hash = hash_password(senha)
-                sql = """INSERT INTO "agente ibama"
-                         (matricula, nome_agente, cpf, email, telefone, login, senha, perfil, status, cadastrado_por)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ativo', ?)"""
-                params = (matricula_int, nome, cpf, email, telefone, login, senha_hash, perfil,
-                          self.usuario_logado or "")
-                mensagem = f"Usuario '{nome}' cadastrado com sucesso!"
-
-            db.executar(sql, params)
-            db.commitar()
-
-        registrar_log(
-            self.usuario_logado or "Sistema",
-            "edicao" if self.usuario_edicao else "cadastro",
-            "agente ibama",
-            mensagem
-        )
 
         messagebox.showinfo("Sucesso", mensagem)
         self.destroy()

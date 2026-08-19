@@ -5,14 +5,18 @@ from tkinter import messagebox
 
 from config.layout_system import LayoutSystem
 from config.styles import COLORS, FONTS
-from database.conexaodb import Database
-from utils import hash_password, registrar_log
+from screens.service.infrator_service import (
+    InfratorService,
+    RegraInfratorError,
+    validar_dados_infrator,
+)
 
 
 class CadastrarInfratorWindow(ctk.CTkToplevel):
     def __init__(self, master=None, infrator=None):
         super().__init__(master)
         self.infrator_edicao = infrator
+        self.service = InfratorService()
         self.title("FISCSOFT - Cadastrar Infrator")
         self.geometry("820x700")
         self.resizable(False, False)
@@ -41,14 +45,14 @@ class CadastrarInfratorWindow(ctk.CTkToplevel):
             header,
             text="Cadastro / Edicao de Infrator",
             font=ctk.CTkFont(size=20, weight="bold"),
-            text_color=colors["primary"],
+            text_color=COLORS["primary"],
         ).pack(anchor="w")
 
         ctk.CTkLabel(
             header,
             text="Informe os dados do infrator.",
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
-            text_color=colors["text"],
+            text_color=COLORS["text"],
         ).pack(anchor="w", pady=(2, 0))
 
         form = LayoutSystem.panel(
@@ -63,7 +67,7 @@ class CadastrarInfratorWindow(ctk.CTkToplevel):
         ctk.CTkLabel(
             form, text="Dados Pessoais",
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
-            text_color=colors["text"],
+            text_color=COLORS["text"],
         ).pack(anchor="w", padx=20, pady=(18, 8))
 
         row1 = LayoutSystem.form_row(form, padding_x=20, padding_y=(0, 10), columns=3)
@@ -79,7 +83,7 @@ class CadastrarInfratorWindow(ctk.CTkToplevel):
         ctk.CTkLabel(
             form, text="Dados de Acesso",
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
-            text_color=colors["text"],
+            text_color=COLORS["text"],
         ).pack(anchor="w", padx=20, pady=(5, 8))
 
         row3 = LayoutSystem.form_row(form, padding_x=20, padding_y=(0, 10), columns=2)
@@ -94,7 +98,7 @@ class CadastrarInfratorWindow(ctk.CTkToplevel):
             btn_frame,
             text="  Salvar Infrator",
             height=40, corner_radius=4,
-            fg_color=colors["primary"], hover_color=colors["primary_hover"],
+            fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
             text_color="white", border_width=0,
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             compound="left",
@@ -105,9 +109,9 @@ class CadastrarInfratorWindow(ctk.CTkToplevel):
             btn_frame,
             text="Cancelar",
             height=40, corner_radius=4,
-            fg_color=colors["border"], hover_color=colors["hover"],
-            text_color=colors["text"], border_width=1,
-            border_color=colors["border"],
+            fg_color=COLORS["border"], hover_color=COLORS["hover"],
+            text_color=COLORS["text"], border_width=1,
+            border_color=COLORS["border"],
             font=ctk.CTkFont(size=FONTS["size_body"]),
             command=self.destroy,
         ).pack(side="right")
@@ -130,50 +134,31 @@ class CadastrarInfratorWindow(ctk.CTkToplevel):
         )
 
     def salvar(self):
-        nome = self.entry_nome.get()
-        cpf = self.entry_cpf.get()
-        email = self.entry_email.get()
-        telefone = self.entry_telefone.get()
-        senha = self.entry_senha.get()
-        confirmar = self.entry_confirmar.get()
-
-        if not all([nome, cpf, email, senha, confirmar]):
-            messagebox.showwarning("Atencao", "Preencha todos os campos obrigatorios!")
-            return
-
-        if senha != confirmar:
-            messagebox.showerror("Erro", "As senhas nao conferem!")
-            return
-
-        with Database() as db:
-            if not db.conexao:
-                messagebox.showerror("Erro", "Nao foi possivel conectar ao banco de dados!")
-                return
-
-            senha_hash = hash_password(senha)
-            if self.infrator_edicao:
-                db.executar(
-                    "UPDATE infrator SET nome_infrator=?, cpf=?, email=?, "
-                    "telefone_infrator=?, senha=? WHERE id_infrator=?",
-                    (nome, cpf, email, telefone, senha_hash, self.infrator_edicao["id"])
-                )
-                mensagem = f"Infrator '{nome}' atualizado com sucesso!"
+        try:
+            dados = validar_dados_infrator(
+                self.entry_nome.get(),
+                self.entry_cpf.get(),
+                self.entry_email.get(),
+                self.entry_telefone.get(),
+                self.entry_senha.get(),
+                self.entry_confirmar.get(),
+            )
+        except RegraInfratorError as exc:
+            if "senhas" in str(exc):
+                messagebox.showerror("Erro", str(exc))
             else:
-                db.executar(
-                    "INSERT INTO infrator (nome_infrator, cpf, email, telefone_infrator, senha) "
-                    "VALUES (?, ?, ?, ?, ?)",
-                    (nome, cpf, email, telefone, senha_hash)
-                )
-                mensagem = f"Infrator '{nome}' cadastrado com sucesso!"
+                messagebox.showwarning("Atencao", str(exc))
+            return
 
-            db.commitar()
-
-        registrar_log(
-            getattr(self.master, 'usuario_logado', None) or "Sistema",
-            "edicao" if self.infrator_edicao else "cadastro",
-            "infrator",
-            mensagem
-        )
+        try:
+            mensagem = self.service.salvar(
+                dados,
+                infrator_id=self.infrator_edicao["id"] if self.infrator_edicao else None,
+                usuario_logado=getattr(self.master, "usuario_logado", None),
+            )
+        except Exception as exc:
+            messagebox.showerror("Erro", f"Nao foi possivel salvar o infrator:\n{exc}")
+            return
 
         messagebox.showinfo("Sucesso", mensagem)
         self.destroy()

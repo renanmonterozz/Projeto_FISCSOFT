@@ -7,7 +7,9 @@ from config.styles import COLORS, FONTS
 from config.permissoes import pode_acao
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
+from screens.repository.infratores_repository import InfratoresRepository
 from screens.sidebar import carregar_icone
+from screens.service.infrator_service import filtrar_infratores
 from utils import registrar_log
 
 
@@ -19,6 +21,7 @@ class InfratoresPage(CrudBase, ctk.CTkFrame):
         self.perfil = perfil
         self.table_height = table_height
         self.pode_editar = pode_acao(perfil, "gerenciar_infratores")
+        self.repository = InfratoresRepository()
 
         self.build_header("Infratores", "Gerencie os infratores cadastrados no sistema")
         self.build_filter_bar()
@@ -94,23 +97,7 @@ class InfratoresPage(CrudBase, ctk.CTkFrame):
         self.render_rows()
 
     def carregar_do_banco(self):
-        with Database() as db:
-            if not db.conexao:
-                return []
-            resultados = db.executar(
-                "SELECT id_infrator, nome_infrator, cpf, email, telefone_infrator FROM infrator"
-            )
-            infratores = []
-            if resultados:
-                for row in resultados.fetchall():
-                    infratores.append({
-                        "id": row[0],
-                        "nome": row[1],
-                        "cpf": row[2],
-                        "email": row[3],
-                        "telefone": row[4] or "-",
-                    })
-            return infratores
+        return self.repository.listar()
 
     def render_rows(self):
         for widget in self.table_body.winfo_children():
@@ -154,18 +141,13 @@ class InfratoresPage(CrudBase, ctk.CTkFrame):
         self.add_action_buttons(linha, acoes)
 
     def pesquisar(self):
-        busca = self.entry_busca.get().strip().lower()
-        filtro_email = self.entry_filtro1.get().strip().lower()
-        filtro_tel = self.entry_filtro2.get().strip().lower()
-
         todos = self.carregar_do_banco()
-        self.infratores = [
-            i for i in todos
-            if (not busca or busca in i["nome"].lower()
-                or busca in i["cpf"] or busca in i["email"].lower())
-            and (not filtro_email or filtro_email in i["email"].lower())
-            and (not filtro_tel or filtro_tel in i["telefone"])
-        ]
+        self.infratores = filtrar_infratores(
+            todos,
+            self.entry_busca.get(),
+            self.entry_filtro1.get(),
+            self.entry_filtro2.get(),
+        )
         self.render_rows()
 
     def limpar_filtros(self):
@@ -194,13 +176,7 @@ class InfratoresPage(CrudBase, ctk.CTkFrame):
 
     def excluir(self, infrator):
         if messagebox.askyesno("Excluir", f"Deseja excluir {infrator['nome']}?"):
-            with Database() as db:
-                if db.conexao:
-                    db.executar(
-                        "DELETE FROM infrator WHERE id_infrator = ?",
-                        (infrator["id"],)
-                    )
-                    db.commitar()
+            self.repository.excluir(infrator["id"])
             registrar_log(
                 self.usuario_logado or "Sistema",
                 "exclusao",

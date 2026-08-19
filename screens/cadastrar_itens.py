@@ -5,9 +5,8 @@ from tkinter import messagebox
 
 from config.layout_system import LayoutSystem
 from config.styles import COLORS, FONTS
-from database.conexaodb import Database
+from screens.service.itens_service import ItemService, RegraItemError, validar_dados_item
 from screens.widgets import ComboBoxComSeta
-from utils import registrar_log
 
 
 class CadastrarItensWindow(ctk.CTkToplevel):
@@ -16,6 +15,7 @@ class CadastrarItensWindow(ctk.CTkToplevel):
         self.item_edicao = item
         self.processo_tccm = processo_tccm
         self.usuario_logado = usuario_logado
+        self.service = ItemService()
         self.title("FISCSOFT - Cadastrar Item")
         self.geometry("820x600")
         self.resizable(False, False)
@@ -141,108 +141,32 @@ class CadastrarItensWindow(ctk.CTkToplevel):
         )
 
     def salvar(self):
-        nome = self.entry_nome.get().strip()
-        desc = self.entry_desc.get().strip() or nome
-        tipo = self.combo_tipo.get().strip()
-        unidade = self.combo_unidade.get().strip()
-        just = self.entry_just.get().strip()
-        qtd = self.entry_qtd.get().strip()
-
-        if not all([nome, just, qtd]):
-            messagebox.showwarning("Atencao", "Preencha nome, justificativa e quantidade prevista!", parent=self)
+        try:
+            dados = validar_dados_item(
+                self.entry_nome.get(),
+                self.entry_desc.get(),
+                self.combo_tipo.get(),
+                self.combo_unidade.get(),
+                self.entry_just.get(),
+                self.entry_qtd.get(),
+            )
+        except RegraItemError as exc:
+            if "inteiro" in str(exc):
+                messagebox.showerror("Erro", str(exc), parent=self)
+            else:
+                messagebox.showwarning("Atencao", str(exc), parent=self)
             return
 
         try:
-            qtd_int = int(qtd)
-        except ValueError:
-            messagebox.showerror("Erro", "Qtd. Prevista deve ser um numero inteiro!", parent=self)
+            mensagem = self.service.salvar(
+                dados,
+                item_id=self.item_edicao["id"] if self.item_edicao else None,
+                processo=self.processo_tccm,
+                usuario_logado=self.usuario_logado,
+            )
+        except Exception as exc:
+            messagebox.showerror("Erro", f"Nao foi possivel salvar o item:\n{exc}", parent=self)
             return
 
-        with Database() as db:
-            if not db.conexao:
-                messagebox.showerror("Erro", "Nao foi possivel conectar ao banco de dados!", parent=self)
-                return
-
-            if self.item_edicao:
-                sql = """UPDATE itens SET nome=?, descricao=?, tipo=?, justificativa=?,
-                         unidade_medida=?, quantidade_prevista=? WHERE id=?"""
-                params = (nome, desc, tipo, just, unidade, qtd_int, self.item_edicao["id"])
-                mensagem = f"Item '{nome}' atualizado com sucesso!"
-            else:
-                c = db.executar("SELECT COALESCE(MAX(id), 0) + 1 FROM itens")
-                nid = c.fetchone()[0] if c else 1
-                codigo = f"IT-{nid:03d}"
-                sql = """INSERT INTO itens (nome, descricao, codigo_interno, tipo, justificativa,
-                                            unidade_medida, quantidade_prevista, status, processo)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, 'Ativo', ?)"""
-                params = (nome, desc, codigo, tipo, just, unidade, qtd_int, self.processo_tccm)
-                mensagem = f"Item '{nome}' cadastrado com sucesso!"
-
-            db.executar(sql, params)
-            cur = db.executar("SELECT last_insert_rowid()")
-            try:
-                # try to obtain last inserted id; if editing, use existing id
-                if self.item_edicao:
-                    item_id = self.item_edicao["id"]
-                else:
-                    # fetch last row id from connection
-                    lr = cur.fetchone()
-                    item_id = int(lr[0]) if lr else nid
-            except Exception:
-                item_id = self.item_edicao["id"] if self.item_edicao else nid
-
-            # persist per-semester quantities based on TCCM semesters
-            try:
-                from datetime import datetime as _dt
-                r_tccm = db.executar(
-                    "SELECT data_inicio, semestres FROM tccm WHERE processo = ?",
-                    (self.processo_tccm,),
-                )
-                tccm_row = r_tccm.fetchone() if r_tccm else None
-
-                if tccm_row and tccm_row[1]:
-                    data_inicio = tccm_row[0]
-                    semestres_total = int(tccm_row[1]) or 1
-
-                    try:
-                        if hasattr(data_inicio, "year"):
-                            start_dt = data_inicio
-                        else:
-                            start_dt = _dt.strptime(str(data_inicio), "%Y-%m-%d")
-                    except Exception:
-                        start_dt = _dt.now()
-
-                    start_sem = 1 if start_dt.month <= 6 else 2
-
-                    base = qtd_int // semestres_total
-                    rem = qtd_int % semestres_total
-
-                    for i in range(semestres_total):
-                        offset = (start_sem - 1) + i
-                        ano = start_dt.year + (offset // 2)
-                        sem_num = (offset % 2) + 1
-                        qtd_sem = base + (1 if i < rem else 0)
-                        db.executar(
-                            "INSERT OR REPLACE INTO item_semestre "
-                            "(itens_id, ano, semestre, quantidade_prevista, processo) "
-                            "VALUES (?, ?, ?, ?, ?)",
-                            (item_id, ano, sem_num, qtd_sem, self.processo_tccm),
-                        )
-                else:
-                    now = _dt.now()
-                    ano = now.year
-                    semestre = 1 if now.month <= 6 else 2
-                    db.executar(
-                        "INSERT OR REPLACE INTO item_semestre "
-                        "(itens_id, ano, semestre, quantidade_prevista, processo) "
-                        "VALUES (?, ?, ?, ?, ?)",
-                        (item_id, ano, semestre, qtd_int, self.processo_tccm),
-                    )
-            except Exception:
-                pass
-
-            db.commitar()
-
-        registrar_log(self.usuario_logado or "Sistema", "edicao" if self.item_edicao else "cadastro", "itens", mensagem)
         messagebox.showinfo("Sucesso", mensagem, parent=self)
         self.destroy()
