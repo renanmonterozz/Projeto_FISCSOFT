@@ -9,6 +9,7 @@ from config.permissoes import pode_acao
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
 from screens.service.itens_service import ItemService
+from screens.widgets import ComboBoxComSeta
 
 
 class ItensPage(CrudBase, ctk.CTkFrame):
