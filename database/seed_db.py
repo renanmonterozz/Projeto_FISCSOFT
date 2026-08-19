@@ -5,7 +5,7 @@ Execute uma única vez após clonar o repositório:
     python database/seed_db.py
 """
 
-from conexaodb import criar_schema, DB_PATH
+from conexaodb import criar_schema, seed_dados, DB_PATH
 import os
 
 
@@ -18,6 +18,7 @@ def main():
 
     print(f"Criando banco de dados em: {DB_PATH}")
     criar_schema()
+    seed_dados()
     print("✓ Banco de dados criado com sucesso!")
     print("  Usuários de teste:")
     print("    - admin / senha: admin")

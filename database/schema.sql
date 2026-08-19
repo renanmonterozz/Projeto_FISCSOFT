@@ -48,6 +48,9 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `fiscsoft`.`TCCM` (
   `processo` CHAR(20) NOT NULL,
+  `documento_sei` TEXT NULL,
+  `data_inicio` DATE NULL,
+  `semestres` INT NOT NULL DEFAULT 1,
   `total_pago` DECIMAL(12,2) NOT NULL DEFAULT 0.00,
   `total_validado` DECIMAL(12,2) NOT NULL,
   `data_validade` DATE NULL,
@@ -84,13 +87,20 @@ CREATE TABLE IF NOT EXISTS `fiscsoft`.`nota fiscal` (
   `valor_total` DECIMAL(8,2) NOT NULL,
   `agente ibama_matricula` INT NOT NULL,
   `status_nota` VARCHAR(30) NULL DEFAULT 'Pendente',
+  `processo` TEXT NULL,
   UNIQUE INDEX `nota_fiscal_UNIQUE` (`nota_fiscal` ASC) VISIBLE,
   UNIQUE INDEX `chave_de_acesso_UNIQUE` (`chave_de_acesso` ASC) VISIBLE,
   PRIMARY KEY (`nota_fiscal`, `agente ibama_matricula`),
   INDEX `fk_nota fiscal_agente ibama1_idx` (`agente ibama_matricula` ASC) VISIBLE,
+  INDEX `fk_nota fiscal_tccm_idx` (`processo` ASC) VISIBLE,
   CONSTRAINT `fk_nota fiscal_agente ibama1`
     FOREIGN KEY (`agente ibama_matricula`)
     REFERENCES `fiscsoft`.`agente ibama` (`matricula`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_nota fiscal_tccm`
+    FOREIGN KEY (`processo`)
+    REFERENCES `fiscsoft`.`TCCM` (`processo`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
@@ -107,12 +117,20 @@ CREATE TABLE IF NOT EXISTS `fiscsoft`.`produtos` (
   `data_validade` DATE NULL,
   `nota fiscal_nota_fiscal` VARCHAR(50) NOT NULL,
   `nota fiscal_agente ibama_matricula` INT NOT NULL,
+  `itens_id` INT NULL,
+  `nome_item` VARCHAR(200) NULL,
   PRIMARY KEY (`lote`, `nota fiscal_nota_fiscal`, `nota fiscal_agente ibama_matricula`),
   UNIQUE INDEX `lote_UNIQUE` (`lote` ASC) VISIBLE,
   INDEX `fk_produtos_nota fiscal1_idx` (`nota fiscal_nota_fiscal` ASC, `nota fiscal_agente ibama_matricula` ASC) VISIBLE,
+  INDEX `fk_produtos_itens_idx` (`itens_id` ASC) VISIBLE,
   CONSTRAINT `fk_produtos_nota fiscal1`
     FOREIGN KEY (`nota fiscal_nota_fiscal` , `nota fiscal_agente ibama_matricula`)
     REFERENCES `fiscsoft`.`nota fiscal` (`nota_fiscal` , `agente ibama_matricula`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_produtos_itens`
+    FOREIGN KEY (`itens_id`)
+    REFERENCES `fiscsoft`.`itens` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
@@ -190,7 +208,68 @@ CREATE TABLE IF NOT EXISTS `fiscsoft`.`itens` (
   `quantidade_prevista` INT DEFAULT 0,
   `status` VARCHAR(30) DEFAULT 'Ativo',
   `notas_fiscais` VARCHAR(100) NULL,
+  `processo` VARCHAR(100) NULL,
   `criado_em` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE INDEX `codigo_interno_UNIQUE` (`codigo_interno` ASC) VISIBLE,
   PRIMARY KEY (`id`))
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `fiscsoft`.`locais`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `fiscsoft`.`locais` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `cep` VARCHAR(10) NOT NULL,
+  `endereco` VARCHAR(255) NOT NULL,
+  `instituicao` VARCHAR(200) NOT NULL,
+  `responsavel` VARCHAR(100) NOT NULL,
+  `telefone` VARCHAR(20) NULL,
+  `criado_em` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`))
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `fiscsoft`.`logs`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `fiscsoft`.`logs` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `usuario` VARCHAR(100) NOT NULL,
+  `acao` VARCHAR(50) NOT NULL,
+  `tabela` VARCHAR(50) NOT NULL,
+  `descricao` TEXT NOT NULL,
+  `criado_em` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`))
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `fiscsoft`.`item_semestre`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `fiscsoft`.`item_semestre` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `itens_id` INT NOT NULL,
+  `ano` INT NOT NULL,
+  `semestre` INT NOT NULL,
+  `quantidade_prevista` INT NOT NULL DEFAULT 0,
+  `processo` TEXT NULL,
+  UNIQUE INDEX `uk_item_semestre` (`itens_id` ASC, `ano` ASC, `semestre` ASC) VISIBLE,
+  PRIMARY KEY (`id`),
+  INDEX `fk_item_semestre_itens_idx` (`itens_id` ASC) VISIBLE,
+  CONSTRAINT `fk_item_semestre_itens`
+    FOREIGN KEY (`itens_id`)
+    REFERENCES `fiscsoft`.`itens` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `fiscsoft`.`schema_migrations`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `fiscsoft`.`schema_migrations` (
+  `name` TEXT NOT NULL,
+  `applied_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE INDEX `uk_schema_migrations` (`name`(255) ASC) VISIBLE)
 ENGINE = InnoDB;

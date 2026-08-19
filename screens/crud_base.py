@@ -1,12 +1,8 @@
 from tkinter import messagebox
-
 import customtkinter as ctk
-<<<<<<< HEAD
-
-from config.layout_system import LayoutSystem
-=======
->>>>>>> main
 from config.styles import COLORS, FONTS
+from config.layout_system import LayoutSystem
+
 
 
 def _rebuild_sidebar_and_content(page):
@@ -133,7 +129,7 @@ class CrudBase:
             **kwargs,
         )
 
-    def build_header(self, title, subtitle):
+    def build_header(self, title, subtitle, alerta_nota=False, processo_tccm=None):
         colors = COLORS
         header = ctk.CTkFrame(self, fg_color="transparent")
         header.pack(fill="x", padx=30, pady=(30, 20))
@@ -152,6 +148,13 @@ class CrudBase:
             font=ctk.CTkFont(size=FONTS["size_subtitle"]),
             text_color=colors["text_muted"],
         ).pack(anchor="w", pady=(4, 0))
+
+        if alerta_nota:
+                self.build_alerta_nota(
+                header,
+                processo_tccm=processo_tccm,
+                pack_direction="right"
+        )
 
     def build_filter_container(self):
         container = LayoutSystem.panel(

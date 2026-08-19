@@ -3,7 +3,6 @@ import _path  # noqa: F401
 import customtkinter as ctk
 from tkinter import messagebox
 
-from config.layout_system import LayoutSystem
 from config.styles import COLORS, FONTS
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
@@ -20,9 +19,7 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
         self.usuario_logado = usuario_logado
         self.id_infrator = id_infrator
 
-        self.build_header("Relatório Geral",
-                          "Visualize o resumo das suas notas fiscais e processos TCCM.",
-                          alerta_nota=False)
+        self.build_header("Relatório Geral","Visualize o resumo das suas notas fiscais e processos TCCM.", alerta_nota=False)
         self.build_filter_bar()
         self.build_stats_cards()
         self.build_relatorio_content()

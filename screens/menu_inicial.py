@@ -7,12 +7,8 @@ from datetime import datetime as _dt
 import customtkinter as ctk
 from PIL import Image
 
-<<<<<<< HEAD
 from config.layout_system import LayoutSystem
 from config.styles import ASSETS_DIR, COLORS, FONTS
-=======
-from config.styles import COLORS, FONTS
->>>>>>> main
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
 

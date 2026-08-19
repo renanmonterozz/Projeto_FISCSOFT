@@ -17,8 +17,7 @@ class DashboardExterno(CrudBase, ctk.CTkFrame):
         self.usuario_logado = usuario_logado
         self.id_infrator = id_infrator
 
-        self.build_header("Meu Painel", f"Bem-vindo, {usuario_logado or 'Usuario'}",
-                          alerta_nota=False)
+        self.build_header("Meu Painel", f"Bem-vindo, {usuario_logado or 'Usuario'}",alerta_nota=False)
         self.build_stats_cards()
         # build_tccm_info removed
         self.build_notas_resumo()
