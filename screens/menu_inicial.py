@@ -9,9 +9,9 @@ from PIL import Image
 from config.layout_system import LayoutSystem
 from config.styles import ASSETS_DIR, COLORS, FONTS
 from screens.crud_base import CrudBase
-from screens.service.dashboard_service import formatar_data, formatar_moeda_brl
-from screens.service.menu_service import MenuService
-from screens.service.tccm_service import calcular_data_validade
+from services.dashboard_service import formatar_data, formatar_moeda_brl
+from services.menu_service import MenuService
+from services.tccm_service import calcular_data_validade
 
 class ToolTip:
     def __init__(self, widget, itens, master=None):

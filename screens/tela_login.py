@@ -12,7 +12,7 @@ from PIL import Image
 import customtkinter as ctk
 
 from config.styles import ASSETS_DIR, COLORS
-from screens.service.login_service import RegraLoginError, validar_credenciais
+from services.login_service import RegraLoginError, validar_credenciais
 
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")

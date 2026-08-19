@@ -5,7 +5,7 @@ from tkinter import messagebox
 
 from config.layout_system import LayoutSystem
 from config.styles import COLORS, FONTS
-from screens.service.infrator_service import (
+from services.infrator_service import (
     InfratorService,
     RegraInfratorError,
     validar_dados_infrator,

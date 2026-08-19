@@ -2,6 +2,7 @@ from tkinter import messagebox
 import customtkinter as ctk
 from config.styles import COLORS, FONTS
 from config.layout_system import LayoutSystem
+from services.notas_service import NotasFiscaisService
 
 
 
@@ -39,6 +40,13 @@ def _rebuild_sidebar_and_content(page):
 class CrudBase:
     CARD_BORDER_RADIUS = 4
 
+    def _servico_notas_alerta(self):
+        service = getattr(self, "_alerta_notas_service", None)
+        if service is None:
+            service = NotasFiscaisService()
+            self._alerta_notas_service = service
+        return service
+
     def build_alerta_nota(self, header, processo_tccm=None, pack_direction="right"):
         """Exibe um sino que so aparece quando existe nota fiscal pendente de conferencia."""
         # only show alerta on the post-login main screen
@@ -71,17 +79,9 @@ class CrudBase:
 
         # initialize exigencias tracking
         try:
-            with Database() as db:
-                if db.conexao:
-                    sql = "SELECT DISTINCT processo FROM \"nota fiscal\" WHERE status_nota = 'Correcao Solicitada'"
-                    params = ()
-                    if processo_tccm:
-                        sql += " AND processo = ?"
-                        params = (processo_tccm,)
-                    r = db.executar(sql, params)
-                    self._exigencias_set = set([row[0] for row in r.fetchall()]) if r else set()
-                else:
-                    self._exigencias_set = set()
+            self._exigencias_set = set(
+                self._servico_notas_alerta().listar_processos_com_correcao(processo_tccm)
+            )
         except Exception:
             self._exigencias_set = set()
 
@@ -90,21 +90,7 @@ class CrudBase:
     def _notas_pendentes(self, processo_tccm=None):
         """Retorna lista de (processo, quantidade) de notas fiscais pendentes de conferencia."""
         try:
-            with Database() as db:
-                if not db.conexao:
-                    return []
-                if processo_tccm:
-                    sql = """SELECT processo, COUNT(*) FROM "nota fiscal"
-                             WHERE processo = ? AND status_nota NOT IN ('Aprovada', 'Rejeitada')
-                             GROUP BY processo"""
-                    params = (processo_tccm,)
-                else:
-                    sql = """SELECT processo, COUNT(*) FROM "nota fiscal"
-                             WHERE status_nota NOT IN ('Aprovada', 'Rejeitada')
-                             GROUP BY processo"""
-                    params = ()
-                r = db.executar(sql, params)
-                return [(row[0], row[1]) for row in r.fetchall()] if r else []
+            return self._servico_notas_alerta().listar_pendencias_alerta(processo_tccm)
         except Exception:
             return []
 
@@ -340,17 +326,9 @@ class CrudBase:
     def _check_exigencias_and_refresh(self, processo_tccm=None):
         """Check for exigencias (correcao solicitada) that were attended and refresh alerta button."""
         try:
-            with Database() as db:
-                if not db.conexao:
-                    current = set()
-                else:
-                    sql = "SELECT DISTINCT processo FROM \"nota fiscal\" WHERE status_nota = 'Correcao Solicitada'"
-                    params = ()
-                    if processo_tccm:
-                        sql += " AND processo = ?"
-                        params = (processo_tccm,)
-                    r = db.executar(sql, params)
-                    current = set([row[0] for row in r.fetchall()]) if r else set()
+            current = set(
+                self._servico_notas_alerta().listar_processos_com_correcao(processo_tccm)
+            )
         except Exception:
             current = set()
 

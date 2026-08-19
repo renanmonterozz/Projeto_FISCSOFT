@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from screens.repository.locais_repository import LocaisRepository
+from repositories.locais_repository import LocaisRepository
 from utils import registrar_log
 
 

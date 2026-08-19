@@ -9,7 +9,7 @@ import customtkinter as ctk
 from config.styles import COLORS, FONTS
 from config.permissoes import pode_acao
 from screens.crud_base import CrudBase
-from screens.service.tccm_service import TccmService
+from services.tccm_service import TccmService
 from screens.widgets import ComboBoxComSeta
 from screens.sidebar import carregar_icone
 

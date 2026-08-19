@@ -585,7 +585,18 @@ class LoginApp(ctk.CTk):
                 UsuariosInfratoresPage(content_frame, usuario_logado=usuario_logado,
                                        perfil=perfil).pack(fill="both", expand=True)
             elif pagina == "Notas Fiscais":
-                RelatoriosPage(content_frame, usuario_logado=usuario_logado, perfil=perfil).pack(fill="both", expand=True)
+                if not processo_tccm:
+                    messagebox.showwarning(
+                        "TCCM obrigatorio",
+                        "Selecione um TCCM antes de abrir as notas fiscais.",
+                    )
+                    return
+                RelatoriosPage(
+                    content_frame,
+                    usuario_logado=usuario_logado,
+                    perfil=perfil,
+                    processo_tccm=processo_tccm,
+                ).pack(fill="both", expand=True)
             elif pagina == "Historico":
                 HistoricoPage(content_frame, usuario_logado=usuario_logado).pack(fill="both", expand=True)
             elif pagina == "Dashboard TCCM":

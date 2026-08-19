@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from screens.repository.itens_repository import ItensRepository
+from repositories.itens_repository import ItensRepository
 from utils import registrar_log
 
 

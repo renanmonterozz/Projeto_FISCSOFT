@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from screens.repository.historico_repository import HistoricoRepository
+from repositories.historico_repository import HistoricoRepository
 
 
 class HistoricoService:

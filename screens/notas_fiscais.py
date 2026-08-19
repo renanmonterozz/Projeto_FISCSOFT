@@ -2,7 +2,7 @@ import _path  # noqa: F401
 
 import os
 from datetime import datetime as _dt
-from tkinter import messagebox
+from tkinter import messagebox, simpledialog
 
 import customtkinter as ctk
 
@@ -10,8 +10,8 @@ from config.styles import COLORS, FONTS
 from config.permissoes import pode_acao
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
-from screens.service.dashboard_service import formatar_data
-from screens.service.notas_service import NotasFiscaisService
+from services.dashboard_service import formatar_data
+from services.notas_service import NotasFiscaisService
 from screens.widgets import CalendarioPopup, ComboBoxComSeta
 
 
@@ -33,8 +33,10 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
         self.perfil = perfil
         self.pode_aprovar = pode_acao(perfil, "aprovar_nota")
         self.processo_tccm = processo_tccm
+        self.tccm_id = processo_tccm
         self.nf_selecionada = None
         self.service = NotasFiscaisService()
+        self.service.definir_agente_logado(usuario_logado)
 
         self.build_header("Monitoramento de Notas Fiscais",
                           "Acompanhe todas as notas fiscais enviadas neste TCCM.")
@@ -274,7 +276,7 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
 
     def carregar_do_banco(self):
         try:
-            notas = self.service.listar_monitoramento(self.processo_tccm)
+            notas = self.service.listar_por_tccm(self.tccm_id)
             for nota in notas:
                 nota["data"] = formatar_data(nota["data"])
                 nota["valor_total"] = float(nota["valor_total"] or 0)
@@ -362,9 +364,9 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
             self.btn_solicitar_correcao.configure(state="disabled")
             self.btn_rejeitar.configure(state="disabled")
         elif status == "Correcao Solicitada":
-            self.btn_aprovar.configure(state="normal")
+            self.btn_aprovar.configure(state="disabled")
             self.btn_solicitar_correcao.configure(state="disabled")
-            self.btn_rejeitar.configure(state="normal")
+            self.btn_rejeitar.configure(state="disabled")
         else:
             self.btn_aprovar.configure(state="normal")
             self.btn_solicitar_correcao.configure(state="normal")
@@ -435,24 +437,16 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
     def _atualizar_status_nota(self, novo_status):
         if not self.nf_selecionada:
             return
-        status_atual = self.nf_selecionada.get("status")
-        if status_atual in ("Aprovada", "Rejeitada"):
-            messagebox.showwarning("Aviso", "Esta nota fiscal ja foi finalizada e nao pode mais ser alterada.")
+        if novo_status != "Aprovada":
             return
-        if novo_status == status_atual:
-            return
-        processo = self.nf_selecionada["processo"]
-        try:
-            self.service.atualizar_status(self.nf_selecionada, novo_status)
-        except Exception:
-            return
+        self.service.aprovar_nota(self.nf_selecionada, self.tccm_id)
         self.nf_selecionada["status"] = novo_status
         self.notas = self.carregar_do_banco()
         self.render_rows()
         self._atualizar_estado_botoes(novo_status)
         # refresh alert and check if any exigencia was attended
         try:
-            proc = processo
+            proc = self.tccm_id
             if hasattr(self, '_check_exigencias_and_refresh'):
                 self._check_exigencias_and_refresh(proc)
         except Exception:
@@ -514,23 +508,54 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
             messagebox.showwarning("Aviso", "Selecione uma nota fiscal primeiro.")
             return
         if messagebox.askyesno("Confirmar", "Deseja aprovar esta nota fiscal?"):
-            self._atualizar_status_nota("Aprovada")
-            messagebox.showinfo("Sucesso", "Nota fiscal aprovada com sucesso!")
+            try:
+                self._atualizar_status_nota("Aprovada")
+                messagebox.showinfo("Sucesso", "Nota fiscal aprovada com sucesso!")
+            except Exception as exc:
+                messagebox.showerror("Erro", str(exc))
 
     def solicitar_correcao(self):
         if not self.nf_selecionada:
             messagebox.showwarning("Aviso", "Selecione uma nota fiscal primeiro.")
             return
-        self._atualizar_status_nota("Correcao Solicitada")
-        messagebox.showinfo("Informacao", "Solicitacao de correcao enviada.")
+        motivo = simpledialog.askstring(
+            "Solicitar correcao",
+            "Informe obrigatoriamente o motivo da correcao:",
+            parent=self,
+        )
+        if not (motivo or "").strip():
+            messagebox.showwarning("Atencao", "Informe o motivo da correcao.", parent=self)
+            return
+        try:
+            self.service.solicitar_correcao(self.nf_selecionada, self.tccm_id, motivo)
+            self.nf_selecionada["status"] = "Correcao Solicitada"
+            self.notas = self.carregar_do_banco()
+            self.render_rows()
+            messagebox.showinfo("Informacao", "Solicitacao de correcao enviada.")
+        except Exception as exc:
+            messagebox.showerror("Erro", str(exc))
 
     def rejeitar(self):
         if not self.nf_selecionada:
             messagebox.showwarning("Aviso", "Selecione uma nota fiscal primeiro.")
             return
+        motivo = simpledialog.askstring(
+            "Rejeitar nota fiscal",
+            "Informe obrigatoriamente o motivo da rejeicao:",
+            parent=self,
+        )
+        if not (motivo or "").strip():
+            messagebox.showwarning("Atencao", "Informe o motivo da rejeicao.", parent=self)
+            return
         if messagebox.askyesno("Confirmar", "Deseja rejeitar esta nota fiscal?"):
-            self._atualizar_status_nota("Rejeitada")
-            messagebox.showinfo("Informacao", "Nota fiscal rejeitada.")
+            try:
+                self.service.rejeitar_nota(self.nf_selecionada, self.tccm_id, motivo)
+                self.nf_selecionada["status"] = "Rejeitada"
+                self.notas = self.carregar_do_banco()
+                self.render_rows()
+                messagebox.showinfo("Informacao", "Nota fiscal rejeitada.")
+            except Exception as exc:
+                messagebox.showerror("Erro", str(exc))
 
 
 if __name__ == "__main__":

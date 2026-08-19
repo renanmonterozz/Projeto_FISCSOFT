@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from screens.repository.relatorio_repository import RelatorioRepository
+from repositories.relatorio_repository import RelatorioRepository
 
 
 class RelatorioService:

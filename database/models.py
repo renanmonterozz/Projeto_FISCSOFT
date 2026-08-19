@@ -65,6 +65,21 @@ class NotaFiscal(Base):
     status_nota: Mapped[str | None] = mapped_column(String(30), default="Pendente")
     processo: Mapped[str | None] = mapped_column(String(100))
     arquivo: Mapped[str | None] = mapped_column(Text)
+    agente_decisao: Mapped[int | None] = mapped_column(Integer)
+    data_decisao: Mapped[datetime | None] = mapped_column(DateTime)
+
+
+class NotaFiscalHistorico(Base):
+    __tablename__ = "nota fiscal historico"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    nota_fiscal: Mapped[str] = mapped_column(String(50), nullable=False)
+    processo: Mapped[str | None] = mapped_column(String(100))
+    agente_matricula: Mapped[int | None] = mapped_column(Integer)
+    usuario: Mapped[str | None] = mapped_column(String(100))
+    acao: Mapped[str] = mapped_column(String(40), nullable=False)
+    motivo: Mapped[str | None] = mapped_column(Text)
+    criado_em: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.now)
 
 
 class Produto(Base):
@@ -94,6 +109,7 @@ class Item(Base):
     unidade_medida: Mapped[str | None] = mapped_column(String(50))
     semestre: Mapped[str | None] = mapped_column(String(20))
     quantidade_prevista: Mapped[int | None] = mapped_column(Integer, default=0)
+    quantidade_entregue: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     status: Mapped[str | None] = mapped_column(String(30), default="Ativo")
     notas_fiscais: Mapped[str | None] = mapped_column(String(100))
     processo: Mapped[str | None] = mapped_column(String(100))

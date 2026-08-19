@@ -7,7 +7,7 @@ from config.styles import COLORS, FONTS
 from config.permissoes import pode_acao
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
-from screens.service.usuario_service import UsuarioService
+from services.usuario_service import UsuarioService
 
 
 class UsuariosPage(CrudBase, ctk.CTkFrame):

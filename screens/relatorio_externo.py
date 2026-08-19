@@ -5,8 +5,9 @@ from tkinter import messagebox
 
 from config.styles import COLORS, FONTS
 from screens.crud_base import CrudBase
-from screens.service.dashboard_service import formatar_data, formatar_moeda_brl, status_nota
-from screens.service.relatorio_service import RelatorioService
+from services.dashboard_service import formatar_data, formatar_moeda_brl, status_nota
+from services.relatorio_service import RelatorioService
+from screens.notas_fiscais_externo import NotasFiscaisExterno
 from screens.widgets import CalendarioPopup, ComboBoxComSeta
 
 
@@ -625,13 +626,43 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
                         anchor=anchor,
                     ).place(relx=rx, relwidth=rw, rely=0, relheight=1)
 
+        if dados_nf.get("status") == "Correcao Solicitada":
+            def abrir_correcao():
+                popup.destroy()
+                janela = ctk.CTkToplevel(self)
+                janela.title(f"Corrigir NF {nota_fiscal}")
+                janela.geometry("1100x760")
+                janela.transient(self)
+                janela.grab_set()
+
+                def finalizar_correcao():
+                    janela.destroy()
+                    self._carregar_dados()
+                    self._atualizar_cards()
+
+                NotasFiscaisExterno(
+                    janela,
+                    usuario_logado=self.usuario_logado,
+                    id_infrator=self.id_infrator,
+                    nota_edicao=dados_nf,
+                    on_voltar=finalizar_correcao,
+                ).pack(fill="both", expand=True)
+
+            ctk.CTkButton(
+                container, text="Corrigir Nota", height=36, corner_radius=4,
+                fg_color=COLORS["warning"], hover_color=COLORS["warning_hover"],
+                text_color=COLORS["text"], border_width=0,
+                font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
+                command=abrir_correcao,
+            ).place(relx=0.62, rely=0.92, relwidth=0.24)
+
         ctk.CTkButton(
             container, text="Fechar", height=36, corner_radius=4,
             fg_color="#6B7280", hover_color="#4B5563",
             text_color="white", border_width=0,
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
             command=popup.destroy
-        ).place(relx=0.38, rely=0.92, relwidth=0.24)
+        ).place(relx=0.35, rely=0.92, relwidth=0.20)
 
     def _buscar_dados_nf(self, nota_fiscal):
         dados = self.service.buscar_detalhes(nota_fiscal, self.id_infrator)

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from screens.repository.infratores_repository import InfratoresRepository
+from repositories.infratores_repository import InfratoresRepository
 from utils import hash_password, registrar_log
 
 

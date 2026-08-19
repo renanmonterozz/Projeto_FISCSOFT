@@ -3,7 +3,7 @@ from __future__ import annotations
 import calendar
 from datetime import datetime
 
-from screens.repository.tccm_repository import TccmRepository
+from repositories.tccm_repository import TccmRepository
 
 
 class RegraTccmError(ValueError):

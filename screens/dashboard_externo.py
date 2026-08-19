@@ -7,7 +7,7 @@ from PIL import Image
 
 from config.styles import ASSETS_DIR, COLORS, FONTS
 from screens.crud_base import CrudBase
-from screens.service.dashboard_service import (
+from services.dashboard_service import (
     DashboardService,
     formatar_data,
     formatar_moeda_brl,

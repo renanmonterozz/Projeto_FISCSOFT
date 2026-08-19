@@ -4,7 +4,7 @@ import customtkinter as ctk
 
 from config.styles import COLORS, FONTS
 from screens.crud_base import CrudBase
-from screens.service.historico_service import (
+from services.historico_service import (
     HistoricoService,
     chave_cor_acao,
     truncar_descricao,

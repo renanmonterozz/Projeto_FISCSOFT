@@ -7,7 +7,7 @@ from config.styles import COLORS, FONTS
 from config.permissoes import pode_acao
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
-from screens.service.infrator_service import InfratorService
+from services.infrator_service import InfratorService
 
 
 class InfratoresPage(CrudBase, ctk.CTkFrame):

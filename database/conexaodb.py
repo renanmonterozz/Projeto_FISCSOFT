@@ -82,6 +82,8 @@ _SCHEMA_SQL = """
         "agente ibama_matricula" INTEGER NOT NULL,
         status_nota VARCHAR(30) DEFAULT 'Pendente',
         processo TEXT,
+        agente_decisao INTEGER,
+        data_decisao DATETIME,
         PRIMARY KEY (nota_fiscal, "agente ibama_matricula"),
         UNIQUE (nota_fiscal),
         UNIQUE (chave_de_acesso),
@@ -117,6 +119,7 @@ _SCHEMA_SQL = """
         unidade_medida VARCHAR(50),
         semestre VARCHAR(20),
         quantidade_prevista INTEGER DEFAULT 0,
+        quantidade_entregue INTEGER NOT NULL DEFAULT 0,
         status VARCHAR(30) DEFAULT 'Ativo',
         notas_fiscais VARCHAR(100),
         processo VARCHAR(100),
@@ -141,6 +144,17 @@ _SCHEMA_SQL = """
         tabela VARCHAR(50) NOT NULL,
         descricao TEXT NOT NULL,
         criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS "nota fiscal historico" (
+        id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        nota_fiscal VARCHAR(50) NOT NULL,
+        processo VARCHAR(100),
+        agente_matricula INTEGER,
+        usuario VARCHAR(100),
+        acao VARCHAR(40) NOT NULL,
+        motivo TEXT,
+        criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
 """
 
@@ -198,6 +212,9 @@ class Database:
             ("tccm", "data_inicio", 'ALTER TABLE tccm ADD COLUMN data_inicio DATE'),
             ("tccm", "semestres", 'ALTER TABLE tccm ADD COLUMN semestres INTEGER NOT NULL DEFAULT 1'),
             ('nota fiscal', "arquivo", 'ALTER TABLE "nota fiscal" ADD COLUMN arquivo TEXT'),
+            ('nota fiscal', "agente_decisao", 'ALTER TABLE "nota fiscal" ADD COLUMN agente_decisao INTEGER'),
+            ('nota fiscal', "data_decisao", 'ALTER TABLE "nota fiscal" ADD COLUMN data_decisao DATETIME'),
+            ('itens', "quantidade_entregue", 'ALTER TABLE itens ADD COLUMN quantidade_entregue INTEGER NOT NULL DEFAULT 0'),
         ]
         for tabela, coluna, sql in migracoes:
             if self._coluna_existe(tabela, coluna):
@@ -208,6 +225,27 @@ class Database:
                 logger.info("Migracao aplicada: %s.%s", tabela, coluna)
             except sqlite3.OperationalError as e:
                 logger.debug("Migracao ignorada para %s.%s: %s", tabela, coluna, e)
+
+        if not self._tabela_existe("nota fiscal historico"):
+            try:
+                self.conexao.execute(
+                    """
+                    CREATE TABLE "nota fiscal historico" (
+                        id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        nota_fiscal VARCHAR(50) NOT NULL,
+                        processo VARCHAR(100),
+                        agente_matricula INTEGER,
+                        usuario VARCHAR(100),
+                        acao VARCHAR(40) NOT NULL,
+                        motivo TEXT,
+                        criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    )
+                    """
+                )
+                self.conexao.commit()
+                logger.info("Migracao aplicada: tabela nota fiscal historico")
+            except sqlite3.OperationalError as e:
+                logger.debug("Migracao de historico ignorada: %s", e)
 
         # Create item_semestre table and migrate existing quantidade_prevista into current semester
         if not self._tabela_existe("item_semestre"):

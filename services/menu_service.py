@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from screens.repository.menu_repository import MenuRepository
+from repositories.menu_repository import MenuRepository
 
 
 class MenuService:

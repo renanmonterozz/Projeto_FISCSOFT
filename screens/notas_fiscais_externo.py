@@ -17,7 +17,7 @@ except ImportError:
     PDF_DISPONIVEL = False
 
 from config.styles import ASSETS_DIR, ASSETS_DIR, COLORS, FONTS
-from screens.service.notas_service import (
+from services.notas_service import (
     NotasFiscaisService,
     RegraNotaError,
     preparar_item_nota,
@@ -28,12 +28,13 @@ ANEXOS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file
 
 
 class NotasFiscaisExterno(ctk.CTkFrame):
-    def __init__(self, master, usuario_logado=None, id_infrator=None, on_voltar=None, **kwargs):
+    def __init__(self, master, usuario_logado=None, id_infrator=None, on_voltar=None, nota_edicao=None, **kwargs):
         super().__init__(master, **kwargs)
         self.configure(fg_color=COLORS["bg"])
         self.usuario_logado = usuario_logado
         self.id_infrator = id_infrator
         self.on_voltar = on_voltar
+        self.nota_edicao = nota_edicao
         self.arquivo_selecionado = None
         self.itens_lista = []
         self._processo_map = {}
@@ -49,6 +50,39 @@ class NotasFiscaisExterno(ctk.CTkFrame):
         self._build_action_buttons()
         self._carregar_processos()
         self._carregar_itens_tccm()
+        if self.nota_edicao:
+            self._preencher_edicao()
+
+    def _preencher_edicao(self):
+        processo = self.nota_edicao.get("processo")
+        for display, valor in self._processo_map.items():
+            if valor == processo:
+                self.combo_processo.set(display)
+                break
+        self._carregar_itens_tccm()
+
+        self.entry_numero.insert(0, self.nota_edicao.get("nota_fiscal", ""))
+        self.entry_chave.insert(0, self.nota_edicao.get("chave", ""))
+        data = self.nota_edicao.get("data")
+        if hasattr(data, "strftime"):
+            data = data.strftime("%d/%m/%Y")
+        self.entry_data.insert(0, data or "")
+
+        itens_por_id = {item["id"]: item for item in self.itens_tccm}
+        self.itens_lista = []
+        for item in self.nota_edicao.get("itens", []):
+            catalogo = itens_por_id.get(item.get("item_id"))
+            if catalogo is None:
+                continue
+            self.itens_lista.append({
+                "item_id": catalogo["id"],
+                "nome": catalogo["nome"],
+                "descricao": catalogo["descricao"],
+                "quantidade": item["quantidade"],
+                "preco_unitario": float(item["preco_unitario"]),
+                "subtotal": item["subtotal"],
+            })
+        self._render_itens()
 
     def _build_header(self):
         header = ctk.CTkFrame(self.scroll, fg_color="transparent")
@@ -668,19 +702,33 @@ class NotasFiscaisExterno(ctk.CTkFrame):
                 return
 
         try:
-            valor_total = self.service.salvar(
-                numero,
-                chave,
-                data_str,
-                processo,
-                self.itens_lista,
-                arquivo_path,
-            )
+            if self.nota_edicao:
+                valor_total = self.service.reenviar_nota(
+                    self.nota_edicao["nota_fiscal"], processo, self.id_infrator,
+                    {
+                        "numero": numero,
+                        "chave": chave,
+                        "data": data,
+                        "arquivo": arquivo_path or self.nota_edicao.get("arquivo"),
+                    }, self.itens_lista,
+                )
+            else:
+                valor_total = self.service.salvar(
+                    numero,
+                    chave,
+                    data_str,
+                    processo,
+                    self.itens_lista,
+                    arquivo_path,
+                    usuario_id=self.id_infrator,
+                )
             messagebox.showinfo("Sucesso",
-                f"Nota fiscal enviada para o agente responsavel pela validacao!\n"
+                f"Nota fiscal {'reenviada' if self.nota_edicao else 'enviada'} para o agente responsavel pela validacao!\n"
                 f"Valor Total: R$ {valor_total:,.2f}\n"
                 f"Itens: {len(self.itens_lista)}")
             self._limpar_campos()
+            if self.nota_edicao and self.on_voltar:
+                self.on_voltar()
         except RegraNotaError as exc:
             messagebox.showwarning("Atencao", str(exc))
         except Exception as exc:

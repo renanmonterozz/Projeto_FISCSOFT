@@ -70,7 +70,8 @@ class RelatorioRepository:
                 "nota_fiscal": nota.nota_fiscal, "data": nota.data,
                 "chave": nota.chave_de_acesso, "valor_total": nota.valor_total or 0,
                 "status": nota.status_nota or "Pendente", "processo": processo,
-                "itens": [{"nome": p.nome_item or "--", "quantidade": p.quantidade or 0,
+                "matricula": nota.agente_matricula, "arquivo": nota.arquivo,
+                "itens": [{"item_id": p.itens_id, "nome": p.nome_item or "--", "quantidade": p.quantidade or 0,
                            "preco_unitario": p.preco_unitario or 0,
                            "subtotal": (p.quantidade or 0) * (p.preco_unitario or 0)} for p in produtos],
             }

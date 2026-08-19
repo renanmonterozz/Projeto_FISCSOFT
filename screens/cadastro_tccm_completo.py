@@ -6,7 +6,7 @@ import customtkinter as ctk
 from tkinter import messagebox
 
 from config.styles import COLORS, FONTS
-from screens.service.tccm_service import (
+from services.tccm_service import (
     RegraTccmError,
     TccmService,
     validar_cadastro_tccm,

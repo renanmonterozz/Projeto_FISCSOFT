@@ -5,7 +5,7 @@ from tkinter import messagebox
 
 from config.layout_system import LayoutSystem
 from config.styles import COLORS, FONTS
-from screens.service.itens_service import ItemService, RegraItemError, validar_dados_item
+from services.itens_service import ItemService, RegraItemError, validar_dados_item
 from screens.widgets import ComboBoxComSeta
 
 

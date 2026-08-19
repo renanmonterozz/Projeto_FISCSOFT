@@ -8,7 +8,7 @@ import os
 from config.layout_system import LayoutSystem
 from config.styles import COLORS, FONTS, ASSETS_DIR
 from config.permissoes import normalizar_perfil
-from screens.service.usuario_service import (
+from services.usuario_service import (
     RegraUsuarioError,
     UsuarioService,
     validar_dados_usuario,

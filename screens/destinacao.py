@@ -11,7 +11,7 @@ from config.styles import COLORS, FONTS
 from config.permissoes import pode_acao
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
-from screens.service.destinacao_service import (
+from services.destinacao_service import (
     DestinacaoService,
     RegraDestinacaoError,
     gerar_texto_relatorio,

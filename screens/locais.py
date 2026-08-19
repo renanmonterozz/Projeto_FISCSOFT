@@ -7,7 +7,7 @@ from config.styles import COLORS, FONTS
 from config.permissoes import pode_acao
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
-from screens.service.locais_service import LocalService, RegraLocalError
+from services.locais_service import LocalService, RegraLocalError
 
 
 class LocaisPage(CrudBase, ctk.CTkFrame):

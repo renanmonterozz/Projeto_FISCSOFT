@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from screens.repository.usuarios_repository import UsuariosRepository
+from repositories.usuarios_repository import UsuariosRepository
 from utils import hash_password, registrar_log
 
 

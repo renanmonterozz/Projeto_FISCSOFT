@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from screens.repository.destinacao_repository import DestinacaoRepository
+from repositories.destinacao_repository import DestinacaoRepository
 from utils import registrar_log
 
 
