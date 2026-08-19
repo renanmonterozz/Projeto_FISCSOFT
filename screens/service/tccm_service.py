@@ -26,6 +26,18 @@ class TccmService:
     def salvar(self, dados, itens):
         return self.repository.criar_com_itens(dados, itens)
 
+    def criar_infrator(self, dados):
+        return self.repository.criar_infrator(dados)
+
+    def criar_agente(self, dados):
+        return self.repository.criar_agente(dados)
+
+    def listar_dashboard(self):
+        return self.repository.listar_dashboard()
+
+    def buscar_detalhes(self, processo):
+        return self.repository.buscar_detalhes(processo)
+
 
 def calcular_data_validade(data_inicio, semestres):
     try:

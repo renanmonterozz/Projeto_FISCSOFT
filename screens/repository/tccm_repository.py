@@ -9,6 +9,58 @@ from database.orm import session_scope
 
 
 class TccmRepository:
+    def criar_infrator(self, dados):
+        with session_scope() as session:
+            infrator = Infrator(
+                cpf=dados["cpf"], email=dados["email"], senha="",
+                nome_infrator=dados["nome"], telefone_infrator=dados.get("telefone") or None,
+            )
+            session.add(infrator)
+
+    def criar_agente(self, dados):
+        with session_scope() as session:
+            agente = AgenteIbama(
+                matricula=dados["matricula"], login=dados["login"], senha=dados["senha"],
+                email=dados["email"], nome_agente=dados["nome"], cpf=dados["cpf"],
+                perfil="agente", status="ativo",
+            )
+            session.add(agente)
+
+    def listar_dashboard(self):
+        with session_scope() as session:
+            rows = session.execute(
+                select(Tccm, Infrator.nome_infrator, Infrator.cpf)
+                .outerjoin(Infrator, Infrator.id_infrator == Tccm.infrator_id)
+                .order_by(Tccm.processo)
+            ).all()
+            return [{"processo": t.processo, "total_pago": float(t.total_pago or 0),
+                     "total_devido": float(t.total_devido or 0), "status": t.status or "pendente",
+                     "data_validade": t.data_validade, "intervalo": t.intervalo or 0,
+                     "infrator": nome or "--", "cpf": cpf or "--"} for t, nome, cpf in rows]
+
+    def buscar_detalhes(self, processo):
+        with session_scope() as session:
+            row = session.execute(
+                select(Tccm, Infrator, AgenteIbama)
+                .outerjoin(Infrator, Infrator.id_infrator == Tccm.infrator_id)
+                .outerjoin(AgenteIbama, AgenteIbama.matricula == Tccm.agente_matricula)
+                .where(Tccm.processo == processo)
+            ).first()
+            if not row:
+                return None
+            tccm, infrator, agente = row
+            return {"processo": tccm.processo, "documento_sei": tccm.documento_sei or "--",
+                    "data_inicio": tccm.data_inicio, "semestres": tccm.semestres or 0,
+                    "total_pago": float(tccm.total_pago or 0), "data_validade": tccm.data_validade,
+                    "total_devido": float(tccm.total_devido or 0), "status": tccm.status or "pendente",
+                    "agente_matricula": tccm.agente_matricula, "infrator_id": tccm.infrator_id,
+                    "infrator_nome": infrator.nome_infrator if infrator else "--",
+                    "infrator_cpf": infrator.cpf if infrator else "--",
+                    "infrator_email": infrator.email if infrator else "--",
+                    "infrator_telefone": infrator.telefone_infrator if infrator else "--",
+                    "agente_nome": agente.nome_agente if agente else "--",
+                    "agente_cpf": agente.cpf if agente else "--",
+                    "agente_email": agente.email if agente else "--"}
     def listar_agentes(self):
         with session_scope() as session:
             agentes = session.scalars(

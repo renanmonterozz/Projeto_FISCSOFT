@@ -5,12 +5,9 @@ from tkinter import messagebox
 
 from config.styles import COLORS, FONTS
 from config.permissoes import pode_acao
-from database.conexaodb import Database
 from screens.crud_base import CrudBase
-from screens.repository.infratores_repository import InfratoresRepository
 from screens.sidebar import carregar_icone
-from screens.service.infrator_service import filtrar_infratores
-from utils import registrar_log
+from screens.service.infrator_service import InfratorService
 
 
 class InfratoresPage(CrudBase, ctk.CTkFrame):
@@ -21,7 +18,7 @@ class InfratoresPage(CrudBase, ctk.CTkFrame):
         self.perfil = perfil
         self.table_height = table_height
         self.pode_editar = pode_acao(perfil, "gerenciar_infratores")
-        self.repository = InfratoresRepository()
+        self.service = InfratorService()
 
         self.build_header("Infratores", "Gerencie os infratores cadastrados no sistema")
         self.build_filter_bar()
@@ -97,7 +94,7 @@ class InfratoresPage(CrudBase, ctk.CTkFrame):
         self.render_rows()
 
     def carregar_do_banco(self):
-        return self.repository.listar()
+        return self.service.listar()
 
     def render_rows(self):
         for widget in self.table_body.winfo_children():
@@ -141,9 +138,7 @@ class InfratoresPage(CrudBase, ctk.CTkFrame):
         self.add_action_buttons(linha, acoes)
 
     def pesquisar(self):
-        todos = self.carregar_do_banco()
-        self.infratores = filtrar_infratores(
-            todos,
+        self.infratores = self.service.pesquisar(
             self.entry_busca.get(),
             self.entry_filtro1.get(),
             self.entry_filtro2.get(),
@@ -176,13 +171,7 @@ class InfratoresPage(CrudBase, ctk.CTkFrame):
 
     def excluir(self, infrator):
         if messagebox.askyesno("Excluir", f"Deseja excluir {infrator['nome']}?"):
-            self.repository.excluir(infrator["id"])
-            registrar_log(
-                self.usuario_logado or "Sistema",
-                "exclusao",
-                "infrator",
-                f"Infrator '{infrator['nome']}' (ID: {infrator['id']}) excluido"
-            )
+            self.service.excluir(infrator, self.usuario_logado)
             self.infratores = self.carregar_do_banco()
             self.render_rows()
 

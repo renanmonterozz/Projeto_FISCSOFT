@@ -8,9 +8,9 @@ from PIL import Image
 
 from config.layout_system import LayoutSystem
 from config.styles import ASSETS_DIR, COLORS, FONTS
-from database.conexaodb import Database
 from screens.crud_base import CrudBase
 from screens.service.dashboard_service import formatar_data, formatar_moeda_brl
+from screens.service.menu_service import MenuService
 from screens.service.tccm_service import calcular_data_validade
 
 class ToolTip:
@@ -67,6 +67,7 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
         self.usuario_logado = usuario_logado
         self.perfil = perfil
         self.processo_tccm = processo_tccm
+        self.service = MenuService()
 
         if processo_tccm:
             titulo = f"TCCM - {processo_tccm}"
@@ -247,77 +248,17 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
         self._render_rows()
 
     def _carregar_notas(self):
-        with Database() as db:
-            if not db.conexao:
-                return []
-
-            if self.processo_tccm:
-                sql = """SELECT nf.nota_fiscal, nf.data,
-                                nf.valor_total, nf.status_nota,
-                                i.nome_infrator,
-                                COUNT(DISTINCT p.lote) as qtd_itens,
-                                GROUP_CONCAT(
-                                    p.nome_item || '|' || COALESCE(p.quantidade, 0) || '|' || COALESCE(it.unidade_medida, 'un'),
-                                    ';; '
-                                ) as itens_detalhes
-                         FROM "nota fiscal" nf
-                         LEFT JOIN tccm t ON t.processo = nf.processo
-                         LEFT JOIN infrator i ON i.id_infrator = t."infrator_id_infrator"
-                         LEFT JOIN produtos p ON p."nota fiscal_nota_fiscal" = nf.nota_fiscal
-                            AND p."nota fiscal_agente ibama_matricula" = nf."agente ibama_matricula"
-                         LEFT JOIN itens it ON it.id = p.itens_id
-                         WHERE nf.processo = ?
-                         GROUP BY nf.nota_fiscal, nf.data,
-                                nf.valor_total, nf.status_nota, i.nome_infrator
-                         ORDER BY nf.data DESC"""
-                params = (self.processo_tccm,)
-            else:
-                sql = """SELECT nf.nota_fiscal, nf.data,
-                                nf.valor_total, nf.status_nota,
-                                i.nome_infrator,
-                                COUNT(DISTINCT p.lote) as qtd_itens,
-                                GROUP_CONCAT(
-                                    p.nome_item || '|' || COALESCE(p.quantidade, 0) || '|' || COALESCE(it.unidade_medida, 'un'),
-                                    ';; '
-                                ) as itens_detalhes
-                         FROM "nota fiscal" nf
-                         LEFT JOIN tccm t ON t.processo = nf.processo
-                         LEFT JOIN infrator i ON i.id_infrator = t."infrator_id_infrator"
-                         LEFT JOIN produtos p ON p."nota fiscal_nota_fiscal" = nf.nota_fiscal
-                            AND p."nota fiscal_agente ibama_matricula" = nf."agente ibama_matricula"
-                         LEFT JOIN itens it ON it.id = p.itens_id
-                         GROUP BY nf.nota_fiscal, nf.data,
-                                nf.valor_total, nf.status_nota, i.nome_infrator
-                         ORDER BY nf.data DESC"""
-                params = ()
-
-            try:
-                resultados = db.executar(sql, params)
-                notas = []
-                if resultados:
-                    for row in resultados.fetchall():
-                        itens_lista = []
-                        if row[6]:
-                            for item_str in row[6].split(";; "):
-                                partes = item_str.split("|")
-                                if len(partes) == 3:
-                                    itens_lista.append({
-                                        "nome": partes[0],
-                                        "quantidade": int(partes[1]) if partes[1] else 0,
-                                        "unidade": partes[2] or "un"
-                                    })
-                        notas.append({
-                            "nota_fiscal": row[0] or "--",
-                            "data": formatar_data(row[1]),
-                            "valor_total": float(row[2]) if row[2] else 0,
-                            "status": row[3] or "Pendente",
-                            "infrator": row[4] or "--",
-                            "qtd_itens": row[5] if row[5] else 0,
-                            "itens_detalhes": itens_lista,
-                        })
-                return notas
-            except Exception:
-                return []
+        try:
+            return [
+                {
+                    **nota,
+                    "data": formatar_data(nota["data"]),
+                    "valor_total": float(nota["valor_total"] or 0),
+                }
+                for nota in self.service.listar_notas(self.processo_tccm)
+            ]
+        except Exception:
+            return []
 
     def _render_rows(self):
         colors = COLORS
@@ -386,43 +327,30 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
         )
 
     def build_info_tccm(self):
-        with Database() as db:
-            if not db.conexao:
-                return
-            try:
-                r = db.executar(
-                    """SELECT processo, status, documento_sei, data_inicio, semestres,
-                              data_validade, total_devido, total_pago
-                       FROM tccm WHERE processo = ?""",
-                    (self.processo_tccm,),
-                )
-                row = r.fetchone() if r else None
-            except Exception:
-                row = None
-
+        row = self.service.buscar_tccm(self.processo_tccm)
         if not row:
             return
 
-        status = row[1] or "pendente"
-        semestres = row[4] or 0
+        status = row["status"] or "pendente"
+        semestres = row["semestres"] or 0
 
         # try to parse data_inicio from DB; prefer a datetime object when possible
         data_inicio_obj = None
         try:
-            if hasattr(row[3], "year"):
-                data_inicio_obj = row[3]
+            if hasattr(row["data_inicio"], "year"):
+                data_inicio_obj = row["data_inicio"]
             else:
-                data_inicio_obj = _dt.strptime(str(row[3]), "%Y-%m-%d")
+                data_inicio_obj = _dt.strptime(str(row["data_inicio"]), "%Y-%m-%d")
         except Exception:
             data_inicio_obj = None
 
         months_to_add = int(semestres) * 6 if semestres else 0
-        data_validade_obj = calcular_data_validade(data_inicio_obj, semestres) if months_to_add and data_inicio_obj else (row[5] if row[5] else None)
+        data_validade_obj = calcular_data_validade(data_inicio_obj, semestres) if months_to_add and data_inicio_obj else (row["data_validade"] if row["data_validade"] else None)
 
         data_inicio = formatar_data(data_inicio_obj)
         data_validade = formatar_data(data_validade_obj)
-        total_devido = float(row[6]) if row[6] else 0
-        total_pago = float(row[7]) if row[7] else 0
+        total_devido = float(row["total_devido"]) if row["total_devido"] else 0
+        total_pago = float(row["total_pago"]) if row["total_pago"] else 0
         pendente = max(0, total_devido - total_pago)
         pct = (total_pago / total_devido * 100) if total_devido > 0 else 0
 
@@ -459,9 +387,9 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
             info_grid.grid_columnconfigure(i, weight=1)
 
         campos = [
-            ("Processo", row[0] or "--"),
+            ("Processo", row["processo"] or "--"),
             ("Status", status.capitalize()),
-            ("Documento SEI", row[2] or "--"),
+            ("Documento SEI", row["documento_sei"] or "--"),
             ("Data Inicio", data_inicio),
             ("Semestres", f"{semestres}"),
             ("Data Validade", data_validade),
@@ -483,64 +411,11 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
                           text_color=COLORS["text"]).pack(anchor="w")
 
     def atualizar_cards(self):
-        with Database() as db:
-            if not db.conexao:
-                return
-
-            if self.processo_tccm:
-                try:
-                    r = db.executar('SELECT COUNT(DISTINCT nota_fiscal) FROM "nota fiscal" WHERE processo = ?',
-                                    (self.processo_tccm,)).fetchone()
-                    total_nf = r[0] if r else 0
-                except Exception:
-                    total_nf = 0
-
-                try:
-                    r = db.executar(
-                        'SELECT COUNT(p.lote) FROM produtos p '
-                        'JOIN "nota fiscal" nf ON p."nota fiscal_nota_fiscal" = nf.nota_fiscal '
-                        'AND p."nota fiscal_agente ibama_matricula" = nf."agente ibama_matricula" '
-                        'WHERE nf.processo = ? AND nf.status_nota = \'Aprovada\'',
-                        (self.processo_tccm,)
-                    ).fetchone()
-                    total_itens = r[0] if r else 0
-                except Exception:
-                    total_itens = 0
-
-                try:
-                    r = db.executar(
-                        'SELECT COALESCE(SUM(valor_total), 0) FROM "nota fiscal" WHERE processo = ? AND status_nota = \'Aprovada\'',
-                        (self.processo_tccm,)
-                    ).fetchone()
-                    valor_total = float(r[0]) if r else 0
-                except Exception:
-                    valor_total = 0
-
-            else:
-                try:
-                    r = db.executar('SELECT COUNT(DISTINCT nota_fiscal) FROM "nota fiscal"').fetchone()
-                    total_nf = r[0] if r else 0
-                except Exception:
-                    total_nf = 0
-
-                try:
-                    r = db.executar('SELECT COUNT(lote) FROM produtos p '
-                                    'JOIN "nota fiscal" nf ON p."nota fiscal_nota_fiscal" = nf.nota_fiscal '
-                                    'AND p."nota fiscal_agente ibama_matricula" = nf."agente ibama_matricula" '
-                                    'WHERE nf.status_nota = \'Aprovada\'').fetchone()
-                    total_itens = r[0] if r else 0
-                except Exception:
-                    total_itens = 0
-
-                try:
-                    r = db.executar(
-                        'SELECT COALESCE(SUM(valor_total), 0) FROM "nota fiscal" WHERE status_nota = \'Aprovada\''
-                    ).fetchone()
-                    valor_total = float(r[0]) if r else 0
-                except Exception:
-                    valor_total = 0
-
+        cards = self.service.buscar_cards(self.processo_tccm)
+        total_nf = cards["total_nf"]
+        total_itens = cards["total_itens"]
+        valor_total = float(cards["valor_total"] or 0)
         self.stat_labels["Notas Fiscais"].configure(text=str(total_nf))
         self.stat_labels["Itens Recebidos"].configure(text=str(total_itens))
-        valor_formatado = f"R$ {valor_total:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        valor_formatado = formatar_moeda_brl(valor_total)
         self.stat_labels["Valor Total(R$)"].configure(text=valor_formatado)

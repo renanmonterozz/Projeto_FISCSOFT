@@ -1,16 +1,12 @@
 import _path  # noqa: F401
 
 import customtkinter as ctk
-from datetime import datetime
 
 from config.styles import COLORS, FONTS
-from database.conexaodb import Database
 from screens.crud_base import CrudBase
-from screens.repository.historico_repository import HistoricoRepository
 from screens.service.historico_service import (
+    HistoricoService,
     chave_cor_acao,
-    converter_data_log,
-    filtrar_logs,
     truncar_descricao,
 )
 from screens.sidebar import carregar_icone
@@ -21,7 +17,7 @@ class HistoricoPage(CrudBase, ctk.CTkFrame):
         super().__init__(master, **kwargs)
         self.configure(fg_color=COLORS["bg"])
         self.usuario_logado = usuario_logado
-        self.repository = HistoricoRepository()
+        self.service = HistoricoService()
         self.logs = []
 
         self.build_header("Historico de Atividades", "Registros de todas as alteracoes realizadas no sistema")
@@ -85,10 +81,7 @@ class HistoricoPage(CrudBase, ctk.CTkFrame):
         self.render_rows()
 
     def carregar_do_banco(self):
-        logs = self.repository.listar()
-        for log in logs:
-            log["data_hora"] = converter_data_log(log["data_hora"])
-        return logs
+        return self.service.listar()
 
     def render_rows(self):
         for widget in self.table_body.winfo_children():
@@ -138,7 +131,7 @@ class HistoricoPage(CrudBase, ctk.CTkFrame):
             ).place(relx=rx, relwidth=rw, rely=0, relheight=1)
 
     def pesquisar(self):
-        self.logs = filtrar_logs(self.carregar_do_banco(), self.entry_busca.get())
+        self.logs = self.service.pesquisar(self.entry_busca.get())
         self.render_rows()
 
     def limpar_filtros(self):

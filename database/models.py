@@ -134,26 +134,3 @@ class Log(Base):
     criado_em: Mapped[datetime | None] = mapped_column(DateTime)
 
 
-class Insumo(Base):
-    __tablename__ = "insumo"
-
-    id_insumo: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    nome: Mapped[str] = mapped_column(String(255), nullable=False)
-    tipo: Mapped[str] = mapped_column(String(255), nullable=False)
-    descricao: Mapped[str | None] = mapped_column(Text)
-    justificativa: Mapped[str | None] = mapped_column(Text)
-    link: Mapped[str | None] = mapped_column(Text)
-    preco_orcado: Mapped[Decimal] = mapped_column(Numeric(8, 2), nullable=False)
-    infrator_id: Mapped[int] = mapped_column("infrator_id_infrator", Integer, nullable=False)
-    produto_lote: Mapped[str] = mapped_column("produtos_lote", String(255), nullable=False)
-
-
-class InsumoTccm(Base):
-    __tablename__ = "insumo_has_TCCM"
-
-    insumo_id: Mapped[int] = mapped_column("insumo_id_insumo", Integer, primary_key=True)
-    insumo_infrator_id: Mapped[int] = mapped_column("insumo_infrator_id_infrator", Integer, primary_key=True)
-    insumo_produto_lote: Mapped[str] = mapped_column("insumo_produtos_lote", String(255), primary_key=True)
-    processo: Mapped[str] = mapped_column("TCCM_processo", String(100), primary_key=True)
-    agente_matricula: Mapped[int] = mapped_column("TCCM_agente ibama_matricula", Integer, primary_key=True)
-    infrator_id: Mapped[int] = mapped_column("TCCM_infrator_id_infrator", Integer, primary_key=True)

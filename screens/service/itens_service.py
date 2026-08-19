@@ -27,6 +27,21 @@ class ItemService:
         registrar_log(usuario_logado or "Sistema", acao, "itens", mensagem)
         return mensagem
 
+    def listar(self, processo=None, semestre_atual=False):
+        return self.repository.listar(processo, semestre_atual)
+
+    def pesquisar(self, itens, busca=""):
+        return filtrar_itens(itens, busca)
+
+    def listar_para_exportacao(self, processo=None):
+        return self.repository.listar_para_exportacao(processo)
+
+    def excluir(self, item, usuario_logado=None):
+        self.repository.excluir(item["id"])
+        mensagem = f"Item '{item['nome']}' (ID: {item['id']}) excluido"
+        registrar_log(usuario_logado or "Sistema", "exclusao", "itens", mensagem)
+        return mensagem
+
 
 def validar_dados_item(nome, descricao, tipo, unidade, justificativa, quantidade):
     dados = {

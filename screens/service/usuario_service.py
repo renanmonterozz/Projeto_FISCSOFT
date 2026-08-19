@@ -35,6 +35,18 @@ class UsuarioService:
         registrar_log(usuario_logado or "Sistema", acao, "agente ibama", mensagem)
         return mensagem
 
+    def listar(self):
+        return self.repository.listar()
+
+    def pesquisar(self, busca="", filtro_email="", filtro_perfil=""):
+        return filtrar_usuarios(self.listar(), busca, filtro_email, filtro_perfil)
+
+    def excluir(self, usuario, usuario_logado=None):
+        self.repository.excluir(usuario["matricula"])
+        mensagem = f"Usuario '{usuario['nome']}' (matricula: {usuario['matricula']}) excluido"
+        registrar_log(usuario_logado or "Sistema", "exclusao", "agente ibama", mensagem)
+        return mensagem
+
 
 def validar_dados_usuario(
     nome,

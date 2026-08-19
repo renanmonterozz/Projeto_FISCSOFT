@@ -8,8 +8,8 @@ import customtkinter as ctk
 
 from config.styles import COLORS, FONTS
 from config.permissoes import pode_acao
-from database.conexaodb import Database
 from screens.crud_base import CrudBase
+from screens.service.tccm_service import TccmService
 from screens.widgets import ComboBoxComSeta
 from screens.sidebar import carregar_icone
 
@@ -166,19 +166,11 @@ class ModalCadastrarInfrator(ctk.CTkToplevel):
             messagebox.showerror("Erro", "CPF deve conter 11 digitos!", parent=self)
             return
 
-        with Database() as db:
-            if not db.conexao:
-                messagebox.showerror("Erro", "Nao foi possivel conectar ao banco!", parent=self)
-                return
-            try:
-                db.executar(
-                    "INSERT INTO infrator (cpf, email, senha, nome_infrator, telefone_infrator) VALUES (?, ?, '', ?, ?)",
-                    (cpf, email, nome, telefone or None),
-                )
-                db.commitar()
-            except Exception as e:
-                messagebox.showerror("Erro", f"Falha ao cadastrar infrator:\n{e}", parent=self)
-                return
+        try:
+            TccmService().criar_infrator({"cpf": cpf, "email": email, "nome": nome, "telefone": telefone})
+        except Exception as e:
+            messagebox.showerror("Erro", f"Falha ao cadastrar infrator:\n{e}", parent=self)
+            return
 
         messagebox.showinfo("Sucesso", "Infrator cadastrado com sucesso!", parent=self)
         if self.onSalvar:
@@ -271,22 +263,12 @@ class ModalCadastrarAgente(ctk.CTkToplevel):
             return
 
         senha_hash = hashlib.sha256(senha.encode()).hexdigest()
-
-        with Database() as db:
-            if not db.conexao:
-                messagebox.showerror("Erro", "Nao foi possivel conectar ao banco!", parent=self)
-                return
-            try:
-                db.executar(
-                    """INSERT INTO "agente ibama"
-                       (matricula, login, senha, email, nome_agente, cpf, perfil, status)
-                       VALUES (?, ?, ?, ?, ?, ?, 'agente', 'ativo')""",
-                    (matricula_val, login, senha_hash, email, nome, cpf),
-                )
-                db.commitar()
-            except Exception as e:
-                messagebox.showerror("Erro", f"Falha ao cadastrar agente:\n{e}", parent=self)
-                return
+        try:
+            TccmService().criar_agente({"matricula": matricula_val, "login": login, "senha": senha_hash,
+                                        "email": email, "nome": nome, "cpf": cpf})
+        except Exception as e:
+            messagebox.showerror("Erro", f"Falha ao cadastrar agente:\n{e}", parent=self)
+            return
 
         messagebox.showinfo("Sucesso", "Agente cadastrado com sucesso!", parent=self)
         if self.onSalvar:
@@ -538,21 +520,15 @@ class ModalCadastrarTCCM(ctk.CTkToplevel):
         ).pack(side="right")
 
     def _carregar_dados_combobox(self):
-        with Database() as db:
-            if not db.conexao:
-                return
-            try:
-                r = db.executar("SELECT matricula, nome_agente FROM \"agente ibama\" WHERE status = 'ativo'")
-                if r:
-                    self.agentes = [(row[0], row[1]) for row in r.fetchall()]
-            except Exception:
-                self.agentes = []
-            try:
-                r = db.executar("SELECT id_infrator, nome_infrator FROM infrator")
-                if r:
-                    self.infratores = [(row[0], row[1]) for row in r.fetchall()]
-            except Exception:
-                self.infratores = []
+        service = TccmService()
+        try:
+            self.agentes = service.listar_agentes()
+        except Exception:
+            self.agentes = []
+        try:
+            self.infratores = service.listar_infratores()
+        except Exception:
+            self.infratores = []
 
     def _atualizar_combos(self):
         self._carregar_dados_combobox()
@@ -708,34 +684,20 @@ class ModalCadastrarTCCM(ctk.CTkToplevel):
         agente_matricula = int(agente_str.split(" - ")[0])
         infrator_id = int(infrator_str.split(" - ")[0])
 
-        with Database() as db:
-            if not db.conexao:
-                messagebox.showerror("Erro", "Nao foi possivel conectar ao banco!", parent=self)
-                return
-            try:
-                sql = """INSERT INTO tccm
-                    (processo, documento_sei, data_inicio, semestres,
-                     total_pago, total_validado, total_devido,
-                     data_validade, intervalo, status,
-                     "agente ibama_matricula", "infrator_id_infrator")
-                    VALUES (?, ?, ?, ?, 0.00, 0.00, 0.00,
-                            ?, ?, 'pendente', ?, ?)"""
-                db.executar(sql, (processo, documento_sei or None, data_inicio_db,
-                                  semestres_val, data_validade_db, semestres_val,
-                                  agente_matricula, infrator_id))
-
-                for item in self.itens_lista:
-                    sql_item = """INSERT INTO itens (nome, descricao, codigo_interno, unidade_medida,
-                                                    quantidade_prevista, status, processo)
-                                  VALUES (?, ?, ?, ?, ?, 'Ativo', ?)"""
-                    db.executar(sql_item, (item["nome"], item["descricao"],
-                                           f"{processo}-{item['nome'][:10].upper()}",
-                                           item["unidade"], item["quantidade"], processo))
-
-                db.commitar()
-            except Exception as e:
-                messagebox.showerror("Erro", f"Falha ao cadastrar TCCM:\n{e}", parent=self)
-                return
+        try:
+            TccmService().salvar(
+                {"processo": processo, "documento_sei": documento_sei,
+                 "data_inicio_db": data_inicio_db, "semestres": semestres_val,
+                 "total_devido": 0, "agente_matricula": agente_matricula,
+                 "infrator_id": infrator_id},
+                [{"nome": item["nome"], "descricao": item["descricao"],
+                  "tipo": "", "justificativa": "", "unidade_medida": item["unidade"],
+                  "quantidade": item["quantidade"], "quantidades_semestre": [item["quantidade"]]}
+                 for item in self.itens_lista],
+            )
+        except Exception as e:
+            messagebox.showerror("Erro", f"Falha ao cadastrar TCCM:\n{e}", parent=self)
+            return
 
         messagebox.showinfo("Sucesso", "TCCM cadastrado com sucesso!", parent=self)
 
@@ -907,57 +869,15 @@ class TccmDetalhesPage(CrudBase, ctk.CTkFrame):
         ctk.CTkFrame(age_frame, fg_color="transparent").pack(pady=(0, 8))
 
     def _carregar_dados(self):
-        with Database() as db:
-            if not db.conexao:
-                return
-            try:
-                sql = """SELECT t.processo, t.documento_sei, t.data_inicio, t.semestres,
-                                t.total_pago, t.data_validade, t.total_devido, t.status,
-                                t."agente ibama_matricula", t."infrator_id_infrator"
-                         FROM tccm t WHERE t.processo = ?"""
-                r = db.executar(sql, (self.processo,))
-                row = r.fetchone() if r else None
-                if not row:
-                    return
-
-                self.tccm_data = {
-                    "processo": row[0],
-                    "documento_sei": row[1] or "--",
-                    "data_inicio": _fmt_date(row[2]),
-                    "semestres": row[3] or 0,
-                    "total_pago": float(row[4]) if row[4] else 0,
-                    "data_validade": _fmt_date(_calcular_data_validade(row[2], row[3]) or row[5]),
-                    "total_devido": float(row[6]) if row[6] else 0,
-                    "status": row[7] or "pendente",
-                    "agente_matricula": row[8],
-                    "infrator_id": row[9],
-                }
-
-                try:
-                    r = db.executar('SELECT nome_infrator, cpf, email, telefone_infrator FROM infrator WHERE id_infrator = ?',
-                                    (self.tccm_data["infrator_id"],))
-                    inf = r.fetchone() if r else None
-                    if inf:
-                        self.tccm_data["infrator_nome"] = inf[0] or "--"
-                        self.tccm_data["infrator_cpf"] = inf[1] or "--"
-                        self.tccm_data["infrator_email"] = inf[2] or "--"
-                        self.tccm_data["infrator_telefone"] = inf[3] or "--"
-                except Exception:
-                    self.tccm_data["infrator_nome"] = "--"
-
-                try:
-                    r = db.executar('SELECT nome_agente, cpf, email FROM "agente ibama" WHERE matricula = ?',
-                                    (self.tccm_data["agente_matricula"],))
-                    age = r.fetchone() if r else None
-                    if age:
-                        self.tccm_data["agente_nome"] = age[0] or "--"
-                        self.tccm_data["agente_cpf"] = age[1] or "--"
-                        self.tccm_data["agente_email"] = age[2] or "--"
-                except Exception:
-                    self.tccm_data["agente_nome"] = "--"
-
-            except Exception:
-                self.tccm_data = None
+        dados = TccmService().buscar_detalhes(self.processo)
+        if not dados:
+            return
+        dados["data_inicio"] = _fmt_date(dados["data_inicio"])
+        dados["data_validade"] = _fmt_date(
+            _calcular_data_validade(dados.get("data_inicio"), dados.get("semestres"))
+            or dados.get("data_validade")
+        )
+        self.tccm_data = dados
 
     def _voltar(self):
         if self.on_voltar:
@@ -1169,40 +1089,17 @@ class TccmDashboardPage(CrudBase, ctk.CTkFrame):
         qtd_pendentes = 0
         qtd_concluidos = 0
 
-        with Database() as db:
-            if not db.conexao:
-                return
-            try:
-                sql = """SELECT t.processo, t.total_pago, t.total_devido, t.status,
-                                t.data_validade, t.intervalo,
-                                i.nome_infrator, i.cpf
-                         FROM tccm t
-                         LEFT JOIN infrator i ON i.id_infrator = t."infrator_id_infrator"
-                         ORDER BY t.processo"""
-                r = db.executar(sql)
-                if r:
-                    for row in r.fetchall():
-                        status = row[3] or "pendente"
-                        td = float(row[2]) if row[2] else 0
-                        tp = float(row[1]) if row[1] else 0
-
-                        if status == "concluido":
-                            qtd_concluidos += 1
-                        else:
-                            qtd_pendentes += 1
-
-                        tccms.append({
-                            "processo": row[0] or "--",
-                            "total_pago": tp,
-                            "total_devido": td,
-                            "status": status,
-                            "data_validade": _fmt_date(row[4]),
-                            "intervalo": row[5] or 0,
-                            "infrator": row[6] or "--",
-                            "cpf": row[7] or "--",
-                        })
-            except Exception:
-                pass
+        try:
+            tccms = TccmService().listar_dashboard()
+            for tccm in tccms:
+                if tccm["status"] == "concluido":
+                    qtd_concluidos += 1
+                else:
+                    qtd_pendentes += 1
+                tccm["data_validade"] = _fmt_date(tccm["data_validade"])
+            tccms = tccms
+        except Exception:
+            tccms = []
 
         self.tccms_todos = tccms
         self.lbl_count.configure(text=f"{len(tccms)} TCCM(s)")

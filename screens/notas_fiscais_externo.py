@@ -17,8 +17,11 @@ except ImportError:
     PDF_DISPONIVEL = False
 
 from config.styles import ASSETS_DIR, ASSETS_DIR, COLORS, FONTS
-from database.conexaodb import Database
-from screens.service.notas_service import RegraNotaError, preparar_item_nota
+from screens.service.notas_service import (
+    NotasFiscaisService,
+    RegraNotaError,
+    preparar_item_nota,
+)
 from screens.widgets import ComboBoxComSeta
 
 ANEXOS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "anexos")
@@ -34,6 +37,7 @@ class NotasFiscaisExterno(ctk.CTkFrame):
         self.arquivo_selecionado = None
         self.itens_lista = []
         self._processo_map = {}
+        self.service = NotasFiscaisService()
 
         self.scroll = ctk.CTkScrollableFrame(self, fg_color=COLORS["bg"])
         self.scroll.pack(fill="both", expand=True)
@@ -125,30 +129,18 @@ class NotasFiscaisExterno(ctk.CTkFrame):
 
     def _carregar_processos(self):
         try:
-            with Database() as db:
-                if not db.conexao:
-                    return
-                sql = """SELECT t.processo, i.nome_infrator
-                         FROM tccm t
-                         JOIN infrator i ON t."infrator_id_infrator" = i.id_infrator
-                         WHERE t."infrator_id_infrator" = ?
-                         ORDER BY t.processo"""
-                resultado = db.executar(sql, (self.id_infrator,))
-                if resultado:
-                    rows = resultado.fetchall()
-                    if rows:
-                        self._processo_map = {}
-                        opcoes = []
-                        for row in rows:
-                            processo = row[0]
-                            nome_infrator = row[1]
-                            display = f"{processo} - {nome_infrator}"
-                            self._processo_map[display] = processo
-                            opcoes.append(display)
-                        self.combo_processo.configure(values=opcoes)
-                        self.combo_processo.set(opcoes[0])
-                    else:
-                        self.combo_processo.configure(values=["Nenhum TCCM encontrado"])
+            rows = self.service.listar_processos(self.id_infrator)
+            if rows:
+                self._processo_map = {}
+                opcoes = []
+                for processo, nome_infrator in rows:
+                    display = f"{processo} - {nome_infrator}"
+                    self._processo_map[display] = processo
+                    opcoes.append(display)
+                self.combo_processo.configure(values=opcoes)
+                self.combo_processo.set(opcoes[0])
+            else:
+                self.combo_processo.configure(values=["Nenhum TCCM encontrado"])
         except Exception:
             pass
 
@@ -171,31 +163,14 @@ class NotasFiscaisExterno(ctk.CTkFrame):
             return
 
         try:
-            with Database() as db:
-                if not db.conexao:
-                    return
-                sql = """SELECT id, nome, descricao, unidade_medida
-                         FROM itens
-                         WHERE processo = ? AND status = 'Ativo'
-                         ORDER BY nome"""
-                resultado = db.executar(sql, (processo,))
-                if resultado:
-                    rows = resultado.fetchall()
-                    self.itens_tccm = [
-                        {"id": row[0], "nome": row[1], "descricao": row[2], "unidade": row[3]}
-                        for row in rows
-                    ]
-                    if self.itens_tccm:
-                        nomes = [f"{i['nome']} ({i['descricao']})" for i in self.itens_tccm]
-                        self.combo_item.configure(values=nomes)
-                        self.combo_item.set(nomes[0])
-                    else:
-                        self.combo_item.configure(values=["Nenhum item vinculado ao TCCM"])
-                        self.combo_item.set("Nenhum item vinculado ao TCCM")
-                else:
-                    self.itens_tccm = []
-                    self.combo_item.configure(values=["Nenhum item vinculado ao TCCM"])
-                    self.combo_item.set("Nenhum item vinculado ao TCCM")
+            self.itens_tccm = self.service.listar_itens_processo(processo)
+            if self.itens_tccm:
+                nomes = [f"{i['nome']} ({i['descricao']})" for i in self.itens_tccm]
+                self.combo_item.configure(values=nomes)
+                self.combo_item.set(nomes[0])
+            else:
+                self.combo_item.configure(values=["Nenhum item vinculado ao TCCM"])
+                self.combo_item.set("Nenhum item vinculado ao TCCM")
         except Exception:
             self.itens_tccm = []
             self.combo_item.configure(values=["Erro ao carregar itens"])
@@ -679,8 +654,6 @@ class NotasFiscaisExterno(ctk.CTkFrame):
             messagebox.showwarning("Atencao", "Adicione pelo menos um item a nota fiscal.")
             return
 
-        valor_total = sum(item["subtotal"] for item in self.itens_lista)
-
         arquivo_path = None
         if self.arquivo_selecionado:
             try:
@@ -694,46 +667,24 @@ class NotasFiscaisExterno(ctk.CTkFrame):
                 messagebox.showerror("Erro", f"Erro ao salvar o arquivo anexado:\n{e}")
                 return
 
-        with Database() as db:
-            if not db.conexao:
-                messagebox.showerror("Erro", "Nao foi possivel conectar ao banco de dados.")
-                return
-
-            try:
-                sql_mat = '''SELECT "agente ibama_matricula"
-                             FROM tccm WHERE processo = ?
-                             LIMIT 1'''
-                resultado = db.executar(sql_mat, (processo,))
-                row = resultado.fetchone() if resultado else None
-                matricula = row[0] if row else 0
-
-                sql = """INSERT INTO "nota fiscal"
-                         (nota_fiscal, semestre, data, chave_de_acesso, valor_total,
-                          "agente ibama_matricula", status_nota, processo, arquivo)
-                         VALUES (?, ?, ?, ?, ?, ?, 'Pendente', ?, ?)"""
-                db.executar(sql, (numero, 1, data, chave, valor_total, matricula, processo, arquivo_path))
-
-                for idx, item in enumerate(self.itens_lista):
-                    lote = f"{numero}-ITEM-{idx+1}"
-                    sql_produto = """INSERT INTO produtos
-                                    (lote, quantidade, preco_unitario,
-                                     "nota fiscal_nota_fiscal",
-                                     "nota fiscal_agente ibama_matricula",
-                                     itens_id, nome_item)
-                                    VALUES (?, ?, ?, ?, ?, ?, ?)"""
-                    db.executar(sql_produto, (
-                        lote, item["quantidade"], item["preco_unitario"],
-                        numero, matricula, item["item_id"], item["nome"],
-                    ))
-
-                db.commitar()
-                messagebox.showinfo("Sucesso",
-                    f"Nota fiscal enviada para o agente responsavel pela validacao!\n"
-                    f"Valor Total: R$ {valor_total:,.2f}\n"
-                    f"Itens: {len(self.itens_lista)}")
-                self._limpar_campos()
-            except Exception as e:
-                messagebox.showerror("Erro", f"Erro ao salvar nota fiscal:\n{e}")
+        try:
+            valor_total = self.service.salvar(
+                numero,
+                chave,
+                data_str,
+                processo,
+                self.itens_lista,
+                arquivo_path,
+            )
+            messagebox.showinfo("Sucesso",
+                f"Nota fiscal enviada para o agente responsavel pela validacao!\n"
+                f"Valor Total: R$ {valor_total:,.2f}\n"
+                f"Itens: {len(self.itens_lista)}")
+            self._limpar_campos()
+        except RegraNotaError as exc:
+            messagebox.showwarning("Atencao", str(exc))
+        except Exception as exc:
+            messagebox.showerror("Erro", f"Erro ao salvar nota fiscal:\n{exc}")
 
     def _limpar_arquivo(self):
         self.arquivo_selecionado = None

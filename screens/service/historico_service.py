@@ -2,6 +2,22 @@ from __future__ import annotations
 
 from datetime import datetime
 
+from screens.repository.historico_repository import HistoricoRepository
+
+
+class HistoricoService:
+    def __init__(self, repository=None):
+        self.repository = repository or HistoricoRepository()
+
+    def listar(self):
+        logs = self.repository.listar()
+        for log in logs:
+            log["data_hora"] = converter_data_log(log["data_hora"])
+        return logs
+
+    def pesquisar(self, termo=""):
+        return filtrar_logs(self.listar(), termo)
+
 
 def converter_data_log(valor):
     if not isinstance(valor, str):

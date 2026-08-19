@@ -5,12 +5,9 @@ from tkinter import messagebox
 
 from config.styles import COLORS, FONTS
 from config.permissoes import pode_acao
-from database.conexaodb import Database
 from screens.crud_base import CrudBase
-from screens.repository.locais_repository import LocaisRepository
 from screens.sidebar import carregar_icone
-from screens.service.locais_service import filtrar_locais
-from utils import registrar_log
+from screens.service.locais_service import LocalService, RegraLocalError
 
 
 class LocaisPage(CrudBase, ctk.CTkFrame):
@@ -21,7 +18,7 @@ class LocaisPage(CrudBase, ctk.CTkFrame):
         self.perfil = perfil
         self.table_height = table_height
         self.pode_editar = pode_acao(perfil, "gerenciar_locais")
-        self.repository = LocaisRepository()
+        self.service = LocalService()
         self.locais = []
         self.local_edicao = None
 
@@ -98,7 +95,7 @@ class LocaisPage(CrudBase, ctk.CTkFrame):
         self.render_rows()
 
     def carregar_do_banco(self):
-        return self.repository.listar()
+        return self.service.listar()
 
     def render_rows(self):
         for widget in self.table_body.winfo_children():
@@ -190,18 +187,12 @@ class LocaisPage(CrudBase, ctk.CTkFrame):
 
     def excluir(self, local):
         if messagebox.askyesno("Excluir", f"Deseja excluir o local da {local['instituicao']}?"):
-            self.repository.excluir(local["id"])
-            registrar_log(
-                self.usuario_logado or "Sistema",
-                "exclusao",
-                "locais",
-                f"Local '{local['instituicao']}' (ID: {local['id']}) excluido"
-            )
+            self.service.excluir(local, self.usuario_logado)
             self.locais = self.carregar_do_banco()
             self.render_rows()
 
     def pesquisar(self):
-        self.locais = filtrar_locais(self.carregar_do_banco(), self.entry_busca.get())
+        self.locais = self.service.pesquisar(self.entry_busca.get())
         self.render_rows()
 
     def limpar_filtros(self):
@@ -271,35 +262,24 @@ class LocaisPage(CrudBase, ctk.CTkFrame):
             responsavel = entries["responsavel"].get().strip()
             telefone = entries["telefone"].get().strip()
 
-            if not all([cep, endereco, instituicao, responsavel]):
-                messagebox.showwarning("Aviso", "Preencha CEP, Endereco, Instituicao e Responsavel.")
+            try:
+                mensagem = self.service.salvar(
+                    {
+                        "cep": cep,
+                        "endereco": endereco,
+                        "instituicao": instituicao,
+                        "responsavel": responsavel,
+                        "telefone": telefone,
+                    },
+                    local_id=self.local_edicao["id"] if self.local_edicao else None,
+                    usuario_logado=self.usuario_logado,
+                )
+            except RegraLocalError as exc:
+                messagebox.showwarning("Aviso", str(exc))
                 return
-
-            with Database() as db:
-                if not db.conexao:
-                    messagebox.showerror("Erro", "Nao foi possivel conectar ao banco de dados!")
-                    return
-
-                if self.local_edicao:
-                    sql = """UPDATE locais SET cep=?, endereco=?, instituicao=?, responsavel=?, telefone=?
-                             WHERE id=?"""
-                    params = (cep, endereco, instituicao, responsavel, telefone or None, self.local_edicao["id"])
-                    mensagem = "Local atualizado com sucesso!"
-                else:
-                    sql = """INSERT INTO locais (cep, endereco, instituicao, responsavel, telefone)
-                             VALUES (?, ?, ?, ?, ?)"""
-                    params = (cep, endereco, instituicao, responsavel, telefone or None)
-                    mensagem = "Local cadastrado com sucesso!"
-
-                db.executar(sql, params)
-                db.commitar()
-
-            registrar_log(
-                self.usuario_logado or "Sistema",
-                "edicao" if self.local_edicao else "cadastro",
-                "locais",
-                mensagem
-            )
+            except Exception as exc:
+                messagebox.showerror("Erro", f"Nao foi possivel salvar o local:\n{exc}")
+                return
 
             messagebox.showinfo("Sucesso", mensagem)
             form.destroy()

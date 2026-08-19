@@ -106,36 +106,6 @@ _SCHEMA_SQL = """
         FOREIGN KEY (itens_id) REFERENCES itens (id)
     );
 
-    CREATE TABLE IF NOT EXISTS insumo (
-        nome VARCHAR(255) NOT NULL,
-        tipo VARCHAR(255) NOT NULL,
-        descricao TEXT,
-        justificativa TEXT,
-        link TEXT,
-        preco_orcado DECIMAL(8,2) NOT NULL,
-        id_insumo INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-        "infrator_id_infrator" INTEGER NOT NULL,
-        "produtos_lote" VARCHAR(255) NOT NULL,
-        UNIQUE (id_insumo),
-        FOREIGN KEY ("infrator_id_infrator") REFERENCES infrator (id_infrator),
-        FOREIGN KEY ("produtos_lote") REFERENCES produtos (lote)
-    );
-
-    CREATE TABLE IF NOT EXISTS insumo_has_TCCM (
-        "insumo_id_insumo" INTEGER NOT NULL,
-        "insumo_infrator_id_infrator" INTEGER NOT NULL,
-        "insumo_produtos_lote" VARCHAR(255) NOT NULL,
-        "TCCM_processo" TEXT NOT NULL,
-        "TCCM_agente ibama_matricula" INTEGER NOT NULL,
-        "TCCM_infrator_id_infrator" INTEGER NOT NULL,
-        PRIMARY KEY ("insumo_id_insumo", "insumo_infrator_id_infrator", "insumo_produtos_lote",
-                     "TCCM_processo", "TCCM_agente ibama_matricula", "TCCM_infrator_id_infrator"),
-        FOREIGN KEY ("insumo_id_insumo", "insumo_infrator_id_infrator", "insumo_produtos_lote")
-            REFERENCES insumo (id_insumo, "infrator_id_infrator", "produtos_lote"),
-        FOREIGN KEY ("TCCM_processo", "TCCM_agente ibama_matricula", "TCCM_infrator_id_infrator")
-            REFERENCES tccm (processo, "agente ibama_matricula", "infrator_id_infrator")
-    );
-
     CREATE TABLE IF NOT EXISTS itens (
         id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
         nome VARCHAR(200),

@@ -33,6 +33,25 @@ class InfratorService:
         )
         return mensagem
 
+    def listar(self):
+        return self.repository.listar()
+
+    def pesquisar(self, busca="", filtro_email="", filtro_telefone=""):
+        return filtrar_infratores(
+            self.listar(), busca, filtro_email, filtro_telefone
+        )
+
+    def excluir(self, infrator, usuario_logado=None):
+        self.repository.excluir(infrator["id"])
+        mensagem = f"Infrator '{infrator['nome']}' (ID: {infrator['id']}) excluido"
+        registrar_log(
+            usuario_logado or "Sistema",
+            "exclusao",
+            "infrator",
+            mensagem,
+        )
+        return mensagem
+
 
 def validar_dados_infrator(nome, cpf, email, telefone, senha, confirmar):
     dados = {
