@@ -7,7 +7,7 @@ import os
 import sys
 from tkinter import TclError, messagebox
 
-from PIL import Image
+from PIL import Image, ImageTk
 
 import customtkinter as ctk
 
@@ -55,9 +55,24 @@ AMARELO_BOTAO = "#FFF48C"
 VERDE_POLIGONO = "#302F2F"
 
 
+def _configurar_icone_janela(janela):
+    try:
+        caminho_icone_ico = os.path.join(ASSETS_DIR, "logo_fiscsoft.ico")
+        janela.iconbitmap(caminho_icone_ico)
+    except Exception:
+        try:
+            caminho_icone_png = os.path.join(ASSETS_DIR, "logo_fiscsoft.png")
+            icone = ImageTk.PhotoImage(Image.open(caminho_icone_png))
+            janela.iconphoto(True, icone)
+            janela._icone_fiscsoft = icone
+        except Exception:
+            pass
+
+
 class LoginApp(ctk.CTk):
     def __init__(self):
         super().__init__()
+        _configurar_icone_janela(self)
 
         self.title("FISCSOFT - Login")
         self.configure(fg_color=COLORS["white"])
@@ -356,6 +371,7 @@ class LoginApp(ctk.CTk):
             pass
 
         main_app = ctk.CTk()
+        _configurar_icone_janela(main_app)
         main_app.title("FISCSOFT - Acesso Externo")
         main_app.configure(fg_color=COLORS["white"])
         main_app.after(0, main_app.state, "zoomed")
@@ -420,6 +436,7 @@ class LoginApp(ctk.CTk):
             pass
 
         welcome_app = ctk.CTk()
+        _configurar_icone_janela(welcome_app)
         welcome_app.title("FISCSOFT - Bem-vindo")
         welcome_app.configure(fg_color=COLORS["bg"])
         welcome_app.after(0, welcome_app.state, "zoomed")
@@ -497,6 +514,7 @@ class LoginApp(ctk.CTk):
             pass
 
         main_app = ctk.CTk()
+        _configurar_icone_janela(main_app)
         main_app.title("FISCSOFT" if perfil == "admin" else "FISCSOFT - Usuario")
         main_app.configure(fg_color=COLORS["white"])
         main_app.after(0, main_app.state, "zoomed")
