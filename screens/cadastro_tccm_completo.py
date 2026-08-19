@@ -222,7 +222,7 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
         opcoes = [f"{a[0]} - {a[1]}" for a in self.agentes] if self.agentes else ["Nenhum agente"]
         combo = ComboBoxComSeta(agente_row, values=opcoes,
                                 height=40, corner_radius=6,
-                                fg_color=COLORS["white"], border_color=COLORS["border"],
+                                fg_color=COLORS["white"], border_color=COLORS["primary"],
                                 button_color=COLORS["primary"],
                                 dropdown_fg_color=COLORS["white"])
         combo.grid(row=0, column=0, sticky="ew", padx=(0, 10))
@@ -270,7 +270,7 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
         opcoes = [f"{i[0]} - {i[1]}" for i in self.infratores] if self.infratores else ["Nenhum infrator"]
         combo = ComboBoxComSeta(infrator_row, values=opcoes,
                                 height=40, corner_radius=6,
-                                fg_color=COLORS["white"], border_color=COLORS["border"],
+                                fg_color=COLORS["white"], border_color=COLORS["primary"],
                                 button_color=COLORS["primary"],
                                 dropdown_fg_color=COLORS["white"])
         combo.grid(row=0, column=0, sticky="ew", padx=(0, 10))
@@ -346,7 +346,7 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
                       text_color=COLORS["text_muted"]).grid(row=0, column=2, sticky="w", padx=(0, 6))
         self.entry_item_tipo = ComboBoxComSeta(form_inner, values=["Consumivel", "Permanente"],
                                                height=38, corner_radius=6, state="readonly",
-                                               fg_color=COLORS["white"], border_color=COLORS["border"],
+                                               fg_color=COLORS["white"], border_color=COLORS["primary"],
                                                button_color=COLORS["primary"],
                                                dropdown_fg_color=COLORS["white"])
         self.entry_item_tipo.grid(row=1, column=1, sticky="ew", padx=(0, 6))
@@ -371,10 +371,10 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
                       font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
                       text_color=COLORS["text_muted"]).grid(row=0, column=5, sticky="w", padx=(0, 6))
         self.entry_item_unidade = ctk.CTkComboBox(form_inner, values=["Unidade", "Caixa", "Litro", "Kg"],
-                                                  height=38, corner_radius=6, state="readonly",
-                                                  fg_color=COLORS["white"], border_color=COLORS["border"],
-                                                  button_color=COLORS["primary"],
-                                                  dropdown_fg_color=COLORS["white"])
+                                                   height=38, corner_radius=6, state="readonly",
+                                                   fg_color=COLORS["white"], border_color=COLORS["primary"],
+                                                   button_color=COLORS["primary"],
+                                                   dropdown_fg_color=COLORS["white"])
         self.entry_item_unidade.grid(row=1, column=1, sticky="ew", padx=(0, 6))
 
         ctk.CTkButton(

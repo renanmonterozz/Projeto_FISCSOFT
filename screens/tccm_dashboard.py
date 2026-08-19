@@ -415,7 +415,7 @@ class ModalCadastrarTCCM(ctk.CTkToplevel):
         opcoes_agentes = [f"{a[0]} - {a[1]}" for a in self.agentes] if self.agentes else ["Nenhum agente"]
         combo = ComboBoxComSeta(agente_row, values=opcoes_agentes,
                                 height=38, corner_radius=4,
-                                fg_color=COLORS["white"], border_color=COLORS["border"],
+                                fg_color=COLORS["white"], border_color=COLORS["primary"],
                                 button_color=COLORS["primary"],
                                 dropdown_fg_color=COLORS["white"])
         combo.grid(row=0, column=0, sticky="ew", padx=(0, 8))
@@ -439,7 +439,7 @@ class ModalCadastrarTCCM(ctk.CTkToplevel):
         opcoes_infratores = [f"{i[0]} - {i[1]}" for i in self.infratores] if self.infratores else ["Nenhum infrator"]
         combo = ComboBoxComSeta(infrator_row, values=opcoes_infratores,
                                 height=38, corner_radius=4,
-                                fg_color=COLORS["white"], border_color=COLORS["border"],
+                                fg_color=COLORS["white"], border_color=COLORS["primary"],
                                 button_color=COLORS["primary"],
                                 dropdown_fg_color=COLORS["white"])
         combo.grid(row=0, column=0, sticky="ew", padx=(0, 8))
