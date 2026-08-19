@@ -133,7 +133,7 @@ class NotasFiscaisExterno(ctk.CTkFrame):
 
         self.combo_processo = ComboBoxComSeta(
             col_processo, values=["Carregando..."],
-            height=38, border_width=1, border_color=COLORS["border"],
+            height=38, border_width=1, border_color=COLORS["primary"],
             corner_radius=4, fg_color=COLORS["white"], text_color=COLORS["text"],
             button_color=COLORS["primary"], button_hover_color=COLORS["primary_hover"],
             dropdown_fg_color=COLORS["white"], dropdown_hover_color=COLORS["primary_light"],
@@ -242,7 +242,7 @@ class NotasFiscaisExterno(ctk.CTkFrame):
         nomes_itens = ["Selecione um processo primeiro"]
         self.combo_item = ComboBoxComSeta(
             col_item, values=nomes_itens,
-            height=34, border_width=1, border_color=COLORS["border"],
+            height=34, border_width=1, border_color=COLORS["primary"],
             corner_radius=4, fg_color=COLORS["white"], text_color=COLORS["text"],
             button_color=COLORS["primary"], button_hover_color=COLORS["primary_hover"],
             dropdown_fg_color=COLORS["white"], dropdown_hover_color=COLORS["primary_light"],

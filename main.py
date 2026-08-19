@@ -8,7 +8,7 @@ import sys
 from dataclasses import dataclass
 from tkinter import TclError, messagebox
 
-from PIL import Image
+from PIL import Image, ImageTk
 
 import customtkinter as ctk
 
@@ -68,6 +68,7 @@ class SessaoUsuario:
 class LoginApp(ctk.CTk):
     def __init__(self):
         super().__init__()
+        _configurar_icone_janela(self)
 
         self.title("FISCSOFT - Login")
         self.configure(fg_color=COLORS["white"])
@@ -430,6 +431,7 @@ class LoginApp(ctk.CTk):
         self._fechar_janela(self)
 
         main_app = ctk.CTk()
+        _configurar_icone_janela(main_app)
         main_app.title("FISCSOFT - Acesso Externo")
         main_app.configure(fg_color=COLORS["white"])
         main_app.after(0, main_app.state, "zoomed")
@@ -481,6 +483,7 @@ class LoginApp(ctk.CTk):
         self._fechar_janela(self)
 
         welcome_app = ctk.CTk()
+        _configurar_icone_janela(welcome_app)
         welcome_app.title("FISCSOFT - Bem-vindo")
         welcome_app.configure(fg_color=COLORS["bg"])
         welcome_app.after(0, welcome_app.state, "zoomed")
@@ -545,6 +548,7 @@ class LoginApp(ctk.CTk):
         self._fechar_janela(welcome_app)
 
         main_app = ctk.CTk()
+        _configurar_icone_janela(main_app)
         main_app.title("FISCSOFT" if perfil == "admin" else "FISCSOFT - Usuario")
         main_app.configure(fg_color=COLORS["white"])
         main_app.after(0, main_app.state, "zoomed")

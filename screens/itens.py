@@ -39,9 +39,9 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         from datetime import datetime as _dt
         ano_atual = _dt.now().year
         self.semestre_option = "Todos"
-        self.combo_semestre = ctk.CTkComboBox(
+        self.combo_semestre = ComboBoxComSeta(
             row, values=["Todos", "Semestre Atual"], height=38, width=180,
-            border_width=1, border_color=COLORS["border"], corner_radius=4,
+            border_width=1, border_color=COLORS["primary"], corner_radius=4,
             fg_color=COLORS["white"], text_color=COLORS["text"],
             button_color=COLORS["primary"], button_hover_color=COLORS["primary_hover"],
             dropdown_fg_color=COLORS["white"], dropdown_hover_color=COLORS["primary_light"],
