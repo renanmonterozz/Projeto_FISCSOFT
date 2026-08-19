@@ -21,7 +21,8 @@ from screens.destinacao import RelatorioEntregaPage
 from screens.historico import HistoricoPage
 from screens.itens_locais import ItensLocaisPage
 from screens.usuarios_infratores import UsuariosInfratoresPage
-from screens.tccm_dashboard import TccmDashboardPage, TccmDetalhesPage
+from screens.tccm_dashboard_page import TccmDashboardPage
+from screens.tccm_dashboard import TccmDetalhesPage
 from screens.cadastro_tccm_completo import CadastroTCCMCompleto
 from utils import verify_password, login_por_certificado
 from screens.sidebar_externo import SidebarExterno
@@ -575,7 +576,14 @@ class LoginApp(ctk.CTk):
             _suprimir_erro_tcl()
             app.mainloop()
 
-        sidebar = Sidebar(main_app, width=210, on_navigate=navegar, on_sair=logout, perfil=perfil)
+        sidebar = Sidebar(
+            main_app,
+            width=210,
+            on_navigate=navegar,
+            on_sair=logout,
+            on_voltar=lambda: navegar("Dashboard TCCM", processo_tccm=_processo_tccm),
+            perfil=perfil,
+        )
         sidebar.pack(side="left", fill="y")
 
         content_frame = ctk.CTkFrame(main_app, fg_color=COLORS["bg"])

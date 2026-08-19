@@ -21,11 +21,12 @@ def carregar_icone(caminho: str, tamanho_max: int = 20):
 
 
 class Sidebar(ctk.CTkFrame):
-    def __init__(self, master, on_navigate=None, on_sair=None, perfil=None, **kwargs):
+    def __init__(self, master, on_navigate=None, on_sair=None, on_voltar=None, perfil=None, **kwargs):
         super().__init__(master, **kwargs)
         self.configure(fg_color="#FAFAFA", corner_radius=0)
         self.on_navigate = on_navigate
         self.on_sair = on_sair
+        self.on_voltar = on_voltar
         self.pagina_atual = None
         self.btns_navegacao = {}
 
@@ -102,6 +103,28 @@ class Sidebar(ctk.CTkFrame):
         except Exception:
             pass
 
+        # Mostrar botão 'Voltar' no menu (por exemplo, voltar ao Dashboard TCCM)
+        paginas_permitidas = paginas_do_perfil(perfil) if perfil else None
+        if paginas_permitidas and "Dashboard TCCM" in paginas_permitidas:
+            self.voltar_container = ctk.CTkFrame(bottom_frame, fg_color="transparent", height=38)
+            self.voltar_container.pack(fill="x", pady=(0, 8))
+
+            ctk.CTkFrame(self.voltar_container, fg_color=COLORS["border"], corner_radius=8).place(relx=0, rely=0, relwidth=1, relheight=1, x=2, y=2)
+
+            ctk.CTkButton(
+                self.voltar_container,
+                text="   Voltar",
+                anchor="w",
+                compound="left",
+                fg_color=COLORS["primary"],
+                hover_color=COLORS["primary_hover"],
+                text_color="white",
+                height=38,
+                corner_radius=8,
+                font=ctk.CTkFont(family=FONTS["family"], size=FONTS["size_small"], weight="bold"),
+                command=self._voltar,
+            ).place(relx=0, rely=0, relwidth=1, relheight=1)
+
         sair_container = ctk.CTkFrame(bottom_frame, fg_color="transparent", height=38)
         sair_container.pack(fill="x")
 
@@ -133,6 +156,30 @@ class Sidebar(ctk.CTkFrame):
 
         if self.on_navigate:
             self.on_navigate(page_name)
+
+        # Mostrar/ocultar o botão Voltar para páginas específicas
+        try:
+            if page_name == "Dashboard TCCM":
+                if getattr(self, "voltar_container", None) is not None and not getattr(self.voltar_container, "_is_packed", False):
+                    self.voltar_container.pack(fill="x")
+                    self.voltar_container._is_packed = True
+            else:
+                if getattr(self, "voltar_container", None) is not None and getattr(self.voltar_container, "_is_packed", False):
+                    self.voltar_container.pack_forget()
+                    self.voltar_container._is_packed = False
+        except Exception:
+            pass
+
+    def _voltar(self):
+        if self.on_voltar:
+            try:
+                self.on_voltar()
+                return
+            except Exception:
+                pass
+        # fallback para navegar ao dashboard padrão
+        if self.on_navigate:
+            self.on_navigate("Dashboard TCCM")
 
     def _sair(self):
         if self.on_sair:
