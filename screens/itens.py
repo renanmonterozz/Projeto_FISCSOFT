@@ -6,11 +6,10 @@ import customtkinter as ctk
 
 from config.styles import COLORS, FONTS
 from config.permissoes import pode_acao
-from database.conexaodb import Database
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
+from screens.service.itens_service import ItemService
 from screens.widgets import ComboBoxComSeta
-from utils import registrar_log
 
 
 class ItensPage(CrudBase, ctk.CTkFrame):
@@ -24,6 +23,7 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         self.perfil = perfil
         self.table_height = table_height
         self.pode_editar = pode_acao(perfil, "gerenciar_itens")
+        self.service = ItemService()
 
         titulo = "Itens do TCCM" if processo_tccm else "Itens"
         subtitulo = f"Itens vinculados ao processo {processo_tccm}" if processo_tccm else "Cadastre, visualize, edite e exclua itens do sistema"
@@ -129,109 +129,12 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         self.render_rows()
 
     def carregar_do_banco(self):
-        with Database() as db:
-            if not db.conexao:
-                return []
-            # Determine if semester filter is active
-            semestre_range = None
-            if getattr(self, 'semestre_option', 'Todos') == 'Semestre Atual':
-                from datetime import datetime as _dt
-                now = _dt.now()
-                year = now.year
-                if now.month <= 6:
-                    inicio = f"{year}-01-01"
-                    fim = f"{year}-06-30"
-                    sem_num = 1
-                else:
-                    inicio = f"{year}-07-01"
-                    fim = f"{year}-12-31"
-                    sem_num = 2
-                semestre_range = (inicio, fim)
-                sem_year = year
-
-            # Build SQL with optional semestre filtering for qtd_entregue
-            def sum_subquery(sem_range=None):
-                if sem_range:
-                    return "COALESCE((SELECT SUM(p.quantidade) FROM produtos p JOIN \"nota fiscal\" nf ON p.\"nota fiscal_nota_fiscal\" = nf.nota_fiscal WHERE p.itens_id = i.id AND nf.data >= ? AND nf.data <= ?), 0)"
-                else:
-                    return "COALESCE((SELECT SUM(p.quantidade) FROM produtos p WHERE p.itens_id = i.id), 0)"
-
-            if self.processo_tccm:
-                try:
-                    if semestre_range:
-                        sql = (
-                            "SELECT DISTINCT i.id, i.nome, i.descricao, i.tipo, i.justificativa, i.unidade_medida, "
-                            "COALESCE((SELECT quantidade_prevista FROM item_semestre WHERE itens_id = i.id AND ano = ? AND semestre = ?), i.quantidade_prevista) as quantidade_prevista, "
-                            + sum_subquery(semestre_range) + " "
-                            "FROM itens i "
-                            "WHERE i.processo = ? "
-                            "   OR i.notas_fiscais IN ("
-                            "  SELECT nf.nota_fiscal FROM \"nota fiscal\" nf WHERE nf.processo = ? AND nf.data >= ? AND nf.data <= ?"
-                            ") ORDER BY i.id"
-                        )
-                        params = (sem_year, sem_num, self.processo_tccm, self.processo_tccm, semestre_range[0], semestre_range[1])
-                    else:
-                        sql = (
-                            "SELECT DISTINCT i.id, i.nome, i.descricao, i.tipo, i.justificativa, i.unidade_medida, "
-                            "i.quantidade_prevista, " + sum_subquery(None) + " "
-                            "FROM itens i "
-                            "WHERE i.processo = ? "
-                            "   OR i.notas_fiscais IN ("
-                            "  SELECT nf.nota_fiscal FROM \"nota fiscal\" nf WHERE nf.processo = ?"
-                            ") ORDER BY i.id"
-                        )
-                        params = (self.processo_tccm, self.processo_tccm)
-                    r = db.executar(sql, params)
-                except Exception:
-                    # fallback simple query
-                    r = db.executar(
-                        "SELECT DISTINCT i.id, i.nome, i.descricao, i.categoria, NULL, '', 0, 0 "
-                        "FROM itens i "
-                        "WHERE i.processo = ? "
-                        "   OR i.notas_fiscais IN ("
-                        "  SELECT nf.nota_fiscal FROM \"nota fiscal\" nf WHERE nf.processo = ?"
-                        ") ORDER BY i.id",
-                        (self.processo_tccm, self.processo_tccm)
-                    )
-            else:
-                try:
-                    if semestre_range:
-                        sql = (
-                            "SELECT id, nome, descricao, tipo, justificativa, unidade_medida, "
-                            "COALESCE((SELECT quantidade_prevista FROM item_semestre WHERE itens_id = itens.id AND ano = ? AND semestre = ?), quantidade_prevista) as quantidade_prevista, "
-                            + sum_subquery(semestre_range) +
-                            " FROM itens ORDER BY id"
-                        )
-                        params = (sem_year, sem_num, semestre_range[0], semestre_range[1])
-                        r = db.executar(sql, params)
-                    else:
-                        sql = (
-                            "SELECT id, nome, descricao, tipo, justificativa, unidade_medida, quantidade_prevista, "
-                            + sum_subquery(None) +
-                            " FROM itens ORDER BY id"
-                        )
-                        r = db.executar(sql)
-                except Exception:
-                    r = db.executar(
-                        "SELECT id, nome, descricao, categoria, NULL, '', 0, 0 "
-                        "FROM itens ORDER BY id"
-                    )
-
-            itens = []
-            if r:
-                for row in r.fetchall():
-                    itens.append(dict(
-                        id=row[0],
-                        nome=row[1] or "-",
-                        descricao=row[2] or "-",
-                        tipo=row[3] or "-",
-                        justificativa=row[4] or "",
-                        unidade_medida=row[5] or "",
-                        quantidade_prevista=row[6] or 0,
-                        qtd_entregue=row[7] or 0,
-                    ))
-            self._todos_os_itens = itens[:]
-            return itens
+        itens = self.service.listar(
+            self.processo_tccm,
+            getattr(self, "semestre_option", "Todos") == "Semestre Atual",
+        )
+        self._todos_os_itens = itens[:]
+        return itens
 
     def render_rows(self):
         for w in self.table_body.winfo_children():
@@ -311,18 +214,7 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         self.add_action_buttons(linha, acoes)
 
     def pesquisar(self):
-        busca = self.entry_busca.get().strip().lower()
-        if not busca:
-            self.itens = self._todos_os_itens[:]
-        else:
-            self.itens = [
-                i for i in self._todos_os_itens
-                if busca in i["nome"].lower()
-                or busca in i["descricao"].lower()
-                or busca in i["tipo"].lower()
-                or busca in i.get("justificativa", "").lower()
-                or busca in i.get("unidade_medida", "").lower()
-            ]
+        self.itens = self.service.pesquisar(self._todos_os_itens, self.entry_busca.get())
         self.render_rows()
 
     def exportar_por_semestre(self):
@@ -334,39 +226,10 @@ class ItensPage(CrudBase, ctk.CTkFrame):
             messagebox.showerror("Erro", "Biblioteca openpyxl nao encontrada.", parent=self)
             return
 
-        # load items (respecting current processo_tccm if set)
-        with Database() as db:
-            if not db.conexao:
-                messagebox.showerror("Erro", "Nao foi possivel conectar ao banco.", parent=self)
-                return
-            try:
-                if self.processo_tccm:
-                    r = db.executar("SELECT id, nome, descricao, tipo, justificativa, unidade_medida FROM itens WHERE processo = ? ORDER BY id", (self.processo_tccm,))
-                else:
-                    r = db.executar("SELECT id, nome, descricao, tipo, justificativa, unidade_medida FROM itens ORDER BY id")
-                items = [dict(id=row[0], nome=row[1], descricao=row[2], tipo=row[3], justificativa=row[4], unidade_medida=row[5]) for row in (r.fetchall() if r else [])]
-            except Exception:
-                items = []
-
-            if not items:
-                messagebox.showwarning("Atencao", "Nenhum item para exportar.", parent=self)
-                return
-
-            ids = [i["id"] for i in items]
-            # collect distinct semesters
-            q_marks = ",".join("?" for _ in ids)
-            sem_rows = db.executar(f"SELECT DISTINCT ano, semestre FROM item_semestre WHERE itens_id IN ({q_marks}) ORDER BY ano, semestre", tuple(ids))
-            sems = sem_rows.fetchall() if sem_rows else []
-            sem_list = [(r[0], r[1]) for r in sems]
-
-            # map (itens_id -> {(ano,sem): qty})
-            sem_map = {}
-            if ids:
-                rows = db.executar(f"SELECT itens_id, ano, semestre, quantidade_prevista FROM item_semestre WHERE itens_id IN ({q_marks})", tuple(ids))
-                if rows:
-                    for r in rows.fetchall():
-                        iid, ano, sem, q = r[0], r[1], r[2], r[3]
-                        sem_map.setdefault(iid, {})[(ano, sem)] = q
+        items, sem_list, quantities = self.service.listar_para_exportacao(self.processo_tccm)
+        if not items:
+            messagebox.showwarning("Atencao", "Nenhum item para exportar.", parent=self)
+            return
 
         caminho = filedialog.asksaveasfilename(title="Exportar itens por semestre", defaultextension=".xlsx", filetypes=[("Planilha Excel", "*.xlsx")], initialfile="itens_por_semestre.xlsx")
         if not caminho:
@@ -388,9 +251,8 @@ class ItensPage(CrudBase, ctk.CTkFrame):
                 row = [it.get("nome"), it.get("descricao"), it.get("tipo"), it.get("justificativa"), it.get("unidade_medida")] 
                 totals = 0
                 row_sem = []
-                m = sem_map.get(it["id"], {})
                 for a, b in sem_list:
-                    v = m.get((a, b), 0)
+                    v = quantities.get((it["id"], a, b), 0)
                     row_sem.append(v)
                     totals += (v or 0)
                 row = row + [totals] + row_sem
@@ -406,82 +268,6 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         self.entry_busca.delete(0, "end")
         self.itens = self._todos_os_itens[:]
         self.render_rows()
-
-    def _inserir_item_db(self, db, data, codigo_interno=None):
-        if codigo_interno is None:
-            c = db.executar("SELECT COALESCE(MAX(id), 0) + 1 FROM itens")
-            nid = c.fetchone()[0] if c else 1
-            codigo_interno = f"IT-{nid:03d}"
-        db.executar(
-            "INSERT INTO itens (nome, descricao, codigo_interno, tipo, justificativa, unidade_medida, quantidade_prevista, status, processo) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (
-                data.get("nome", "")[:200],
-                data.get("descricao", "")[:200],
-                codigo_interno,
-                data.get("tipo", ""),
-                data.get("justificativa", ""),
-                data.get("unidade_medida", ""),
-                data.get("quantidade_prevista", 0),
-                "Ativo",
-                data.get("processo"),
-            ),
-        )
-        # try to persist per-semester quantidade
-        try:
-            cur = db.executar("SELECT last_insert_rowid()")
-            lr = cur.fetchone()
-            item_id = int(lr[0]) if lr else None
-            if item_id:
-                from datetime import datetime as _dt
-                now = _dt.now()
-                ano = now.year
-                semestre = 1 if now.month <= 6 else 2
-                db.executar(
-                    "INSERT OR REPLACE INTO item_semestre (itens_id, ano, semestre, quantidade_prevista, processo) VALUES (?, ?, ?, ?, ?)",
-                    (item_id, ano, semestre, data.get("quantidade_prevista", 0), data.get("processo")),
-                )
-        except Exception:
-            pass
-        db.commitar()
-
-    def _inserir_item(self, data, codigo_interno=None):
-        with Database() as db:
-            if not db.conexao:
-                return False
-            self._inserir_item_db(db, data, codigo_interno)
-        return True
-
-    def _atualizar_item(self, item_id, data):
-        with Database() as db:
-            if not db.conexao:
-                return False
-            db.executar(
-                "UPDATE itens SET nome=?, descricao=?, tipo=?, justificativa=?, unidade_medida=?, quantidade_prevista=? WHERE id=?",
-                (
-                    data.get("nome", "")[:200],
-                    data.get("descricao", "")[:200],
-                    data.get("tipo", ""),
-                    data.get("justificativa", ""),
-                    data.get("unidade_medida", ""),
-                    data.get("quantidade_prevista", 0),
-                    item_id,
-                ),
-            )
-            # update per-semester table for current semester
-            try:
-                from datetime import datetime as _dt
-                now = _dt.now()
-                ano = now.year
-                semestre = 1 if now.month <= 6 else 2
-                db.executar(
-                    "INSERT OR REPLACE INTO item_semestre (itens_id, ano, semestre, quantidade_prevista, processo) VALUES (?, ?, ?, ?, ?)",
-                    (item_id, ano, semestre, data.get("quantidade_prevista", 0), data.get("processo")),
-                )
-            except Exception:
-                pass
-            db.commitar()
-        return True
 
     def abrir_formulario(self, item=None):
         from screens.cadastrar_itens import CadastrarItensWindow
@@ -533,11 +319,7 @@ class ItensPage(CrudBase, ctk.CTkFrame):
     def excluir(self, item):
         if not messagebox.askyesno("Excluir", f"Deseja excluir o item \"{item['nome']}\"?"):
             return
-        with Database() as db:
-            if db.conexao:
-                db.executar("DELETE FROM itens WHERE id = ?", (item["id"],))
-                db.commitar()
-        registrar_log(self.usuario_logado or "Sistema", "exclusao", "itens", f"Item '{item['nome']}' (ID: {item['id']}) excluido")
+        self.service.excluir(item, self.usuario_logado)
         self.itens = self.carregar_do_banco()
         self.render_rows()
 

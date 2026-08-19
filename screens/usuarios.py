@@ -5,10 +5,9 @@ from tkinter import messagebox
 
 from config.styles import COLORS, FONTS
 from config.permissoes import pode_acao
-from database.conexaodb import Database
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
-from utils import registrar_log
+from screens.service.usuario_service import UsuarioService
 
 
 class UsuariosPage(CrudBase, ctk.CTkFrame):
@@ -19,6 +18,7 @@ class UsuariosPage(CrudBase, ctk.CTkFrame):
         self.perfil = perfil
         self.table_height = table_height
         self.pode_editar = pode_acao(perfil, "gerenciar_usuarios")
+        self.service = UsuarioService()
 
         self.build_header("Agentes IBAMA", "Gerencie os agentes cadastrados no sistema")
         self.build_filter_bar()
@@ -94,26 +94,7 @@ class UsuariosPage(CrudBase, ctk.CTkFrame):
         self.render_rows()
 
     def carregar_do_banco(self):
-        with Database() as db:
-            if not db.conexao:
-                return []
-            sql = """SELECT matricula, nome_agente, cpf, email, telefone, login, perfil, status
-                     FROM "agente ibama" """
-            resultados = db.executar(sql)
-            usuarios = []
-            if resultados:
-                for row in resultados.fetchall():
-                    usuarios.append({
-                        "matricula": row[0],
-                        "nome": row[1],
-                        "cpf": row[2],
-                        "email": row[3],
-                        "telefone": row[4],
-                        "login": row[5],
-                        "perfil": row[6].capitalize() if row[6] else "Agente",
-                        "status": "Ativo" if row[7] == "ativo" else "Inativo",
-                    })
-            return usuarios
+        return self.service.listar()
 
     def render_rows(self):
         for widget in self.table_body.winfo_children():
@@ -157,20 +138,11 @@ class UsuariosPage(CrudBase, ctk.CTkFrame):
         self.add_action_buttons(linha, acoes)
 
     def pesquisar(self):
-        busca = self.entry_busca.get().strip().lower()
-        filtro_email = self.entry_filtro1.get().strip().lower()
-        filtro_perfil = self.entry_filtro2.get().strip().lower()
-
-        todos = self.carregar_do_banco()
-        self.usuarios = [
-            u for u in todos
-            if (not busca or busca in u["nome"].lower()
-                or busca in u["login"].lower()
-                or busca in str(u["matricula"]))
-            and (not filtro_email or filtro_email in u["email"].lower())
-            and (not filtro_perfil or filtro_perfil in u["perfil"].lower()
-                 or filtro_perfil in u["status"].lower())
-        ]
+        self.usuarios = self.service.pesquisar(
+            self.entry_busca.get(),
+            self.entry_filtro1.get(),
+            self.entry_filtro2.get(),
+        )
         self.render_rows()
 
     def limpar_filtros(self):
@@ -199,19 +171,7 @@ class UsuariosPage(CrudBase, ctk.CTkFrame):
 
     def excluir(self, usuario):
         if messagebox.askyesno("Excluir", f"Deseja excluir {usuario['nome']}?"):
-            with Database() as db:
-                if db.conexao:
-                    db.executar(
-                        "DELETE FROM \"agente ibama\" WHERE matricula = ?",
-                        (usuario["matricula"],)
-                    )
-                    db.commitar()
-            registrar_log(
-                self.usuario_logado or "Sistema",
-                "exclusao",
-                "agente ibama",
-                f"Usuario '{usuario['nome']}' (matricula: {usuario['matricula']}) excluido"
-            )
+            self.service.excluir(usuario, self.usuario_logado)
             self.usuarios = self.carregar_do_banco()
             self.render_rows()
 

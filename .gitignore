@@ -12,3 +12,9 @@ dist/
 build/
 .ruff_cache/
 .mypy_cache/
+.idea/
+*.iml
+.vscode/settings.json
+data/fiscsoft.db
+data/fiscsoft.db.backup
+*.backup

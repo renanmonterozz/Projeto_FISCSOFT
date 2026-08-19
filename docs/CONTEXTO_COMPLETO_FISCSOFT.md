@@ -507,32 +507,6 @@ Campos principais:
 * `descricao`;
 * `criado_em`.
 
-## `insumo`
-
-Campos principais:
-
-* `id_insumo`;
-* `nome`;
-* `tipo`;
-* `descricao`;
-* `justificativa`;
-* `link`;
-* `preco_orcado`;
-* `"infrator_id_infrator"` — FK;
-* `"produtos_lote"` — FK.
-
-## `insumo_has_TCCM`
-
-Tabela de junção entre:
-
-`insumo`
-
-e:
-
-`tccm`.
-
----
-
 # 11. Dados de teste documentados
 
 A documentação atual registra:

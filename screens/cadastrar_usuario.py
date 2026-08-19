@@ -5,11 +5,15 @@ from tkinter import messagebox
 from PIL import Image
 import os
 
+from config.layout_system import LayoutSystem
 from config.styles import COLORS, FONTS, ASSETS_DIR
 from config.permissoes import normalizar_perfil
-from database.conexaodb import Database
+from screens.service.usuario_service import (
+    RegraUsuarioError,
+    UsuarioService,
+    validar_dados_usuario,
+)
 from screens.widgets import ComboBoxComSeta
-from utils import hash_password, registrar_log
 
 
 PERFIL_DISPLAY = {
@@ -24,6 +28,7 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
         super().__init__(master)
         self.usuario_edicao = usuario
         self.usuario_logado = usuario_logado
+        self.service = UsuarioService()
         self.title("FISCSOFT - Cadastrar Agente IBAMA")
         self.geometry("820x700")
         self.resizable(False, False)
@@ -36,11 +41,14 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
             self.preencher_campos()
 
     def build_ui(self):
-        container = ctk.CTkFrame(
-            self, fg_color=COLORS["white"], corner_radius=4,
-            border_width=1, border_color=COLORS["border"]
+        container = LayoutSystem.panel(
+            self,
+            fill="both",
+            expand=True,
+            padding=(20, 20),
+            fg_color=COLORS["white"],
+            border_color=COLORS["border"],
         )
-        container.pack(fill="both", expand=True, padx=20, pady=20)
 
         header = ctk.CTkFrame(container, fg_color="transparent")
         header.pack(fill="x", padx=25, pady=(20, 5))
@@ -59,11 +67,14 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
             text_color=COLORS["text"],
         ).pack(anchor="w", pady=(2, 0))
 
-        form = ctk.CTkFrame(
-            container, fg_color=COLORS["white"], corner_radius=4,
-            border_width=1, border_color=COLORS["border"]
+        form = LayoutSystem.panel(
+            container,
+            fill="both",
+            expand=True,
+            padding=(25, (15, 30)),
+            fg_color=COLORS["white"],
+            border_color=COLORS["border"],
         )
-        form.pack(fill="both", expand=True, padx=25, pady=(15, 30))
 
         ctk.CTkLabel(
             form, text="Dados Pessoais",
@@ -71,15 +82,13 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
             text_color=COLORS["text"],
         ).pack(anchor="w", padx=20, pady=(18, 8))
 
-        row1 = ctk.CTkFrame(form, fg_color="transparent")
-        row1.pack(fill="x", padx=20, pady=(0, 10))
+        row1 = LayoutSystem.form_row(form, padding_x=20, padding_y=(0, 10), columns=3)
 
         self.entry_nome = self._criar_campo(row1, "Nome Completo*", 0, weight=3)
         self.entry_cpf = self._criar_campo(row1, "CPF*", 1, weight=1)
         self.entry_email = self._criar_campo(row1, "E-mail*", 2, weight=2)
 
-        row2 = ctk.CTkFrame(form, fg_color="transparent")
-        row2.pack(fill="x", padx=20, pady=(0, 15))
+        row2 = LayoutSystem.form_row(form, padding_x=20, padding_y=(0, 15), columns=2)
 
         self.entry_telefone = self._criar_campo(row2, "Telefone", 0, weight=2)
         self.entry_matricula = self._criar_campo(row2, "Matricula*", 1, weight=2)
@@ -90,15 +99,13 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
             text_color=COLORS["text"],
         ).pack(anchor="w", padx=20, pady=(5, 8))
 
-        row3 = ctk.CTkFrame(form, fg_color="transparent")
-        row3.pack(fill="x", padx=20, pady=(0, 10))
+        row3 = LayoutSystem.form_row(form, padding_x=20, padding_y=(0, 10), columns=3)
 
         self.entry_login = self._criar_campo(row3, "Login*", 0, weight=1)
         self.entry_senha = self._criar_campo(row3, "Senha*", 1, weight=1, show="*")
         self.entry_confirmar = self._criar_campo(row3, "Confirmar Senha*", 2, weight=1, show="*")
 
-        row4 = ctk.CTkFrame(form, fg_color="transparent")
-        row4.pack(fill="x", padx=20, pady=(0, 15))
+        row4 = LayoutSystem.form_row(form, padding_x=20, padding_y=(0, 15), columns=1)
 
         self.combo_perfil = self._criar_combobox(row4, "Perfil*", 0,
                                                  ["Administrador", "Agente", "Operador"],
@@ -152,121 +159,62 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
         self.combo_perfil.set(PERFIL_DISPLAY.get(perfil_atual, "Operador"))
 
     def _criar_campo(self, parent, label, col, weight=1, show=None):
-        parent.grid_columnconfigure(col, weight=weight)
-
-        frame = ctk.CTkFrame(parent, fg_color="transparent")
-        frame.grid(row=0, column=col, padx=(0, 15), sticky="ew")
-
-        ctk.CTkLabel(
-            frame, text=label,
-            font=ctk.CTkFont(size=12),
-            text_color=COLORS["text"],
-        ).pack(anchor="w", pady=(0, 4))
-
-        entry = ctk.CTkEntry(
-            frame, height=36, corner_radius=4,
-            border_width=1, border_color=COLORS["border"],
-            fg_color=COLORS["white"], text_color=COLORS["text"],
-            placeholder_text_color=COLORS["text_muted"],
+        label_text = label.rstrip("*")
+        return LayoutSystem.field(
+            parent,
+            label_text,
+            column=col,
+            weight=weight,
             show=show,
+            required=label.endswith("*"),
         )
-        entry.pack(fill="x")
-        return entry
 
     def _criar_combobox(self, parent, label, col, values, default=None):
-        parent.grid_columnconfigure(col, weight=1)
-
-        frame = ctk.CTkFrame(parent, fg_color="transparent")
-        frame.grid(row=0, column=col, padx=(0, 15), sticky="ew")
-
-        ctk.CTkLabel(
-            frame, text=label,
-            font=ctk.CTkFont(size=12),
-            text_color=COLORS["text"],
-        ).pack(anchor="w", pady=(0, 4))
-
-        combo = ComboBoxComSeta(
-            frame, values=values, height=36,
-            corner_radius=4, border_width=1,
-            border_color=COLORS["primary"],
-            fg_color=COLORS["white"], button_color=COLORS["primary"],
-            button_hover_color=COLORS["primary_hover"],
+        return LayoutSystem.combobox_field(
+            parent,
+            label.rstrip("*"),
+            values,
+            column=col,
+            weight=1,
+            default=default if default is not None else values[0],
+            border_width=1,
+            button_color=COLORS["border"],
+            button_hover_color=COLORS["hover"],
             dropdown_fg_color=COLORS["white"],
             text_color=COLORS["text"],
         )
-        combo.pack(fill="x")
-        combo.set(default if default is not None else values[0])
-        return combo
 
     def salvar(self):
-        nome = self.entry_nome.get()
-        cpf = self.entry_cpf.get()
-        email = self.entry_email.get()
-        telefone = self.entry_telefone.get()
-        matricula = self.entry_matricula.get()
-        login = self.entry_login.get()
-        senha = self.entry_senha.get()
-        confirmar = self.entry_confirmar.get()
-        perfil = self.combo_perfil.get()
-
-        if not all([nome, cpf, email, matricula, login, perfil]):
-            messagebox.showwarning("Atencao", "Preencha todos os campos obrigatorios!")
+        try:
+            dados = validar_dados_usuario(
+                self.entry_nome.get(),
+                self.entry_cpf.get(),
+                self.entry_email.get(),
+                self.entry_telefone.get(),
+                self.entry_matricula.get(),
+                self.entry_login.get(),
+                self.entry_senha.get(),
+                self.entry_confirmar.get(),
+                self.combo_perfil.get(),
+                em_edicao=bool(self.usuario_edicao),
+            )
+        except RegraUsuarioError as exc:
+            mensagem_erro = str(exc)
+            if "senhas" in mensagem_erro or "Matricula" in mensagem_erro:
+                messagebox.showerror("Erro", mensagem_erro)
+            else:
+                messagebox.showwarning("Atencao", mensagem_erro)
             return
-
-        if not self.usuario_edicao:
-            if not senha or not confirmar:
-                messagebox.showwarning("Atencao", "Preencha todos os campos obrigatorios!")
-                return
-            if senha != confirmar:
-                messagebox.showerror("Erro", "As senhas nao conferem!")
-                return
 
         try:
-            matricula_int = int(matricula)
-        except ValueError:
-            messagebox.showerror("Erro", "Matricula deve ser um numero!")
+            mensagem = self.service.salvar(
+                dados,
+                em_edicao=bool(self.usuario_edicao),
+                usuario_logado=self.usuario_logado,
+            )
+        except Exception as exc:
+            messagebox.showerror("Erro", f"Nao foi possivel salvar o usuario:\n{exc}")
             return
-
-        with Database() as db:
-            if not db.conexao:
-                messagebox.showerror("Erro", "Nao foi possivel conectar ao banco de dados!")
-                return
-
-            if self.usuario_edicao:
-                if senha and confirmar and senha == confirmar:
-                    senha_hash = hash_password(senha)
-                    sql = """UPDATE "agente ibama" SET
-                             nome_agente=?, cpf=?, email=?, telefone=?,
-                             login=?, senha=?, perfil=?, atualizado_por=?
-                             WHERE matricula=?"""
-                    params = (nome, cpf, email, telefone, login, senha_hash, perfil,
-                              self.usuario_logado or "", matricula_int)
-                else:
-                    sql = """UPDATE "agente ibama" SET
-                             nome_agente=?, cpf=?, email=?, telefone=?,
-                             login=?, perfil=?, atualizado_por=?
-                             WHERE matricula=?"""
-                    params = (nome, cpf, email, telefone, login, perfil,
-                              self.usuario_logado or "", matricula_int)
-                mensagem = f"Usuario '{nome}' atualizado com sucesso!"
-            else:
-                senha_hash = hash_password(senha)
-                sql = """INSERT INTO "agente ibama"
-                         (matricula, nome_agente, cpf, email, telefone, login, senha, perfil, status, cadastrado_por)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ativo', ?)"""
-                params = (matricula_int, nome, cpf, email, telefone, login, senha_hash, perfil,
-                          self.usuario_logado or "")
-                mensagem = f"Usuario '{nome}' cadastrado com sucesso!"
-
-            db.executar(sql, params)
-            db.commitar()
-
-        registrar_log(
-            self.usuario_logado or "Sistema",
-            "edicao" if self.usuario_edicao else "cadastro",
-            "agente ibama",
-            mensagem
-        )
 
         messagebox.showinfo("Sucesso", mensagem)
         self.destroy()

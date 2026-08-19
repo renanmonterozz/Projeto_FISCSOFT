@@ -2,6 +2,7 @@ import _path  # noqa: F401
 
 import customtkinter as ctk
 
+from config.layout_system import LayoutSystem
 from config.styles import COLORS, FONTS
 
 
@@ -21,11 +22,14 @@ class VisualizarUsuarioWindow(ctk.CTkToplevel):
         self.transient(master)
         self.grab_set()
 
-        main_container = ctk.CTkFrame(
-            self, fg_color=colors["white"], corner_radius=4,
-            border_width=1, border_color=colors["border"]
+        main_container = LayoutSystem.panel(
+            self,
+            fill="both",
+            expand=True,
+            padding=(20, 20),
+            fg_color=COLORS["white"],
+            border_color=COLORS["border"],
         )
-        main_container.pack(fill="both", expand=True, padx=20, pady=20)
 
         top_bar = ctk.CTkFrame(main_container, fg_color="transparent")
         top_bar.pack(fill="x", padx=25, pady=(20, 0))
@@ -42,11 +46,14 @@ class VisualizarUsuarioWindow(ctk.CTkToplevel):
             text_color=colors["text_muted"]
         ).pack(anchor="w", pady=(2, 0))
 
-        content = ctk.CTkFrame(
-            main_container, fg_color=colors["white"], corner_radius=4,
-            border_width=1, border_color=colors["border"]
+        content = LayoutSystem.panel(
+            main_container,
+            fill="both",
+            expand=True,
+            padding=(25, (15, 20)),
+            fg_color=COLORS["white"],
+            border_color=COLORS["border"],
         )
-        content.pack(fill="both", expand=True, padx=25, pady=(15, 20))
 
         self._build_dados_pessoais(content)
         self._build_dados_acesso(content)

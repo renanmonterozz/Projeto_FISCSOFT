@@ -8,21 +8,11 @@ import customtkinter as ctk
 
 from config.styles import COLORS, FONTS
 from config.permissoes import pode_acao
-from database.conexaodb import Database
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
+from screens.service.dashboard_service import formatar_data
+from screens.service.notas_service import NotasFiscaisService
 from screens.widgets import CalendarioPopup, ComboBoxComSeta
-
-
-def _fmt_date(val):
-    if not val:
-        return "--"
-    if hasattr(val, "strftime"):
-        return val.strftime("%d/%m/%Y")
-    try:
-        return _dt.strptime(str(val), "%Y-%m-%d").strftime("%d/%m/%Y")
-    except Exception:
-        return str(val)
 
 
 COL_NF_CFG = [
@@ -44,6 +34,7 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
         self.pode_aprovar = pode_acao(perfil, "aprovar_nota")
         self.processo_tccm = processo_tccm
         self.nf_selecionada = None
+        self.service = NotasFiscaisService()
 
         self.build_header("Monitoramento de Notas Fiscais",
                           "Acompanhe todas as notas fiscais enviadas neste TCCM.")
@@ -283,63 +274,13 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
 
     def carregar_do_banco(self):
         try:
-            with Database() as db:
-                if not db.conexao:
-                    return []
-                sql = """SELECT nf.nota_fiscal, nf.data, nf.valor_total,
-                                i.nome_infrator, i.cpf,
-                                nf.processo, nf."agente ibama_matricula", nf.status_nota,
-                                t.total_devido, t.total_pago,
-                                COUNT(p.lote) as qtd_itens,
-                                nf.arquivo
-                         FROM "nota fiscal" nf
-                         JOIN tccm t ON nf.processo = t.processo
-                         JOIN infrator i ON i.id_infrator = t."infrator_id_infrator"
-                         LEFT JOIN produtos p ON p."nota fiscal_nota_fiscal" = nf.nota_fiscal
-                            AND p."nota fiscal_agente ibama_matricula" = nf."agente ibama_matricula"
-                         GROUP BY nf.nota_fiscal, nf.data, nf.valor_total,
-                                i.nome_infrator, i.cpf, nf.processo,
-                                nf."agente ibama_matricula", nf.status_nota,
-                                t.total_devido, t.total_pago, nf.arquivo"""
-                try:
-                    resultados = db.executar(sql)
-                except Exception:
-                    sql = """SELECT nf.nota_fiscal, nf.data, nf.valor_total,
-                                    i.nome_infrator, i.cpf,
-                                    nf.processo, nf."agente ibama_matricula", nf.status_nota
-                             FROM "nota fiscal" nf
-                             JOIN tccm t ON nf.processo = t.processo
-                             JOIN infrator i ON i.id_infrator = t."infrator_id_infrator" """
-                    try:
-                        resultados = db.executar(sql)
-                    except Exception:
-                        return []
-
-                notas = []
-                if resultados:
-                    for row in resultados.fetchall():
-                        status = row[7] if len(row) > 7 and row[7] else "Pendente"
-                        qtd_itens = row[10] if len(row) > 10 else 0
-                        total_devido = float(row[8]) if len(row) > 8 and row[8] else 0
-                        total_pago = float(row[9]) if len(row) > 9 and row[9] else 0
-                        notas.append({
-                            "nota_fiscal": row[0],
-                            "data": _fmt_date(row[1]),
-                            "valor_total": float(row[2]) if row[2] else 0,
-                            "interessado": row[3],
-                            "cpf": row[4],
-                            "processo": row[5],
-                            "matricula": row[6],
-                            "status": status,
-                            "itens": qtd_itens,
-                            "total_devido": total_devido,
-                            "total_pago": total_pago,
-                            "arquivo": row[11] if len(row) > 11 else None,
-                        })
-                # if a specific TCCM processo was provided, filter results to that processo
-                if self.processo_tccm:
-                    notas = [n for n in notas if (n.get("processo") or "") == self.processo_tccm]
-                return notas
+            notas = self.service.listar_monitoramento(self.processo_tccm)
+            for nota in notas:
+                nota["data"] = formatar_data(nota["data"])
+                nota["valor_total"] = float(nota["valor_total"] or 0)
+                nota["total_devido"] = float(nota["total_devido"] or 0)
+                nota["total_pago"] = float(nota["total_pago"] or 0)
+            return notas
         except Exception:
             return []
 
@@ -500,52 +441,18 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
             return
         if novo_status == status_atual:
             return
-        with Database() as db:
-            if db.conexao:
-                try:
-                    nota_fiscal = self.nf_selecionada["nota_fiscal"]
-                    matricula = self.nf_selecionada["matricula"]
-                    processo = self.nf_selecionada["processo"]
-
-                    sql_soma = """SELECT COALESCE(SUM(quantidade * preco_unitario), 0)
-                                 FROM produtos
-                                 WHERE "nota fiscal_nota_fiscal" = ?
-                                   AND "nota fiscal_agente ibama_matricula" = ?"""
-                    r = db.executar(sql_soma, (nota_fiscal, matricula))
-                    soma_produtos = float(r.fetchone()[0]) if r else 0
-
-                    if soma_produtos > 0:
-                        db.executar(
-                            'UPDATE "nota fiscal" SET valor_total = ? WHERE nota_fiscal = ?',
-                            (soma_produtos, nota_fiscal)
-                        )
-
-                    db.executar(
-                        'UPDATE "nota fiscal" SET status_nota = ? WHERE nota_fiscal = ?',
-                        (novo_status, nota_fiscal)
-                    )
-
-                    if novo_status == "Aprovada" and processo:
-                        valor_adicionar = soma_produtos if soma_produtos > 0 else self.nf_selecionada["valor_total"]
-                        sql_tccm = """UPDATE tccm
-                                      SET total_pago = total_pago + ?,
-                                          status = CASE
-                                              WHEN (total_pago + ?) >= total_devido THEN 'concluido'
-                                              ELSE 'pendente'
-                                          END
-                                      WHERE processo = ?"""
-                        db.executar(sql_tccm, (valor_adicionar, valor_adicionar, processo))
-
-                    db.commitar()
-                except Exception:
-                    pass
+        processo = self.nf_selecionada["processo"]
+        try:
+            self.service.atualizar_status(self.nf_selecionada, novo_status)
+        except Exception:
+            return
         self.nf_selecionada["status"] = novo_status
         self.notas = self.carregar_do_banco()
         self.render_rows()
         self._atualizar_estado_botoes(novo_status)
         # refresh alert and check if any exigencia was attended
         try:
-            proc = processo if 'processo' in locals() else self.nf_selecionada.get('processo')
+            proc = processo
             if hasattr(self, '_check_exigencias_and_refresh'):
                 self._check_exigencias_and_refresh(proc)
         except Exception:

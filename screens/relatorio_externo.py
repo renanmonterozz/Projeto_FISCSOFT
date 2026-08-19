@@ -4,8 +4,9 @@ import customtkinter as ctk
 from tkinter import messagebox
 
 from config.styles import COLORS, FONTS
-from database.conexaodb import Database
 from screens.crud_base import CrudBase
+from screens.service.dashboard_service import formatar_data, formatar_moeda_brl, status_nota
+from screens.service.relatorio_service import RelatorioService
 from screens.widgets import CalendarioPopup, ComboBoxComSeta
 
 
@@ -18,10 +19,9 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
         self.configure(fg_color=COLORS["bg"])
         self.usuario_logado = usuario_logado
         self.id_infrator = id_infrator
+        self.service = RelatorioService()
 
-        self.build_header("Relatório Geral",
-                          "Visualize o resumo das suas notas fiscais e processos TCCM.",
-                          alerta_nota=False)
+        self.build_header("Relatório Geral","Visualize o resumo das suas notas fiscais e processos TCCM.", alerta_nota=False)
         self.build_filter_bar()
         self.build_stats_cards()
         self.build_relatorio_content()
@@ -87,32 +87,19 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
 
     def _carregar_processos(self):
         try:
-            with Database() as db:
-                if not db.conexao:
-                    return
-                sql = """SELECT t.processo, i.nome_infrator
-                         FROM tccm t
-                         JOIN infrator i ON t."infrator_id_infrator" = i.id_infrator
-                         WHERE t."infrator_id_infrator" = ?
-                         ORDER BY t.processo"""
-                resultado = db.executar(sql, (self.id_infrator,))
-                if resultado:
-                    rows = resultado.fetchall()
-                    if rows:
-                        self._processo_map = {}
-                        opcoes = []
-                        for row in rows:
-                            processo = row[0]
-                            nome_infrator = row[1]
-                            display = f"{processo} - {nome_infrator}"
-                            self._processo_map[display] = processo
-                            opcoes.append(display)
-                        valores = ["Todos"] + opcoes
-                        self.combo_processo.configure(values=valores)
-                        self.combo_processo.set("Todos")
-                    else:
-                        self.combo_processo.configure(values=["Todos", "Nenhum TCCM encontrado"])
-                        self.combo_processo.set("Todos")
+            rows = self.service.listar_processos(self.id_infrator)
+            if rows:
+                self._processo_map = {}
+                opcoes = []
+                for processo, nome_infrator in rows:
+                    display = f"{processo} - {nome_infrator}"
+                    self._processo_map[display] = processo
+                    opcoes.append(display)
+                self.combo_processo.configure(values=["Todos"] + opcoes)
+                self.combo_processo.set("Todos")
+            else:
+                self.combo_processo.configure(values=["Todos", "Nenhum TCCM encontrado"])
+                self.combo_processo.set("Todos")
         except Exception:
             pass
 
@@ -300,58 +287,19 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
             return
 
 
-        with Database() as db:
-            if not db.conexao:
-                return
-
-            sql = """SELECT nf.nota_fiscal, nf.data, nf.valor_total, nf.status_nota,
-                            COUNT(p.lote) as qtd_itens
-                     FROM "nota fiscal" nf
-                     JOIN tccm t ON nf.processo = t.processo
-                     LEFT JOIN produtos p ON p."nota fiscal_nota_fiscal" = nf.nota_fiscal
-                        AND p."nota fiscal_agente ibama_matricula" = nf."agente ibama_matricula"
-                     WHERE t."infrator_id_infrator" = ?"""
-            params = [self.id_infrator]
-            # filter by selected processo if any
-            try:
-                proc = self._get_processo_real()
-            except Exception:
-                proc = ""
-            if proc:
-                sql += " AND nf.processo = ?"
-                params.append(proc)
-
-            if self.data_inicio and self.data_fim:
-                sql += " AND nf.data >= ? AND nf.data <= ?"
-                params.append(self.data_inicio.strftime("%Y-%m-%d"))
-                params.append(self.data_fim.strftime("%Y-%m-%d"))
-
-            sql += " GROUP BY nf.nota_fiscal, nf.data, nf.valor_total, nf.status_nota ORDER BY nf.data DESC"
-            try:
-                resultado = db.executar(sql, params)
-                dados = []
-                if resultado:
-                    for row in resultado.fetchall():
-                        raw_data = row[1]
-                        if hasattr(raw_data, "strftime"):
-                            data_fmt = raw_data.strftime("%d/%m/%Y")
-                        elif raw_data:
-                            from datetime import datetime as _dt
-                            try:
-                                data_fmt = _dt.strptime(str(raw_data), "%Y-%m-%d").strftime("%d/%m/%Y")
-                            except Exception:
-                                data_fmt = str(raw_data)
-                        else:
-                            data_fmt = "--"
-                        dados.append({
-                            "nota_fiscal": row[0] or "--",
-                            "data": data_fmt,
-                            "valor_total": float(row[2]) if row[2] else 0,
-                            "status": row[3] or "Pendente",
-                            "qtd_itens": row[4] if row[4] else 0,
-                        })
-            except Exception:
-                dados = []
+        try:
+            proc = self._get_processo_real()
+            dados = self.service.listar_dados(
+                self.id_infrator,
+                proc,
+                self.data_inicio,
+                self.data_fim,
+            )
+            for item in dados:
+                item["data"] = formatar_data(item["data"])
+                item["valor_total"] = float(item["valor_total"] or 0)
+        except Exception:
+            dados = []
 
         if not dados:
             ctk.CTkLabel(
@@ -424,50 +372,16 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
         if not self.id_infrator:
             return
 
-        with Database() as db:
-            if not db.conexao:
-                return
-
-            base = '''FROM "nota fiscal" nf
-                      JOIN tccm t ON nf.processo = t.processo
-                      WHERE t."infrator_id_infrator" = ?'''
-
-            try:
-                r = db.executar(
-                    f'SELECT COUNT(DISTINCT nf.nota_fiscal) {base}',
-                    (self.id_infrator,)
-                ).fetchone()
-                total = r[0] if r else 0
-            except Exception:
-                total = 0
-
-            try:
-                r = db.executar(
-                    f"SELECT COUNT(DISTINCT nf.nota_fiscal) {base} AND nf.status_nota = 'Aprovada'",
-                    (self.id_infrator,)
-                ).fetchone()
-                aprovadas = r[0] if r else 0
-            except Exception:
-                aprovadas = 0
-
-            try:
-                r = db.executar(
-                    f"SELECT COUNT(DISTINCT nf.nota_fiscal) {base} AND nf.status_nota = 'Pendente'",
-                    (self.id_infrator,)
-                ).fetchone()
-                pendentes = r[0] if r else 0
-            except Exception:
-                pendentes = 0
-
-            try:
-                r = db.executar(
-                    f"""SELECT COALESCE(SUM(nf.valor_total), 0) {base}
-                        AND nf.status_nota = 'Aprovada'""",
-                    (self.id_infrator,)
-                ).fetchone()
-                valor_total = float(r[0]) if r else 0
-            except Exception:
-                valor_total = 0
+        cards = self.service.buscar_cards(
+            self.id_infrator,
+            self._get_processo_real(),
+            self.data_inicio,
+            self.data_fim,
+        )
+        total = cards["total"]
+        aprovadas = cards["aprovadas"]
+        pendentes = cards["pendentes"]
+        valor_total = float(cards["valor_total"] or 0)
 
         self.stat_labels["Total Notas"].configure(text=str(total))
         self.stat_labels["Aprovadas"].configure(text=str(aprovadas))
@@ -488,65 +402,16 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
         dados_nf = []
         itens_por_nf = {}
 
-        with Database() as db:
-            if not db.conexao:
-                return
-
-            sql_nf = """SELECT nf.nota_fiscal, nf.data, nf.valor_total, nf.status_nota, nf.processo
-                        FROM "nota fiscal" nf
-                        JOIN tccm t ON nf.processo = t.processo
-                        WHERE t."infrator_id_infrator" = ?
-                          AND nf.data >= ? AND nf.data <= ?
-                        ORDER BY nf.data DESC"""
-            try:
-                # allow optional processo filter
-                proc = self._get_processo_real() if hasattr(self, '_get_processo_real') else ""
-                params = [self.id_infrator, self.data_inicio.strftime("%Y-%m-%d"), self.data_fim.strftime("%Y-%m-%d")]
-                if proc:
-                    sql_nf = sql_nf.replace("ORDER BY nf.data DESC", "AND nf.processo = ?\n                        ORDER BY nf.data DESC")
-                    params.append(proc)
-                resultado = db.executar(sql_nf, tuple(params))
-                if resultado:
-                    for row in resultado.fetchall():
-                        raw_data = row[1]
-                        if hasattr(raw_data, "strftime"):
-                            data_fmt = raw_data.strftime("%d/%m/%Y")
-                        elif raw_data:
-                            from datetime import datetime as _dt
-                            try:
-                                data_fmt = _dt.strptime(str(raw_data), "%Y-%m-%d").strftime("%d/%m/%Y")
-                            except Exception:
-                                data_fmt = str(raw_data)
-                        else:
-                            data_fmt = "--"
-                        nf_info = {
-                            "nota_fiscal": row[0] or "--",
-                            "data": data_fmt,
-                            "valor_total": float(row[2]) if row[2] else 0,
-                            "status": row[3] or "Pendente",
-                            "processo": row[4] or "--",
-                        }
-                        dados_nf.append(nf_info)
-
-                        sql_itens = """SELECT p.nome_item, p.quantidade, p.preco_unitario
-                                       FROM produtos p
-                                       WHERE p."nota fiscal_nota_fiscal" = ?
-                                       ORDER BY p.lote"""
-                        res_itens = db.executar(sql_itens, (row[0],))
-                        itens = []
-                        if res_itens:
-                            for ir in res_itens.fetchall():
-                                qtd = int(ir[1]) if ir[1] else 0
-                                preco = float(ir[2]) if ir[2] else 0
-                                itens.append({
-                                    "nome": ir[0] or "--",
-                                    "quantidade": qtd,
-                                    "preco_unitario": preco,
-                                    "subtotal": qtd * preco,
-                                })
-                        itens_por_nf[row[0]] = itens
-            except Exception:
-                pass
+        try:
+            proc = self._get_processo_real()
+            dados_nf, itens_por_nf = self.service.listar_relatorio(
+                self.id_infrator, proc, self.data_inicio, self.data_fim
+            )
+            for item in dados_nf:
+                item["data"] = formatar_data(item["data"])
+                item["valor_total"] = float(item["valor_total"] or 0)
+        except Exception:
+            dados_nf, itens_por_nf = [], {}
 
         if not dados_nf:
             messagebox.showinfo("Relatorio", f"Nenhuma nota fiscal encontrada para o periodo {periodo_label}.")
@@ -769,68 +634,9 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
         ).place(relx=0.38, rely=0.92, relwidth=0.24)
 
     def _buscar_dados_nf(self, nota_fiscal):
-        dados = {}
-        with Database() as db:
-            if not db.conexao:
-                return dados
-
-            try:
-                sql = """SELECT nf.nota_fiscal, nf.data, nf.chave_de_acesso,
-                                nf.valor_total, nf.status_nota, nf.processo
-                         FROM "nota fiscal" nf
-                         JOIN tccm t ON nf.processo = t.processo
-                         WHERE nf.nota_fiscal = ?
-                           AND t."infrator_id_infrator" = ?
-                         LIMIT 1"""
-                resultado = db.executar(sql, (nota_fiscal, self.id_infrator,))
-                row = resultado.fetchone() if resultado else None
-                if row:
-                    raw_data = row[1]
-                    if hasattr(raw_data, "strftime"):
-                        data_fmt = raw_data.strftime("%d/%m/%Y")
-                    elif raw_data:
-                        from datetime import datetime as _dt
-                        try:
-                            data_fmt = _dt.strptime(str(raw_data), "%Y-%m-%d").strftime("%d/%m/%Y")
-                        except Exception:
-                            data_fmt = str(raw_data)
-                    else:
-                        data_fmt = "--"
-
-                    valor = float(row[3]) if row[3] else 0
-                    valor_fmt = f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-
-                    dados = {
-                        "nota_fiscal": row[0] or "--",
-                        "data": data_fmt,
-                        "chave": row[2] or "--",
-                        "valor_total": valor,
-                        "valor_total_fmt": valor_fmt,
-                        "status": row[4] or "Pendente",
-                        "processo": row[5] or "--",
-                    }
-            except Exception:
-                pass
-
-            try:
-                sql_itens = """SELECT p.nome_item, p.quantidade, p.preco_unitario
-                               FROM produtos p
-                               WHERE p."nota fiscal_nota_fiscal" = ?
-                               ORDER BY p.lote"""
-                resultado_itens = db.executar(sql_itens, (nota_fiscal,))
-                itens = []
-                if resultado_itens:
-                    for item_row in resultado_itens.fetchall():
-                        qtd = int(item_row[1]) if item_row[1] else 0
-                        preco = float(item_row[2]) if item_row[2] else 0
-                        itens.append({
-                            "nome": item_row[0] or "--",
-                            "quantidade": qtd,
-                            "preco_unitario": preco,
-                            "subtotal": qtd * preco,
-                        })
-                dados["itens"] = itens
-            except Exception:
-                dados["itens"] = []
-
+        dados = self.service.buscar_detalhes(nota_fiscal, self.id_infrator)
+        if dados:
+            dados["data"] = formatar_data(dados["data"])
+            dados["valor_total"] = float(dados["valor_total"] or 0)
+            dados["valor_total_fmt"] = formatar_moeda_brl(dados["valor_total"])
         return dados

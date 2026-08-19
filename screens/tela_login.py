@@ -5,11 +5,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))  # noqa: F401 �
 import pywinstyles
 
 import os
+from tkinter import messagebox
+
 from PIL import Image
 
 import customtkinter as ctk
 
 from config.styles import ASSETS_DIR, COLORS
+from screens.service.login_service import RegraLoginError, validar_credenciais
 
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
@@ -215,9 +218,16 @@ class TestLoginApp(ctk.CTk):
         btn_sair.pack(side="left", padx=5)
 
     def _on_entrar_click(self):
-        usuario = self.entry_usuario.get()
-        senha = self.entry_senha.get()
-        print(f"Usuário: {usuario}, Senha: {senha}")
+        try:
+            usuario, _ = validar_credenciais(
+                self.entry_usuario.get(),
+                self.entry_senha.get(),
+            )
+        except RegraLoginError as exc:
+            messagebox.showwarning("Aviso", str(exc), parent=self)
+            return
+
+        print(f"Usuário: {usuario}")
 
     def _on_sair_click(self):
         # Oculta o frame de login

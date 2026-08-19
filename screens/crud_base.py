@@ -1,7 +1,8 @@
 from tkinter import messagebox
-
 import customtkinter as ctk
 from config.styles import COLORS, FONTS
+from config.layout_system import LayoutSystem
+
 
 
 def _rebuild_sidebar_and_content(page):
@@ -128,7 +129,7 @@ class CrudBase:
             **kwargs,
         )
 
-    def build_header(self, title, subtitle):
+    def build_header(self, title, subtitle, alerta_nota=False, processo_tccm=None):
         colors = COLORS
         header = ctk.CTkFrame(self, fg_color="transparent")
         header.pack(fill="x", padx=30, pady=(30, 20))
@@ -148,13 +149,21 @@ class CrudBase:
             text_color=colors["text_muted"],
         ).pack(anchor="w", pady=(4, 0))
 
-    def build_filter_container(self):
-        colors = COLORS
-        container = ctk.CTkFrame(
-            self, fg_color=colors["white"], corner_radius=4,
-            border_width=1, border_color=colors["border"]
+        if alerta_nota:
+                self.build_alerta_nota(
+                header,
+                processo_tccm=processo_tccm,
+                pack_direction="right"
         )
-        container.pack(fill="x", padx=30, pady=(0, 20))
+
+    def build_filter_container(self):
+        container = LayoutSystem.panel(
+            self,
+            fill="x",
+            padding=(30, (0, 20)),
+            fg_color=COLORS["white"],
+            border_color=COLORS["border"],
+        )
         inner = ctk.CTkFrame(container, fg_color="transparent")
         inner.pack(fill="x", padx=20, pady=14)
         return inner
