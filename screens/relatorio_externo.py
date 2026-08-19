@@ -1,9 +1,12 @@
 import _path  # noqa: F401
 
+import os
+
 import customtkinter as ctk
 from tkinter import messagebox
+from PIL import Image
 
-from config.styles import COLORS, FONTS
+from config.styles import ASSETS_DIR, COLORS, FONTS
 from screens.crud_base import CrudBase
 from screens.service.dashboard_service import formatar_data, formatar_moeda_brl, status_nota
 from screens.service.relatorio_service import RelatorioService
@@ -144,7 +147,8 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
         ]
 
         self.stat_labels = {}
-        icons = ["\U0001f4cb", "\u2705", "\u23F3", "\U0001f4b0"]
+        icons = ["total.png", None, "ampulheta.png", "cifrao.png"]
+        fallback_icons = ["\U0001f4cb", "\u2705", "\u23F3", "\U0001f4b0"]
 
         for i, (titulo, subtitulo, valor) in enumerate(card_data):
             card = ctk.CTkFrame(
@@ -164,11 +168,27 @@ class RelatorioExterno(CrudBase, ctk.CTkFrame):
             icon_circle.pack(side="left", padx=(0, 12))
             icon_circle.pack_propagate(False)
 
-            ctk.CTkLabel(
-                icon_circle, text=icons[i],
-                font=ctk.CTkFont(size=18),
-                text_color=COLORS["primary"]
-            ).pack(expand=True)
+            icon_img = None
+            if icons[i]:
+                try:
+                    caminho_icone = os.path.join(ASSETS_DIR, icons[i])
+                    imagem_icone = Image.open(caminho_icone).convert("RGBA")
+                    icon_img = ctk.CTkImage(
+                        light_image=imagem_icone,
+                        dark_image=imagem_icone.copy(),
+                        size=(24, 24) if icons[i] in ("total.png", "ampulheta.png") else (32, 32),
+                    )
+                except Exception:
+                    pass
+
+            if icon_img:
+                ctk.CTkLabel(icon_circle, text="", image=icon_img).pack(expand=True)
+            else:
+                ctk.CTkLabel(
+                    icon_circle, text=fallback_icons[i],
+                    font=ctk.CTkFont(size=18),
+                    text_color=COLORS["primary"]
+                ).pack(expand=True)
 
             text_frame = ctk.CTkFrame(inner, fg_color="transparent")
             text_frame.pack(side="left", fill="both", expand=True)
