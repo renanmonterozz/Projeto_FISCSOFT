@@ -188,9 +188,9 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
         combo = ComboBoxComSeta(
             frame, values=values, height=36,
             corner_radius=4, border_width=1,
-            border_color=COLORS["border"],
-            fg_color=COLORS["white"], button_color=COLORS["border"],
-            button_hover_color=COLORS["hover"],
+            border_color=COLORS["primary"],
+            fg_color=COLORS["white"], button_color=COLORS["primary"],
+            button_hover_color=COLORS["primary_hover"],
             dropdown_fg_color=COLORS["white"],
             text_color=COLORS["text"],
         )

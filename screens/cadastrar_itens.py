@@ -160,9 +160,9 @@ class CadastrarItensWindow(ctk.CTkToplevel):
         combo = ComboBoxComSeta(
             frame, values=values, height=36,
             corner_radius=4, border_width=1,
-            border_color=COLORS["border"],
-            fg_color=COLORS["white"], button_color=COLORS["border"],
-            button_hover_color=COLORS["hover"],
+            border_color=COLORS["primary"],
+            fg_color=COLORS["white"], button_color=COLORS["primary"],
+            button_hover_color=COLORS["primary_hover"],
             dropdown_fg_color=COLORS["white"],
             text_color=COLORS["text"],
         )
@@ -275,7 +275,8 @@ class CadastrarItensWindow(ctk.CTkToplevel):
         sem_frame = ctk.CTkFrame(ctrl_frame, fg_color="transparent")
         sem_frame.pack(side="left", padx=6)
         ctk.CTkLabel(sem_frame, text="Semestre", font=ctk.CTkFont(size=12), text_color=COLORS["text"]).pack(anchor="w")
-        self.input_sem = ctk.CTkComboBox(sem_frame, values=["1","2"], width=80)
+        self.input_sem = ComboBoxComSeta(sem_frame, values=["1","2"], width=80,
+                                                    border_color=COLORS["primary"])
         self.input_sem.set("1")
         self.input_sem.pack()
 

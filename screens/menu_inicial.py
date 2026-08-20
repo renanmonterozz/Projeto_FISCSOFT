@@ -7,7 +7,7 @@ from datetime import datetime as _dt
 import customtkinter as ctk
 from PIL import Image
 
-from config.styles import COLORS, FONTS
+from config.styles import ASSETS_DIR, COLORS, FONTS
 from database.conexaodb import Database
 from screens.crud_base import CrudBase
 
@@ -127,27 +127,18 @@ class MenuInicialPage(CrudBase, ctk.CTkFrame):
             icon_circle.pack(side="left", padx=(0, 12))
             icon_circle.pack_propagate(False)
 
-            icon_img = None
-            try:
-                icon_img = ctk.CTkImage(
-                    light_image=Image.open(os.path.join(ASSETS_DIR, icons[i])),
-                    dark_image=Image.open(os.path.join(ASSETS_DIR, icons[i])),
-                    size=(32, 32),
-                )
-            except Exception:
-                pass
-
-            if icon_img:
-                ctk.CTkLabel(
-                    icon_circle, text="",
-                    image=icon_img
-                ).pack(expand=True)
-            else:
-                ctk.CTkLabel(
-                    icon_circle, text=["\U0001f4cb", "\U0001f4e6", "\U0001f4b0"][i],
-                    font=ctk.CTkFont(size=18),
-                    text_color=COLORS["primary"]
-                ).pack(expand=True)
+            caminho_icone = os.path.join(ASSETS_DIR, icons[i])
+            imagem_icone = Image.open(caminho_icone).convert("RGBA")
+            icon_img = ctk.CTkImage(
+                light_image=imagem_icone,
+                dark_image=imagem_icone.copy(),
+                size=(32, 32),
+            )
+            icon_label = ctk.CTkLabel(
+                icon_circle, text="", image=icon_img
+            )
+            icon_label._icone_card = icon_img
+            icon_label.pack(expand=True)
 
             text_frame = ctk.CTkFrame(inner, fg_color="transparent")
             text_frame.pack(side="left", fill="both", expand=True)
