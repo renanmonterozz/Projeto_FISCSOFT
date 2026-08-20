@@ -246,8 +246,9 @@ class LoginApp(ctk.CTk):
 
         ctk.CTkButton(
             frame_botoes, text="Entrar", width=100, height=40, corner_radius=12,
-            fg_color=VERDE_POLIGONO, hover_color="#211E1E",
+            fg_color="#202a15", bg_color="#202a15", hover_color="#354522",
             text_color=AMARELO_BOTAO, font=("Segoe UI", 16),
+            border_width=2, border_color="#FFF48C",
             command=self._on_entrar_click
         ).pack(side="left", padx=5)
 
