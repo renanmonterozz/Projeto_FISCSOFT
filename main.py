@@ -50,12 +50,6 @@ def _suprimir_erro_tcl():
         pass
 
 
-# Cores da tela de login
-DOURADO = "#c8b464"
-AMARELO_BOTAO = "#FFF48C"
-VERDE_POLIGONO = "#302F2F"
-
-
 @dataclass
 class SessaoUsuario:
     usuario_logado: str = ""
@@ -82,81 +76,30 @@ class LoginApp(ctk.CTk):
 
         self.bg_label = ctk.CTkLabel(self, text="")
         self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
+        self.bg_label.lower()
         self.after(100, self._ajustar_imagem_fundo)
 
         # --- Texto "ACESSE O SISTEMA!" ---
-        self.label_titulo = LayoutSystem.label(
-            self,
-            "ACESSE O SISTEMA!",
-            font_size=36,
-            weight="bold",
-            text_color="#FFF9BE",
-            anchor="center",
-            fg_color="#202a15",
-            bg_color="#202a15",
-        )
-        self.label_titulo.place(relx=0.5, rely=0.72, anchor="center")
+        self.label_titulo = LayoutSystem.login_title(self)
+        self.label_titulo.place(relx=0.5, rely=LayoutSystem.LOGIN_TITLE_REL_Y, anchor="center")
 
-        self.label_credencial = ctk.CTkLabel(
+        # --- Botão 1: Entrar com Usuário e Senha ---
+        self.btn_usuario = LayoutSystem.login_button(
             self,
-            text="Entrar com Usuário e Senha",
-            font=ctk.CTkFont(size=18, weight="bold"),
-            text_color="#FFF9BE",
-            fg_color="#202a15",
-            bg_color="#202a15",
-        )
-        self.label_credencial.place(relx=0.5, rely=0.75, anchor="center")
-
-        self.label_certificado = ctk.CTkLabel(
-            self,
-            text="Entrar com Certificado Digital",
-            font=ctk.CTkFont(size=18, weight="bold"),
-            text_color="#FFF9BE",
-            fg_color="#202a15",
-            bg_color="#202a15",
-        )
-        self.label_certificado.place(relx=0.5, rely=0.83, anchor="center")
-
-        # --- Botão único: Fazer Login ---
-        self.btn_entrar = LayoutSystem.button(
-            self,
-            "Fazer Login",
-            width=480,
-            height=50,
+            "Entrar com Usuário e Senha",
             command=self._mostrar_formulario_unificado,
-            fg_color="#202a15",
-            bg_color="#202a15",
-            hover_color="#354522",
-            text_color=AMARELO_BOTAO,
-            border_width=2,
-            border_color="#FFF48C",
-            corner_radius=16,
-            font_size=19,
-            font_weight="normal",
         )
-        self.btn_entrar.place(relx=0.5, rely=0.78, anchor="center")
+        self.btn_usuario.place(relx=0.5, rely=LayoutSystem.LOGIN_BUTTON_USER_REL_Y, anchor="center")
 
-        # --- Botao: Entrar com Certificado Digital ---
-        self.btn_certificado = LayoutSystem.button(
+        # --- Botão 2: Entrar com Certificado Digital ---
+        self.btn_certificado = LayoutSystem.login_button(
             self,
             "Entrar com Certificado Digital",
-            width=480,
-            height=50,
             command=self._login_certificado,
-            fg_color="#202a15",
-            bg_color="#202a15",
-            hover_color="#354522",
-            text_color=AMARELO_BOTAO,
-            border_width=2,
-            border_color="#FFF48C",
-            corner_radius=16,
-            font_size=19,
-            font_weight="normal",
         )
-        self.btn_certificado.place(relx=0.5, rely=0.89, anchor="center")
+        self.btn_certificado.place(relx=0.5, rely=LayoutSystem.LOGIN_BUTTON_CERT_REL_Y, anchor="center")
 
         self.login_service = LoginService()
-
     def _ajustar_imagem_fundo(self):
         try:
             if self._img_pil is None:
@@ -185,18 +128,26 @@ class LoginApp(ctk.CTk):
             img = ctk.CTkImage(light_image=cropped, dark_image=cropped, size=(w, h))
             self.bg_label.configure(image=img)
             self.bg_label.image = img
+            self.bg_label.lower()
         except (TclError, RuntimeError):
             # A janela ja foi destruida ou o widget foi removido. Ignora sem derrubar o fluxo.
             return
 
     def _mostrar_formulario_unificado(self):
-        self.label_credencial.place_forget()
-        self.label_certificado.place_forget()
-        self.btn_entrar.place_forget()
+        self.btn_usuario.place_forget()
         self.btn_certificado.place_forget()
 
-        self.frame_login = ctk.CTkFrame(self, fg_color="#202a15", bg_color="#202a15", corner_radius=12)
-        self.frame_login.place(relx=0.5, rely=0.82, anchor="center")
+        self.frame_login = ctk.CTkFrame(
+            self,
+            width=LayoutSystem.LOGIN_FORM_WIDTH,
+            height=LayoutSystem.LOGIN_FORM_HEIGHT,
+            fg_color=LayoutSystem.LOGIN_FORM_COLOR,
+            bg_color=LayoutSystem.LOGIN_FORM_COLOR,
+            corner_radius=0,
+            border_width=0,
+        )
+        self.frame_login.place(relx=0.5, rely=LayoutSystem.LOGIN_FORM_REL_Y, anchor="center")
+        self.frame_login.pack_propagate(False)
         self.frame_login.lift()
 
         # --- Campo de credencial ---
@@ -209,7 +160,7 @@ class LoginApp(ctk.CTk):
             width=480, height=45, corner_radius=8,
             font=("Segoe UI", 16),
             fg_color="#CFFFE3", border_color="#16A34A", border_width=2,
-            text_color="#2D8A4E", placeholder_text_color="#2D8A4E",
+            text_color="#213727", placeholder_text_color="#213727",
             placeholder_text="Digite seu usuário ou CPF"
         )
         self.entry_credencial.place(x=53, y=0)
@@ -224,7 +175,7 @@ class LoginApp(ctk.CTk):
             width=480, height=45, corner_radius=8,
             font=("Segoe UI", 16),
             fg_color="#CFFFE3", border_color="#16A34A", border_width=2,
-            text_color="#2D8A4E", placeholder_text_color="#2D8A4E",
+            text_color="#213727", placeholder_text_color="#213727",
             placeholder_text="Digite sua senha", show="*"
         )
         self.entry_senha.place(x=53, y=0)
@@ -247,7 +198,7 @@ class LoginApp(ctk.CTk):
         ctk.CTkButton(
             frame_botoes, text="Entrar", width=100, height=40, corner_radius=12,
             fg_color="#202a15", bg_color="#202a15", hover_color="#354522",
-            text_color=AMARELO_BOTAO, font=("Segoe UI", 16),
+            text_color=LayoutSystem.LOGIN_BUTTON_TEXT_COLOR, font=("Segoe UI", 16),
             border_width=2, border_color="#FFF48C",
             command=self._on_entrar_click
         ).pack(side="left", padx=5)
@@ -316,27 +267,21 @@ class LoginApp(ctk.CTk):
     def _on_sair_click(self):
         if hasattr(self, "frame_login"):
             self.frame_login.place_forget()
-        self.label_titulo.place(relx=0.5, rely=0.72, anchor="center")
-        self.label_credencial.place(relx=0.5, rely=0.75, anchor="center")
-        self.label_certificado.place(relx=0.5, rely=0.83, anchor="center")
-        self.btn_entrar.place(relx=0.5, rely=0.78, anchor="center")
-        self.btn_certificado.place(relx=0.5, rely=0.89, anchor="center")
+        self.label_titulo.place(relx=0.5, rely=LayoutSystem.LOGIN_TITLE_REL_Y, anchor="center")
+        self.btn_usuario.place(relx=0.5, rely=LayoutSystem.LOGIN_BUTTON_USER_REL_Y, anchor="center")
+        self.btn_certificado.place(relx=0.5, rely=LayoutSystem.LOGIN_BUTTON_CERT_REL_Y, anchor="center")
 
     def _login_certificado(self):
-        self.label_credencial.place_forget()
-        self.label_certificado.place_forget()
-        self.btn_entrar.place_forget()
+        self.btn_usuario.place_forget()
         self.btn_certificado.place_forget()
         try:
             sucesso, mensagem, dados = login_por_certificado()
 
             if not sucesso:
                 messagebox.showerror("Erro", mensagem)
-                self.label_titulo.place(relx=0.5, rely=0.72, anchor="center")
-                self.label_credencial.place(relx=0.5, rely=0.75, anchor="center")
-                self.label_certificado.place(relx=0.5, rely=0.83, anchor="center")
-                self.btn_entrar.place(relx=0.5, rely=0.78, anchor="center")
-                self.btn_certificado.place(relx=0.5, rely=0.89, anchor="center")
+                self.label_titulo.place(relx=0.5, rely=LayoutSystem.LOGIN_TITLE_REL_Y, anchor="center")
+                self.btn_usuario.place(relx=0.5, rely=LayoutSystem.LOGIN_BUTTON_USER_REL_Y, anchor="center")
+                self.btn_certificado.place(relx=0.5, rely=LayoutSystem.LOGIN_BUTTON_CERT_REL_Y, anchor="center")
                 return
 
             self.usuario_logado = dados["nome"]
@@ -350,11 +295,9 @@ class LoginApp(ctk.CTk):
 
         except Exception as e:
             messagebox.showerror("Erro", f"Erro ao autenticar com certificado: {e}")
-            self.label_titulo.place(relx=0.5, rely=0.72, anchor="center")
-            self.label_credencial.place(relx=0.5, rely=0.75, anchor="center")
-            self.label_certificado.place(relx=0.5, rely=0.83, anchor="center")
-            self.btn_entrar.place(relx=0.5, rely=0.78, anchor="center")
-            self.btn_certificado.place(relx=0.5, rely=0.89, anchor="center")
+            self.label_titulo.place(relx=0.5, rely=LayoutSystem.LOGIN_TITLE_REL_Y, anchor="center")
+            self.btn_usuario.place(relx=0.5, rely=LayoutSystem.LOGIN_BUTTON_USER_REL_Y, anchor="center")
+            self.btn_certificado.place(relx=0.5, rely=LayoutSystem.LOGIN_BUTTON_CERT_REL_Y, anchor="center")
 
     def _toggle_senha(self):
         if self._senha_visivel:
@@ -448,6 +391,9 @@ class LoginApp(ctk.CTk):
         main_app.mainloop()
 
     def _abrir_tela_principal(self, perfil: str = "admin", processo_tccm: str = None):
+        self._abrir_selecao_tccm(perfil=perfil, processo_tccm=processo_tccm)
+
+    def _abrir_selecao_tccm(self, perfil: str = "admin", processo_tccm: str = None):
         self._fechar_janela(self)
 
         welcome_app = ctk.CTk()
@@ -512,6 +458,7 @@ class LoginApp(ctk.CTk):
         welcome_app.mainloop()
 
     def _abrir_menu_principal(self, welcome_app, perfil: str, processo_tccm: str = None):
+        usuario_logado = self.usuario_logado
         self._fechar_janela(welcome_app)
 
         main_app = ctk.CTk()
@@ -520,7 +467,7 @@ class LoginApp(ctk.CTk):
         main_app.after(0, main_app.state, "zoomed")
         main_app.update_idletasks()
         main_app.state("zoomed")
-        main_app.usuario_logado = self.usuario_logado
+        main_app.usuario_logado = usuario_logado
         main_app.perfil = perfil
 
         permissoes = paginas_do_perfil(perfil)
@@ -604,7 +551,15 @@ class LoginApp(ctk.CTk):
         content_frame = ctk.CTkFrame(main_app, fg_color=COLORS["bg"])
         content_frame.pack(side="right", fill="both", expand=True)
 
-        navegar("Menu Principal")
+        try:
+            navegar("Menu Principal")
+        except Exception as exc:
+            logging.exception("Erro ao abrir o menu inicial")
+            messagebox.showerror(
+                "Erro ao abrir o menu inicial",
+                f"Nao foi possivel carregar o menu inicial:\n{exc}",
+                parent=main_app,
+            )
         _suprimir_erro_tcl()
         main_app.mainloop()
 

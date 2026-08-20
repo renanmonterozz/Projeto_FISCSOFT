@@ -369,23 +369,23 @@ def seed_dados():
     dados_sql = """
     INSERT OR IGNORE INTO "agente ibama" (matricula, login, senha, email, nome_agente, status, perfil, cpf, telefone)
     VALUES
-        (0, 'admin', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', 'admin@ibama.gov.br', 'Carlos Silva', 'ativo', 'Administrador', '12345678901', NULL),
-        (1, 'agente', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', 'agente@ibama.gov.br', 'Joao Agente', 'ativo', 'Agente', '12345678902', NULL),
-        (2, 'usuario', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', 'usuario@ibama.gov.br', 'Maria Usuario', 'ativo', 'Operador', '12345678903', NULL);
+        (0, 'admin', '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', 'admin@ibama.gov.br', 'Carlos Silva', 'ativo', 'Administrador', '12345678901', NULL),
+        (1, 'agente', 'afb812d3ea7146079bebf27a371a3b30d695c8e7a5f532170fca6dc2068267ec', 'agente@ibama.gov.br', 'Joao Agente', 'ativo', 'Agente', '12345678902', NULL),
+        (2, 'usuario', '9250e222c4c71f0c58d4c54b50a880a312e9f9fed55d5c3aa0b0e860ded99165', 'usuario@ibama.gov.br', 'Maria Usuario', 'ativo', 'Operador', '12345678903', NULL);
 
     INSERT OR IGNORE INTO infrator (cpf, email, senha, id_infrator, nome_infrator, telefone_infrator)
     VALUES
         ('12345678901', 'joao@email.com', 'a991e84c62a25c5a972f67c47cd81f31063c2dde905a8428977b0458073465cd', 1, 'João Silva', '11987654321'),
-        ('23456789012', 'maria@email.com', '02a3e1fc659a693124e09cc25a8b49249e126cbfa0dddf8f45d4dee4895bf81e', 2, 'Maria Oliveira', '11976543210'),
-        ('34567890123', 'pedro@email.com', '503ae5403efc54b676a4b551f30d9439e42aa4c362e8d21dc37a4250cfa19e17', 3, 'Pedro Santos', '11965432109'),
-        ('45678901234', 'ana@email.com', 'f4f08752af7e13674acd6ec40c91e4eb069e7e0e92cf1af5dc34876bf26364d9', 4, 'Ana Costa', '11954321098');
+        ('12345678902', 'maria@email.com', '02a3e1fc659a693124e09cc25a8b49249e126cbfa0dddf8f45d4dee4895bf81e', 2, 'Maria Oliveira', '11976543210'),
+        ('12345678903', 'pedro@email.com', '503ae5403efc54b676a4b551f30d9439e42aa4c362e8d21dc37a4250cfa19e17', 3, 'Pedro Santos', '11965432109'),
+        ('12345678904', 'ana@email.com', 'f4f08752af7e13674acd6ec40c91e4eb069e7e0e92cf1af5dc34876bf26364d9', 4, 'Ana Costa', '11954321098');
 
     INSERT OR IGNORE INTO tccm (processo, documento_sei, data_inicio, semestres, total_pago, total_validado, data_validade, intervalo, total_devido, status, "agente ibama_matricula", "infrator_id_infrator")
     VALUES
-        ('PROC-2026-001', 'SEI-001/2026', '2026-01-15', 4, 1500.00, 2000.00, '2026-12-31', 6, 5000.00, 'pendente', 0, 1),
-        ('PROC-2026-002', 'SEI-002/2026', '2026-02-01', 4, 3000.00, 4000.00, '2026-12-31', 6, 8000.00, 'pendente', 0, 2),
-        ('PROC-2026-003', 'SEI-003/2026', '2026-03-10', 2, 800.00, 1000.00, '2026-12-31', 6, 2500.00, 'pendente', 0, 3),
-        ('PROC-2026-004', 'SEI-004/2026', '2026-01-20', 4, 2200.00, 3000.00, '2026-12-31', 6, 6500.00, 'pendente', 0, 4);
+        ('PROC-2026-001', 'SEI-001/2026', '2026-01-15', 4, 0, 2000.00, '2026-12-31', 6, 5000.00, 'pendente', 0, 1),
+        ('PROC-2026-002', 'SEI-002/2026', '2026-02-01', 4, 0, 4000.00, '2026-12-31', 6, 8000.00, 'pendente', 0, 2),
+        ('PROC-2026-003', 'SEI-003/2026', '2026-03-10', 2, 0, 1000.00, '2026-12-31', 6, 2500.00, 'pendente', 0, 3),
+        ('PROC-2026-004', 'SEI-004/2026', '2026-01-20', 4, 0, 3000.00, '2026-12-31', 6, 6500.00, 'pendente', 0, 4);
 
     INSERT OR IGNORE INTO locais (id, cep, endereco, instituicao, responsavel, telefone)
     VALUES

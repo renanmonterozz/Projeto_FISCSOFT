@@ -5,8 +5,11 @@ from contextlib import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, Session
 
-from database.conexaodb import DB_PATH
+from database.conexaodb import DB_PATH, Database
 
+
+with Database():
+    pass
 
 engine = create_engine(
     f"sqlite:///{DB_PATH.replace(chr(92), '/')}",

@@ -9,6 +9,7 @@ from PIL import Image
 
 import customtkinter as ctk
 
+from config.layout_system import LayoutSystem
 from config.styles import ASSETS_DIR, COLORS
 from services.login_service import RegraLoginError, validar_credenciais
 
@@ -39,56 +40,29 @@ class TestLoginApp(ctk.CTk):
 
         self.bg_label = ctk.CTkLabel(self, text="")
         self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
+        self.bg_label.lower()
         self.after(100, self._ajustar_imagem_fundo)
 
         # --- Texto "ACESSE O SISTEMA!" ---
-        self.label_titulo = ctk.CTkLabel(
-            self,
-            text="ACESSE O SISTEMA!",
-            font=("Libre Baskerville", 36),
-            text_color="#FFF9BE",
-            fg_color="#202a15",
-            bg_color="#202a15"
-        )
-        self.label_titulo.place(relx=0.5, rely=0.72, anchor="center")
+        self.label_titulo = LayoutSystem.login_title(self)
+        self.label_titulo.place(relx=0.5, rely=LayoutSystem.LOGIN_TITLE_REL_Y, anchor="center")
 
         # --- Botão 1: Entrar com Usuário e Senha ---
-        self.btn_usuario = ctk.CTkButton(
+        self.btn_usuario = LayoutSystem.login_button(
             self,
-            text="Entrar com Usuário e Senha",
-            width=480,
-            height=50,
-            corner_radius=16,
-            fg_color="#202a15",
-            bg_color="#202a15",
-            hover_color="#354522",
-            text_color=AMARELO_BOTAO,
-            font=ctk.CTkFont(family="Segoe UI", size=19),
-            border_width=2,
-            border_color="#FFF48C",
-            command=self._on_usuario_click
+            "Entrar com Usuário e Senha",
+            command=self._on_usuario_click,
         )
-        self.btn_usuario.place(relx=0.5, rely=0.78, anchor="center")
+        self.btn_usuario.place(relx=0.5, rely=LayoutSystem.LOGIN_BUTTON_USER_REL_Y, anchor="center")
 
 
         # --- Botão 2: Entrar com Certificado Digital ---
-        self.btn_certificado = ctk.CTkButton(
+        self.btn_certificado = LayoutSystem.login_button(
             self,
-            text="Entrar com Certificado Digital",
-            width=480,
-            height=50,
-            corner_radius=16,
-            fg_color="#202a15",
-            bg_color="#202a15",
-            hover_color="#354522",
-            text_color=AMARELO_BOTAO,
-            font=ctk.CTkFont(family="Segoe UI", size=19),
-            border_width=2,
-            border_color="#FFF48C",
-            command=self._on_certificado_click
+            "Entrar com Certificado Digital",
+            command=self._on_certificado_click,
         )
-        self.btn_certificado.place(relx=0.5, rely=0.89, anchor="center")
-
+        self.btn_certificado.place(relx=0.5, rely=LayoutSystem.LOGIN_BUTTON_CERT_REL_Y, anchor="center")
 
     def _ajustar_imagem_fundo(self):
         if self._img_pil is None:
@@ -115,8 +89,17 @@ class TestLoginApp(ctk.CTk):
 
     def _mostrar_formulario_login(self):
         # Frame para o formulário
-        self.frame_login = ctk.CTkFrame(self, fg_color="#202a15", bg_color="#202a15", corner_radius=12)
+        self.frame_login = ctk.CTkFrame(
+            self,
+            width=LayoutSystem.LOGIN_FORM_WIDTH,
+            height=LayoutSystem.LOGIN_FORM_HEIGHT,
+            fg_color=LayoutSystem.LOGIN_FORM_COLOR,
+            bg_color=LayoutSystem.LOGIN_FORM_COLOR,
+            corner_radius=0,
+            border_width=0,
+        )
         self.frame_login.place(relx=0.5, rely=0.82, anchor="center")
+        self.frame_login.pack_propagate(False)
         self.frame_login.lift()
 
         # Entry - Usuário

@@ -26,9 +26,9 @@ def main():
     print("    - usuario / senha: usuario")
     print("  Infratores de teste:")
     print("    - CPF: 12345678901 / senha: senha1")
-    print("    - CPF: 23456789012 / senha: senha2")
-    print("    - CPF: 34567890123 / senha: senha3")
-    print("    - CPF: 45678901234 / senha: senha4")
+    print("    - CPF: 12345678902 / senha: senha2")
+    print("    - CPF: 12345678903 / senha: senha3")
+    print("    - CPF: 12345678904 / senha: senha4")
 
 
 if __name__ == "__main__":

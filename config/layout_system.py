@@ -8,6 +8,55 @@ class LayoutSystem:
 
     BASE_WIDTH = LAYOUT["base_width"]
     BASE_HEIGHT = LAYOUT["base_height"]
+    LOGIN_BG_COLOR = "#213727"
+    LOGIN_TITLE_COLOR = "#FFF9BE"
+    LOGIN_BUTTON_COLOR = "#302F2F"
+    LOGIN_BUTTON_HOVER = "#211E1E"
+    LOGIN_BUTTON_TEXT_COLOR = LOGIN_TITLE_COLOR
+    LOGIN_BUTTON_BORDER_COLOR = "#000001"
+    LOGIN_BUTTON_WIDTH = 480
+    LOGIN_BUTTON_HEIGHT = 50
+    LOGIN_BUTTON_RADIUS = 16
+    LOGIN_TITLE_REL_Y = 0.78
+    LOGIN_BUTTON_USER_REL_Y = 0.86
+    LOGIN_BUTTON_CERT_REL_Y = 0.93
+    LOGIN_FORM_REL_Y = 0.86
+    LOGIN_FORM_COLOR = "#213727"
+    LOGIN_FORM_WIDTH = 590
+    LOGIN_FORM_HEIGHT = 210
+
+    @staticmethod
+    def login_title(parent):
+        return LayoutSystem.label(
+            parent,
+            "ACESSE O SISTEMA!",
+            font_family="Libre Baskerville",
+            font_size=36,
+            weight="bold",
+            text_color=LayoutSystem.LOGIN_TITLE_COLOR,
+            anchor="center",
+            fg_color=LayoutSystem.LOGIN_BG_COLOR,
+            bg_color=LayoutSystem.LOGIN_BG_COLOR,
+        )
+
+    @staticmethod
+    def login_button(parent, text, *, command=None):
+        return LayoutSystem.button(
+            parent,
+            text,
+            width=LayoutSystem.LOGIN_BUTTON_WIDTH,
+            height=LayoutSystem.LOGIN_BUTTON_HEIGHT,
+            command=command,
+            fg_color=LayoutSystem.LOGIN_BUTTON_COLOR,
+            bg_color=LayoutSystem.LOGIN_BG_COLOR,
+            hover_color=LayoutSystem.LOGIN_BUTTON_HOVER,
+            text_color=LayoutSystem.LOGIN_TITLE_COLOR,
+            border_width=2,
+            border_color=LayoutSystem.LOGIN_BUTTON_BORDER_COLOR,
+            corner_radius=LayoutSystem.LOGIN_BUTTON_RADIUS,
+            font_family="Segoe UI",
+            font_size=19,
+        )
 
     @staticmethod
     def scale(value, *, width=None, height=None, min_ratio=0.82, max_ratio=1.15):
@@ -282,8 +331,8 @@ class LayoutSystem:
 
     @staticmethod
     def button(parent, text, *, command=None, width=None, height=None, fg_color=None, hover_color=None,
-               text_color=None, border_width=0, border_color=None, corner_radius=None, font_size=None,
-               font_weight=None, compound=None, image=None, bg_color=None):
+               text_color=None, border_width=0, border_color=None, corner_radius=None, font_family=None,
+               font_size=None, font_weight=None, compound=None, image=None, bg_color=None):
         button_kwargs = {
             "text": text,
             "command": command,
@@ -293,7 +342,11 @@ class LayoutSystem:
             "border_width": border_width,
             "border_color": border_color or COLORS["border"],
             "corner_radius": corner_radius if corner_radius is not None else LAYOUT["field_radius"],
-            "font": ctk.CTkFont(size=font_size or FONTS["size_body"], weight=font_weight or "normal"),
+            "font": ctk.CTkFont(
+                family=font_family or FONTS["family"],
+                size=font_size or FONTS["size_body"],
+                weight=font_weight or "normal",
+            ),
             "compound": compound,
             "image": image,
         }
@@ -321,11 +374,15 @@ class LayoutSystem:
         return ctk.CTkButton(parent, **button_kwargs)
 
     @staticmethod
-    def label(parent, text, *, font_size=None, weight="normal", text_color=None, anchor="w", justify=None,
+    def label(parent, text, *, font_family=None, font_size=None, weight="normal", text_color=None, anchor="w", justify=None,
               fg_color=None, bg_color=None):
         label_kwargs = {
             "text": text,
-            "font": ctk.CTkFont(size=font_size or FONTS["size_body"], weight=weight),
+            "font": ctk.CTkFont(
+                family=font_family or FONTS["family"],
+                size=font_size or FONTS["size_body"],
+                weight=weight,
+            ),
             "text_color": text_color or COLORS["text"],
             "anchor": anchor,
             "justify": justify,
