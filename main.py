@@ -15,7 +15,7 @@ import customtkinter as ctk
 from config.layout_system import LayoutSystem
 from config.styles import ASSETS_DIR, COLORS, FONTS
 from config.permissoes import PAGINAS_EXTERNO, normalizar_pagina, normalizar_perfil, paginas_do_perfil, pode_acao
-from database.conexaodb import Database
+from services.login_service import LoginService, RegraLoginError
 from screens.sidebar import Sidebar
 from screens.menu_inicial import MenuInicialPage
 from screens.notas_fiscais import RelatoriosPage
@@ -25,7 +25,7 @@ from screens.itens_locais import ItensLocaisPage
 from screens.usuarios_infratores import UsuariosInfratoresPage
 from screens.tccm_dashboard import TccmDashboardPage, TccmDetalhesPage
 from screens.cadastro_tccm_completo import CadastroTCCMCompleto
-from utils import verify_password, login_por_certificado
+from utils import login_por_certificado
 from screens.sidebar_externo import SidebarExterno
 from screens.dashboard_externo import DashboardExterno
 from screens.notas_fiscais_externo import NotasFiscaisExterno
@@ -68,7 +68,6 @@ class SessaoUsuario:
 class LoginApp(ctk.CTk):
     def __init__(self):
         super().__init__()
-        _configurar_icone_janela(self)
 
         self.title("FISCSOFT - Login")
         self.configure(fg_color=COLORS["white"])
@@ -155,6 +154,8 @@ class LoginApp(ctk.CTk):
         )
         self.btn_certificado.place(relx=0.5, rely=0.94, anchor="center")
         pywinstyles.set_opacity(self.btn_certificado, color="#000001")
+
+        self.login_service = LoginService()
 
     def _ajustar_imagem_fundo(self):
         try:
@@ -278,75 +279,38 @@ class LoginApp(ctk.CTk):
             self._login_usuario(credencial, senha)
 
     def _login_usuario(self, usuario, senha):
-        with Database() as db:
-            if not db.conexao:
-                messagebox.showerror("Erro", "Nao foi possivel conectar ao banco de dados!")
-                return
-            sql = "SELECT nome_agente, senha, status, perfil FROM \"agente ibama\" WHERE login = ?"
-            resultado = db.executar(sql, (usuario,))
-            registro = resultado.fetchone() if resultado else None
+        try:
+            resultado = self.login_service.autenticar_credencial_unificada(usuario, senha)
+        except RegraLoginError as exc:
+            messagebox.showerror("Erro", str(exc))
+            return
 
-        if registro:
-            nome, hash_bd, status, perfil = registro
+        if resultado is None:
+            messagebox.showerror("Erro", "Usuario ou senha incorretos!")
+            return
 
-            if not verify_password(senha, hash_bd):
-                messagebox.showerror("Erro", "Usuario ou senha incorretos!")
-                return
-
-            if status != "ativo":
-                messagebox.showerror("Erro", "Usuario inativo! Contate o administrador.")
-                return
-
-            self.usuario_logado = nome
-            self.perfil = normalizar_perfil(perfil)
-
+        if resultado["tipo"] == "agente":
+            self.usuario_logado = resultado["nome"]
+            self.perfil = normalizar_perfil(resultado["perfil"])
             self._abrir_tela_principal(perfil=self.perfil)
-            return
-
-        with Database() as db:
-            if not db.conexao:
-                messagebox.showerror("Erro", "Nao foi possivel conectar ao banco de dados!")
-                return
-
-            sql_inf = "SELECT id_infrator, nome_infrator, senha FROM infrator WHERE cpf = ?"
-            resultado_inf = db.executar(sql_inf, (usuario,))
-            registro_inf = resultado_inf.fetchone() if resultado_inf else None
-
-        if not registro_inf:
-            messagebox.showerror("Erro", "Usuario ou senha incorretos!")
-            return
-
-        id_infrator, nome_inf, hash_bd_inf = registro_inf
-
-        if not verify_password(senha, hash_bd_inf):
-            messagebox.showerror("Erro", "Usuario ou senha incorretos!")
-            return
-
-        self.usuario_logado = nome_inf
-        self.id_infrator = id_infrator
-        self._abrir_tela_externa()
+        else:
+            self.usuario_logado = resultado["nome"]
+            self.id_infrator = resultado["id"]
+            self._abrir_tela_externa()
 
     def _login_cpf(self, cpf, senha):
-        with Database() as db:
-            if not db.conexao:
-                messagebox.showerror("Erro", "Nao foi possivel conectar ao banco de dados!")
-                return
-            sql = "SELECT id_infrator, nome_infrator, senha FROM infrator WHERE cpf = ?"
-            resultado = db.executar(sql, (cpf,))
-            registro = resultado.fetchone() if resultado else None
+        try:
+            resultado = self.login_service.autenticar_infrator_por_cpf(cpf, senha)
+        except RegraLoginError as exc:
+            messagebox.showerror("Erro", str(exc))
+            return
 
-        if not registro:
+        if resultado is None:
             messagebox.showerror("Erro", "CPF ou senha incorretos!")
             return
 
-        id_infrator, nome, hash_bd = registro
-
-        if not verify_password(senha, hash_bd):
-            messagebox.showerror("Erro", "CPF ou senha incorretos!")
-            return
-
-        self.usuario_logado = nome
-        self.id_infrator = id_infrator
+        self.usuario_logado = resultado["nome"]
+        self.id_infrator = resultado["id"]
         self._abrir_tela_externa()
 
     def _on_sair_click(self):
@@ -431,7 +395,6 @@ class LoginApp(ctk.CTk):
         self._fechar_janela(self)
 
         main_app = ctk.CTk()
-        _configurar_icone_janela(main_app)
         main_app.title("FISCSOFT - Acesso Externo")
         main_app.configure(fg_color=COLORS["white"])
         main_app.after(0, main_app.state, "zoomed")
@@ -483,7 +446,6 @@ class LoginApp(ctk.CTk):
         self._fechar_janela(self)
 
         welcome_app = ctk.CTk()
-        _configurar_icone_janela(welcome_app)
         welcome_app.title("FISCSOFT - Bem-vindo")
         welcome_app.configure(fg_color=COLORS["bg"])
         welcome_app.after(0, welcome_app.state, "zoomed")
@@ -548,7 +510,6 @@ class LoginApp(ctk.CTk):
         self._fechar_janela(welcome_app)
 
         main_app = ctk.CTk()
-        _configurar_icone_janela(main_app)
         main_app.title("FISCSOFT" if perfil == "admin" else "FISCSOFT - Usuario")
         main_app.configure(fg_color=COLORS["white"])
         main_app.after(0, main_app.state, "zoomed")
