@@ -1,15 +1,15 @@
 import _path  # noqa: F401
 
-from tkinter import messagebox
+from tkinter import messagebox, simpledialog
 
 import customtkinter as ctk
 
 from config.styles import COLORS, FONTS
-from config.permissoes import pode_acao
+from config.permissoes import normalizar_perfil, pode_acao
 from screens.crud_base import CrudBase
 from screens.sidebar import carregar_icone
 from services.itens_service import ItemService
-
+from screens.widgets import ComboBoxComSeta
 
 class ItensPage(CrudBase, ctk.CTkFrame):
     def __init__(self, master, on_voltar=None, usuario_logado=None, processo_tccm=None,
@@ -22,6 +22,7 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         self.perfil = perfil
         self.table_height = table_height
         self.pode_editar = pode_acao(perfil, "gerenciar_itens")
+        self.pode_desativar = normalizar_perfil(perfil) == "admin"
         self.service = ItemService()
 
         titulo = "Itens do TCCM" if processo_tccm else "Itens"
@@ -59,6 +60,7 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         self.build_action_btn(btn_frame, "  Pesquisar", carregar_icone("lupa.png"), self.pesquisar)
         self.build_action_btn(btn_frame, "  Limpar", carregar_icone("apagar.png"), self.limpar_filtros)
         # export per-semester button
+        self.build_action_btn(btn_frame, "  Exportar Acompanhamento", None, self.exportar_acompanhamento)
         self.build_action_btn(btn_frame, "  Exportar por Semestre", None, self.exportar_por_semestre)
 
         if self.pode_editar:
@@ -93,16 +95,17 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         cols.pack(side="left", fill="x", expand=True, padx=(10, 0))
 
         colunas = ["Item", "Tipo de Material", "Justificativa", "Unidade de Medida",
-                   "Qtd. Prevista", "", "Qtd Entregue"]
+               "Qtd. Prevista", "Qtd. Entregue", "Qtd. Restante", "NFs"]
         # pesos [3, 2, 3, 2] → relx / relwidth
         col_cfg = [
             (0.0,  0.22, "w"),      # Item
             (0.22, 0.14, "center"), # Tipo de Material
             (0.36, 0.22, "center"), # Justificativa
             (0.58, 0.11, "center"), # Unidade de Medida
-            (0.69, 0.10, "center"), # Qtd. Prevista
-            (0.79, 0.13, "center"), # barra de progresso
-            (0.92, 0.08, "center"), # Qtd Entregue
+            (0.69, 0.09, "center"), # Qtd. Prevista
+            (0.78, 0.09, "center"), # Qtd. Entregue
+            (0.87, 0.08, "center"), # Qtd. Restante
+            (0.95, 0.05, "center"), # NFs
         ]
 
         for texto, (rx, rw, anchor) in zip(colunas, col_cfg):
@@ -151,9 +154,10 @@ class ItensPage(CrudBase, ctk.CTkFrame):
             (0.22, 0.14, "center"), # Tipo de Material
             (0.36, 0.22, "center"), # Justificativa
             (0.58, 0.11, "center"), # Unidade de Medida
-            (0.69, 0.10, "center"), # Qtd. Prevista
-            (0.79, 0.13, "center"), # barra de progresso
-            (0.92, 0.08, "center"), # Qtd Entregue
+            (0.69, 0.09, "center"),
+            (0.78, 0.09, "center"),
+            (0.87, 0.08, "center"),
+            (0.95, 0.05, "center"),
         ]
 
         just = item.get("justificativa", "")
@@ -167,6 +171,11 @@ class ItensPage(CrudBase, ctk.CTkFrame):
             entregue = float(item.get("qtd_entregue", 0) or 0)
         except Exception:
             entregue = 0.0
+        try:
+            restante = float(item.get("quantidade_restante", 0) or 0)
+        except Exception:
+            restante = 0.0
+        notas_vinculadas = item.get("qtd_notas_vinculadas", 0) or 0
         progresso = 0.0
         if prevista > 0:
             progresso = min(max(entregue / prevista, 0.0), 1.0)
@@ -177,8 +186,9 @@ class ItensPage(CrudBase, ctk.CTkFrame):
             just_text or "-",
             item.get("unidade_medida", "") or "-",
             str(prevista),
-            "",
             str(entregue),
+            str(restante),
+            str(notas_vinculadas),
         ]
 
         for (rx, rw, anchor), texto in zip(col_cfg, valores):
@@ -189,13 +199,6 @@ class ItensPage(CrudBase, ctk.CTkFrame):
                     text_color=COLORS["text"] if rx == 0 else COLORS["text_muted"],
                     anchor=anchor,
                 ).place(relx=rx, relwidth=rw, rely=0, relheight=1)
-            elif rx == 0.79:
-                bar = ctk.CTkProgressBar(
-                    data, progress_color=COLORS["success_dark"],
-                    fg_color=COLORS["border"], height=8, corner_radius=4,
-                )
-                bar.place(relx=rx + 0.02, relwidth=rw - 0.04, rely=0.42, relheight=0.16)
-                bar.set(progresso)
             else:
                 ctk.CTkLabel(
                     data, text=texto,
@@ -205,11 +208,13 @@ class ItensPage(CrudBase, ctk.CTkFrame):
                 ).place(relx=rx, relwidth=rw, rely=0, relheight=1)
 
         acoes = [("\U0001f441", lambda i=item: self.visualizar(i))]
-        if self.pode_editar:
+        if self.pode_desativar:
             acoes += [
                 ("\u270f", lambda i=item: self.editar(i)),
                 ("\U0001f5d1", lambda i=item: self.excluir(i)),
             ]
+        elif self.pode_editar:
+            acoes.append(("\u270f", lambda i=item: self.editar(i)))
         self.add_action_buttons(linha, acoes)
 
     def pesquisar(self):
@@ -263,6 +268,44 @@ class ItensPage(CrudBase, ctk.CTkFrame):
 
         messagebox.showinfo("Sucesso", f"Planilha exportada: {caminho}", parent=self)
 
+    def exportar_acompanhamento(self):
+        from tkinter import filedialog
+        try:
+            import openpyxl
+            from openpyxl.styles import Font
+        except Exception:
+            messagebox.showerror("Erro", "Biblioteca openpyxl nao encontrada.", parent=self)
+            return
+        dados = self.service.listar(self.processo_tccm)
+        if not dados:
+            messagebox.showwarning("Atencao", "Nenhum item para exportar.", parent=self)
+            return
+        caminho = filedialog.asksaveasfilename(
+            title="Exportar acompanhamento quantitativo", defaultextension=".xlsx",
+            filetypes=[("Planilha Excel", "*.xlsx")], initialfile="acompanhamento_itens.xlsx",
+        )
+        if not caminho:
+            return
+        try:
+            wb = openpyxl.Workbook()
+            ws = wb.active
+            ws.title = "Acompanhamento"
+            headers = ["Item", "Quantidade prevista", "Quantidade entregue",
+                       "Quantidade restante", "Notas vinculadas"]
+            ws.append(headers)
+            for celula in ws[1]:
+                celula.font = Font(bold=True)
+            for item in dados:
+                ws.append([
+                    item["nome"], item["quantidade_prevista"], item["qtd_entregue"],
+                    item["quantidade_restante"], item["qtd_notas_vinculadas"],
+                ])
+            wb.save(caminho)
+        except Exception as exc:
+            messagebox.showerror("Erro", f"Falha ao exportar: {exc}", parent=self)
+            return
+        messagebox.showinfo("Sucesso", f"Planilha exportada: {caminho}", parent=self)
+
     def limpar_filtros(self):
         self.entry_busca.delete(0, "end")
         self.itens = self._todos_os_itens[:]
@@ -294,6 +337,10 @@ class ItensPage(CrudBase, ctk.CTkFrame):
             ("Descricao", item.get("descricao", "-")),
             ("Justificativa", item.get("justificativa", "-") or "-"),
             ("Unidade de Medida", item.get("unidade_medida", "") or "-"),
+            ("Quantidade Prevista", str(item.get("quantidade_prevista", 0))),
+            ("Quantidade Entregue", str(item.get("qtd_entregue", 0))),
+            ("Quantidade Restante", str(item.get("quantidade_restante", 0))),
+            ("Notas Vinculadas", str(item.get("qtd_notas_vinculadas", 0))),
         ]
         for i, (l, v) in enumerate(campos):
             ctk.CTkLabel(
@@ -306,6 +353,26 @@ class ItensPage(CrudBase, ctk.CTkFrame):
                 wraplength=380,
             ).grid(row=i, column=1, sticky="w", pady=3)
 
+        ctk.CTkLabel(
+            frame, text="Notas Fiscais do TCCM",
+            font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
+        ).grid(row=len(campos), column=0, columnspan=2, sticky="w", pady=(14, 4))
+        notas_body = ctk.CTkScrollableFrame(frame, fg_color=COLORS["bg"], height=100)
+        notas_body.grid(row=len(campos) + 1, column=0, columnspan=2, sticky="ew")
+        try:
+            notas = self.service.listar_notas_do_item(item["id"], self.processo_tccm)
+        except Exception as exc:
+            notas = []
+            ctk.CTkLabel(notas_body, text=str(exc), text_color=COLORS["danger"]).pack(anchor="w", padx=8, pady=6)
+        if not notas:
+            ctk.CTkLabel(notas_body, text="Nenhuma NF vinculada a este TCCM.", text_color=COLORS["text_muted"]).pack(anchor="w", padx=8, pady=6)
+        for nota in notas:
+            ctk.CTkLabel(
+                notas_body,
+                text=f"NF {nota['nota_fiscal']} | {nota['status']} | {nota['quantidade']} unidade(s)",
+                text_color=COLORS["text_muted"], anchor="w",
+            ).pack(fill="x", padx=8, pady=2)
+
         ctk.CTkButton(
             modal, text="Fechar", height=34, width=100,
             fg_color=COLORS["border"], hover_color="#C0C0C0",
@@ -316,9 +383,23 @@ class ItensPage(CrudBase, ctk.CTkFrame):
         self.abrir_formulario(item=item)
 
     def excluir(self, item):
-        if not messagebox.askyesno("Excluir", f"Deseja excluir o item \"{item['nome']}\"?"):
+        motivo = simpledialog.askstring(
+            "Desativar item",
+            "Informe obrigatoriamente o motivo da desativacao:",
+            parent=self,
+        )
+        if not (motivo or "").strip():
+            messagebox.showwarning("Atencao", "Informe o motivo da desativacao.", parent=self)
             return
-        self.service.excluir(item, self.usuario_logado)
+        if not messagebox.askyesno("Confirmar desativacao", f"Desativar o item \"{item['nome']}\"?", parent=self):
+            return
+        try:
+            self.service.desativar(
+                item, self.usuario_logado, self.perfil, self.processo_tccm, motivo
+            )
+        except Exception as exc:
+            messagebox.showerror("Erro", str(exc), parent=self)
+            return
         self.itens = self.carregar_do_banco()
         self.render_rows()
 

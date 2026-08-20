@@ -66,7 +66,7 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
             hover_color=COLORS["danger_hover"], text_color="white",
             font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
             command=self._voltar,
-        ).pack(side="bottom", fill="x", padx=12, pady=(0, 16))
+        ).pack(side="bottom", fill="x", padx=8, pady=(0, 40))
 
         ctk.CTkButton(
             sidebar, text="   \u2714 Salvar TCCM", anchor="w", height=40,
@@ -74,7 +74,7 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
             hover_color=COLORS["success_dark_hover"], text_color="white",
             font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
             command=self._salvar_tudo,
-        ).pack(side="bottom", fill="x", padx=12, pady=(0, 6))
+        ).pack(side="bottom", fill="x", padx=8, pady=(0, 44))
 
         self.content_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.content_frame.pack(side="left", fill="both", expand=True)
@@ -329,33 +329,34 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
                                             placeholder_text="Nome do item")
         self.entry_item_nome.grid(row=1, column=0, sticky="ew", padx=(0, 6))
 
-        ctk.CTkLabel(form_inner, text="Descricao",
+        ctk.CTkLabel(form_inner, text="Descricao*",
                       font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                      text_color=COLORS["text_muted"]).grid(row=2, column=0, sticky="w", padx=(0, 6), pady=(12, 4))
+                      text_color=COLORS["text_muted"]).grid(row=0, column=1, sticky="w", padx=(6, 0), pady=(0, 4))
         self.entry_item_desc = ctk.CTkEntry(form_inner, height=38, corner_radius=6,
                                             border_width=1, border_color=COLORS["border"],
                                             fg_color=COLORS["white"], text_color=COLORS["text"],
                                             placeholder_text="Descricao do item")
-        self.entry_item_desc.grid(row=3, column=0, sticky="ew", padx=(0, 6))
+        self.entry_item_desc.grid(row=1, column=1, sticky="ew", padx=(6, 0))
 
         ctk.CTkLabel(form_inner, text="Justificativa*",
                       font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                      text_color=COLORS["text_muted"]).grid(row=4, column=0, sticky="w", padx=(0, 6), pady=(12, 4))
+                      text_color=COLORS["text_muted"]).grid(row=2, column=0, sticky="w", padx=(0, 6), pady=(12, 4))
         self.entry_item_just = ctk.CTkEntry(form_inner, height=38, corner_radius=6,
                                             border_width=1, border_color=COLORS["border"],
                                             fg_color=COLORS["white"], text_color=COLORS["text"],
                                             placeholder_text="Justificativa do item")
-        self.entry_item_just.grid(row=5, column=0, sticky="ew", padx=(0, 6))
+        self.entry_item_just.grid(row=3, column=0, sticky="ew", padx=(0, 6))
 
         ctk.CTkLabel(form_inner, text="Tipo de Material*",
                       font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                      text_color=COLORS["text_muted"]).grid(row=0, column=2, sticky="w", padx=(0, 6))
+                      text_color=COLORS["text_muted"]).grid(row=2, column=1, sticky="w", padx=(6, 0), pady=(12, 4))
         self.entry_item_tipo = ComboBoxComSeta(form_inner, values=["Consumivel", "Permanente"],
                                                height=38, corner_radius=6, state="readonly",
                                                fg_color=COLORS["white"], border_color=COLORS["primary"],
                                                button_color=COLORS["primary"],
                                                dropdown_fg_color=COLORS["white"])
-        self.entry_item_tipo.grid(row=1, column=1, sticky="ew", padx=(0, 6))
+        self.entry_item_tipo.grid(row=3, column=1, sticky="ew", padx=(6, 0))
+        self.entry_item_tipo.set("Consumivel")
 
         row_bottom = ctk.CTkFrame(form_inner, fg_color="transparent")
         row_bottom.grid(row=6, column=0, columnspan=4, sticky="ew", pady=(18, 0))
@@ -375,13 +376,14 @@ class CadastroTCCMCompleto(ctk.CTkFrame):
 
         ctk.CTkLabel(row_bottom, text="Unidade de Medida*",
                       font=ctk.CTkFont(size=FONTS["size_small"], weight="bold"),
-                      text_color=COLORS["text_muted"]).grid(row=0, column=5, sticky="w", padx=(0, 6))
-        self.entry_item_unidade = ctk.CTkComboBox(form_inner, values=["Unidade", "Caixa", "Litro", "Kg"],
+                      text_color=COLORS["text_muted"]).grid(row=0, column=1, sticky="w", padx=(6, 6), pady=(0, 4))
+        self.entry_item_unidade = ComboBoxComSeta(row_bottom, values=["Unidade", "Caixa", "Litro", "Kg"],
                                                    height=38, corner_radius=6, state="readonly",
                                                    fg_color=COLORS["white"], border_color=COLORS["primary"],
                                                    button_color=COLORS["primary"],
                                                    dropdown_fg_color=COLORS["white"])
-        self.entry_item_unidade.grid(row=1, column=1, sticky="ew", padx=(0, 6))
+        self.entry_item_unidade.grid(row=1, column=1, sticky="ew", padx=(6, 6))
+        self.entry_item_unidade.set("Unidade")
 
         ctk.CTkButton(
             row_bottom, text="+ Adicionar", height=38, width=110, corner_radius=6,

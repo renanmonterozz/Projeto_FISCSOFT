@@ -1,7 +1,5 @@
 import _path  # noqa: F401 — garante que o root do projeto está no sys.path
 
-import pywinstyles
-
 import logging
 import os
 import sys
@@ -21,6 +19,7 @@ from screens.menu_inicial import MenuInicialPage
 from screens.notas_fiscais import RelatoriosPage
 from screens.destinacao import RelatorioEntregaPage
 from screens.historico import HistoricoPage
+from screens.auditoria import AuditoriaPage
 from screens.itens_locais import ItensLocaisPage
 from screens.usuarios_infratores import UsuariosInfratoresPage
 from screens.tccm_dashboard import TccmDashboardPage, TccmDetalhesPage
@@ -93,29 +92,30 @@ class LoginApp(ctk.CTk):
             weight="bold",
             text_color="#FFF9BE",
             anchor="center",
-            fg_color="#000001",
-            bg_color="#000001",
+            fg_color="#202a15",
+            bg_color="#202a15",
         )
-        self.label_titulo.place(relx=0.5, rely=0.78, anchor="center")
-        pywinstyles.set_opacity(self.label_titulo, color="#000001")
+        self.label_titulo.place(relx=0.5, rely=0.72, anchor="center")
 
         self.label_credencial = ctk.CTkLabel(
             self,
             text="Entrar com Usuário e Senha",
             font=ctk.CTkFont(size=18, weight="bold"),
             text_color="#FFF9BE",
-            bg_color="#000001",
+            fg_color="#202a15",
+            bg_color="#202a15",
         )
-        self.label_credencial.place(relx=0.5, rely=0.79, anchor="center")
+        self.label_credencial.place(relx=0.5, rely=0.75, anchor="center")
 
         self.label_certificado = ctk.CTkLabel(
             self,
             text="Entrar com Certificado Digital",
             font=ctk.CTkFont(size=18, weight="bold"),
             text_color="#FFF9BE",
-            bg_color="#000001",
+            fg_color="#202a15",
+            bg_color="#202a15",
         )
-        self.label_certificado.place(relx=0.5, rely=0.89, anchor="center")
+        self.label_certificado.place(relx=0.5, rely=0.83, anchor="center")
 
         # --- Botão único: Fazer Login ---
         self.btn_entrar = LayoutSystem.button(
@@ -124,17 +124,17 @@ class LoginApp(ctk.CTk):
             width=480,
             height=50,
             command=self._mostrar_formulario_unificado,
-            fg_color=VERDE_POLIGONO,
-            hover_color="#211E1E",
+            fg_color="#202a15",
+            bg_color="#202a15",
+            hover_color="#354522",
             text_color=AMARELO_BOTAO,
             border_width=2,
-            border_color="#000001",
+            border_color="#FFF48C",
             corner_radius=16,
             font_size=19,
             font_weight="normal",
         )
-        self.btn_entrar.place(relx=0.5, rely=0.85, anchor="center")
-        pywinstyles.set_opacity(self.btn_entrar, color="#000001")
+        self.btn_entrar.place(relx=0.5, rely=0.78, anchor="center")
 
         # --- Botao: Entrar com Certificado Digital ---
         self.btn_certificado = LayoutSystem.button(
@@ -143,17 +143,17 @@ class LoginApp(ctk.CTk):
             width=480,
             height=50,
             command=self._login_certificado,
-            fg_color=VERDE_POLIGONO,
-            hover_color="#211E1E",
+            fg_color="#202a15",
+            bg_color="#202a15",
+            hover_color="#354522",
             text_color=AMARELO_BOTAO,
             border_width=2,
-            border_color="#000001",
+            border_color="#FFF48C",
             corner_radius=16,
             font_size=19,
             font_weight="normal",
         )
-        self.btn_certificado.place(relx=0.5, rely=0.94, anchor="center")
-        pywinstyles.set_opacity(self.btn_certificado, color="#000001")
+        self.btn_certificado.place(relx=0.5, rely=0.89, anchor="center")
 
         self.login_service = LoginService()
 
@@ -195,10 +195,9 @@ class LoginApp(ctk.CTk):
         self.btn_entrar.place_forget()
         self.btn_certificado.place_forget()
 
-        self.frame_login = ctk.CTkFrame(self, fg_color="#000001", bg_color="#000001", corner_radius=0)
-        self.frame_login.place(relx=0.5, rely=0.90, anchor="center")
+        self.frame_login = ctk.CTkFrame(self, fg_color="#202a15", bg_color="#202a15", corner_radius=12)
+        self.frame_login.place(relx=0.5, rely=0.82, anchor="center")
         self.frame_login.lift()
-        pywinstyles.set_opacity(self.frame_login, color="#000001")
 
         # --- Campo de credencial ---
         frame_cred = ctk.CTkFrame(self.frame_login, fg_color="transparent", width=586, height=45)
@@ -316,10 +315,11 @@ class LoginApp(ctk.CTk):
     def _on_sair_click(self):
         if hasattr(self, "frame_login"):
             self.frame_login.place_forget()
-        self.label_credencial.place(relx=0.5, rely=0.79, anchor="center")
-        self.label_certificado.place(relx=0.5, rely=0.89, anchor="center")
-        self.btn_entrar.place(relx=0.5, rely=0.85, anchor="center")
-        self.btn_certificado.place(relx=0.5, rely=0.94, anchor="center")
+        self.label_titulo.place(relx=0.5, rely=0.72, anchor="center")
+        self.label_credencial.place(relx=0.5, rely=0.75, anchor="center")
+        self.label_certificado.place(relx=0.5, rely=0.83, anchor="center")
+        self.btn_entrar.place(relx=0.5, rely=0.78, anchor="center")
+        self.btn_certificado.place(relx=0.5, rely=0.89, anchor="center")
 
     def _login_certificado(self):
         self.label_credencial.place_forget()
@@ -331,10 +331,11 @@ class LoginApp(ctk.CTk):
 
             if not sucesso:
                 messagebox.showerror("Erro", mensagem)
-                self.label_credencial.place(relx=0.5, rely=0.79, anchor="center")
-                self.label_certificado.place(relx=0.5, rely=0.89, anchor="center")
-                self.btn_entrar.place(relx=0.5, rely=0.85, anchor="center")
-                self.btn_certificado.place(relx=0.5, rely=0.94, anchor="center")
+                self.label_titulo.place(relx=0.5, rely=0.72, anchor="center")
+                self.label_credencial.place(relx=0.5, rely=0.75, anchor="center")
+                self.label_certificado.place(relx=0.5, rely=0.83, anchor="center")
+                self.btn_entrar.place(relx=0.5, rely=0.78, anchor="center")
+                self.btn_certificado.place(relx=0.5, rely=0.89, anchor="center")
                 return
 
             self.usuario_logado = dados["nome"]
@@ -348,8 +349,11 @@ class LoginApp(ctk.CTk):
 
         except Exception as e:
             messagebox.showerror("Erro", f"Erro ao autenticar com certificado: {e}")
-            self.btn_entrar.place(relx=0.5, rely=0.865, anchor="center")
-            self.btn_certificado.place(relx=0.5, rely=0.945, anchor="center")
+            self.label_titulo.place(relx=0.5, rely=0.72, anchor="center")
+            self.label_credencial.place(relx=0.5, rely=0.75, anchor="center")
+            self.label_certificado.place(relx=0.5, rely=0.83, anchor="center")
+            self.btn_entrar.place(relx=0.5, rely=0.78, anchor="center")
+            self.btn_certificado.place(relx=0.5, rely=0.89, anchor="center")
 
     def _toggle_senha(self):
         if self._senha_visivel:
@@ -564,12 +568,12 @@ class LoginApp(ctk.CTk):
                 ).pack(fill="both", expand=True)
             elif pagina == "Historico":
                 HistoricoPage(content_frame, usuario_logado=usuario_logado).pack(fill="both", expand=True)
+            elif pagina == "Auditoria NF":
+                AuditoriaPage(content_frame, usuario_logado=usuario_logado).pack(fill="both", expand=True)
             elif pagina == "Dashboard TCCM":
                 if processo_tccm:
                     TccmDetalhesPage(
                         content_frame, processo=processo_tccm,
-                        on_voltar=lambda: navegar("Dashboard TCCM"),
-                        usuario_logado=usuario_logado, perfil=perfil,
                     ).pack(fill="both", expand=True)
                 else:
                     TccmDashboardPage(

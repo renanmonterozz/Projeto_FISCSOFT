@@ -44,6 +44,12 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
         self.build_stats_cards()
         self.build_main_content()
 
+    @staticmethod
+    def _rotulo_status(status):
+        if status == "Correcao Solicitada":
+            return "Em exigencia"
+        return status
+
     def build_filter_bar(self):
         inner = self.build_filter_container()
         row = ctk.CTkFrame(inner, fg_color="transparent")
@@ -307,7 +313,7 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
 
         dados = [str(idx), nota["nota_fiscal"], nota["data"],
                  f"R$ {nota['valor_total']:,.2f}",
-                 str(nota["itens"]), nota["status"]]
+                 str(nota["itens"]), self._rotulo_status(nota["status"])]
 
         for i, (valor, (rx, rw, anchor)) in enumerate(zip(dados, COL_NF_CFG)):
             cor = COLORS["text"] if i == 0 else COLORS["text_muted"]
@@ -339,7 +345,7 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
         total_pago = nota.get("total_pago", 0)
         self.info_labels["Total Devido:"].configure(text=f"R$ {total_devido:,.2f}")
         self.info_labels["Total Pago:"].configure(text=f"R$ {total_pago:,.2f}")
-        self.info_labels["Status:"].configure(text=nota["status"])
+        self.info_labels["Status:"].configure(text=self._rotulo_status(nota["status"]))
         self.itens_label.configure(text=f"{nota['itens']} itens declarados")
 
         arquivo = nota.get("arquivo")
@@ -439,8 +445,7 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
             return
         if novo_status != "Aprovada":
             return
-        self.service.aprovar_nota(self.nf_selecionada, self.tccm_id)
-        self.nf_selecionada["status"] = novo_status
+        self.service.aprovar(self.nf_selecionada, self.tccm_id)
         self.notas = self.carregar_do_banco()
         self.render_rows()
         self._atualizar_estado_botoes(novo_status)
@@ -528,7 +533,6 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
             return
         try:
             self.service.solicitar_correcao(self.nf_selecionada, self.tccm_id, motivo)
-            self.nf_selecionada["status"] = "Correcao Solicitada"
             self.notas = self.carregar_do_banco()
             self.render_rows()
             messagebox.showinfo("Informacao", "Solicitacao de correcao enviada.")
@@ -549,8 +553,7 @@ class RelatoriosPage(CrudBase, ctk.CTkFrame):
             return
         if messagebox.askyesno("Confirmar", "Deseja rejeitar esta nota fiscal?"):
             try:
-                self.service.rejeitar_nota(self.nf_selecionada, self.tccm_id, motivo)
-                self.nf_selecionada["status"] = "Rejeitada"
+                self.service.rejeitar(self.nf_selecionada, self.tccm_id, motivo)
                 self.notas = self.carregar_do_banco()
                 self.render_rows()
                 messagebox.showinfo("Informacao", "Nota fiscal rejeitada.")

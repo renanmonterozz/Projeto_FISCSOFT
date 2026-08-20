@@ -10,6 +10,11 @@ class RegraNotaError(ValueError):
 
 
 class NotasFiscaisService:
+    STATUS_PENDENTE = "Pendente"
+    STATUS_APROVADA = "Aprovada"
+    STATUS_REJEITADA = "Rejeitada"
+    STATUS_CORRECAO = "Correcao Solicitada"
+
     def __init__(self, repository=None):
         self.repository = repository or NotasFiscaisRepository()
         self._agente_logado = None
@@ -63,38 +68,52 @@ class NotasFiscaisService:
         tccm_id = (tccm_id or "").strip()
         if not tccm_id:
             raise RegraNotaError("Selecione um TCCM para alterar a nota fiscal.")
+        transicoes = {
+            self.STATUS_APROVADA,
+            self.STATUS_REJEITADA,
+            self.STATUS_CORRECAO,
+        }
+        if novo_status not in transicoes:
+            raise RegraNotaError("Transicao de status da nota fiscal invalida.")
         if nota.get("processo") != tccm_id:
             raise RegraNotaError("A nota fiscal nao pertence ao TCCM selecionado.")
-        if self.repository.buscar_por_id_e_tccm(nota["nota_fiscal"], tccm_id) is None:
+        if novo_status in {self.STATUS_REJEITADA, self.STATUS_CORRECAO}:
+            motivo = (motivo or "").strip()
+            if not motivo:
+                raise RegraNotaError("Informe o motivo da operacao.")
+        nota_atual = self.repository.buscar_por_id_e_tccm(nota["nota_fiscal"], tccm_id)
+        if nota_atual is None:
             raise RegraNotaError("Nota fiscal nao encontrada neste TCCM.")
+        if nota_atual.status_nota != self.STATUS_PENDENTE:
+            raise RegraNotaError("Somente notas pendentes podem ser alteradas.")
         agente_id = self.repository.buscar_agente_id(self._agente_logado)
         if agente_id is None:
             raise RegraNotaError("Agente responsavel nao encontrado.")
         self.repository.atualizar_status(
-            nota["nota_fiscal"], nota["matricula"], tccm_id, novo_status,
+            nota["nota_fiscal"], nota_atual.agente_matricula, tccm_id, novo_status,
             agente_id, motivo, self._agente_logado,
         )
 
     def aprovar_nota(self, nota, tccm_id):
-        if nota.get("status") != "Pendente":
-            raise RegraNotaError("Somente notas pendentes podem ser aprovadas.")
-        self.atualizar_status(nota, "Aprovada", tccm_id)
+        self.atualizar_status(nota, self.STATUS_APROVADA, tccm_id)
+
+    def aprovar(self, nota, tccm_id):
+        self.aprovar_nota(nota, tccm_id)
 
     def rejeitar_nota(self, nota, tccm_id, motivo):
-        if nota.get("status") != "Pendente":
-            raise RegraNotaError("Somente notas pendentes podem ser rejeitadas.")
         motivo = (motivo or "").strip()
         if not motivo:
             raise RegraNotaError("Informe o motivo da rejeicao.")
-        self.atualizar_status(nota, "Rejeitada", tccm_id, motivo)
+        self.atualizar_status(nota, self.STATUS_REJEITADA, tccm_id, motivo)
+
+    def rejeitar(self, nota, tccm_id, motivo):
+        self.rejeitar_nota(nota, tccm_id, motivo)
 
     def solicitar_correcao(self, nota, tccm_id, motivo):
-        if nota.get("status") != "Pendente":
-            raise RegraNotaError("Somente notas pendentes podem solicitar correcao.")
         motivo = (motivo or "").strip()
         if not motivo:
             raise RegraNotaError("Informe o motivo da correcao.")
-        self.atualizar_status(nota, "Correcao Solicitada", tccm_id, motivo)
+        self.atualizar_status(nota, self.STATUS_CORRECAO, tccm_id, motivo)
 
     def reenviar_nota(self, nota_fiscal, processo, infrator_id, dados, itens):
         processo = (processo or "").strip()

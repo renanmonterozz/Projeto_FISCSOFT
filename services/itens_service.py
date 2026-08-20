@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from repositories.itens_repository import ItensRepository
+from config.permissoes import normalizar_perfil
 from utils import registrar_log
 
 
@@ -28,7 +29,20 @@ class ItemService:
         return mensagem
 
     def listar(self, processo=None, semestre_atual=False):
-        return self.repository.listar(processo, semestre_atual)
+        itens = self.repository.listar(processo, semestre_atual)
+        for item in itens:
+            item["quantidade_restante"] = max(
+                (item.get("quantidade_prevista") or 0) - (item.get("qtd_entregue") or 0),
+                0,
+            )
+        return itens
+
+    def listar_notas_do_item(self, item_id, processo):
+        if not processo:
+            raise RegraItemError("Selecione um TCCM para consultar as notas vinculadas.")
+        if not item_id:
+            raise RegraItemError("Selecione um item para consultar as notas vinculadas.")
+        return self.repository.listar_notas_do_item(item_id, processo)
 
     def pesquisar(self, itens, busca=""):
         return filtrar_itens(itens, busca)
@@ -36,11 +50,27 @@ class ItemService:
     def listar_para_exportacao(self, processo=None):
         return self.repository.listar_para_exportacao(processo)
 
-    def excluir(self, item, usuario_logado=None):
-        self.repository.excluir(item["id"])
-        mensagem = f"Item '{item['nome']}' (ID: {item['id']}) excluido"
-        registrar_log(usuario_logado or "Sistema", "exclusao", "itens", mensagem)
+    def desativar(self, item, usuario_logado=None, perfil=None, processo=None, motivo=None):
+        if normalizar_perfil(perfil) != "admin":
+            raise RegraItemError("A desativacao de itens exige permissao de administrador.")
+        motivo = (motivo or "").strip()
+        if not motivo:
+            raise RegraItemError("Informe o motivo da desativacao do item.")
+        self.repository.desativar(item["id"])
+        usuario = usuario_logado or "Sistema"
+        mensagem = (
+            f"DESATIVACAO_ITEM item_id={item['id']} "
+            f"tccm_id={processo or item.get('processo') or '--'} "
+            f"motivo={motivo}"
+        )
+        registrar_log(usuario, "DESATIVACAO_ITEM", "itens", mensagem)
         return mensagem
+
+    def listar_historico(self, processo=None):
+        return self.repository.listar_historico(processo)
+
+    def excluir(self, item, usuario_logado=None, perfil=None, processo=None, motivo=None):
+        return self.desativar(item, usuario_logado, perfil, processo, motivo)
 
 
 def validar_dados_item(nome, descricao, tipo, unidade, justificativa, quantidade):

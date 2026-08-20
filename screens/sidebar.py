@@ -52,6 +52,7 @@ class Sidebar(ctk.CTkFrame):
             ("Usuários", "usuarios.png", "Agente"),
             ("Notas Fiscais", "relatorios.png", "Notas Fiscais"),
             ("Historico", "relogio.png", "Historico"),
+            ("Auditoria NF", "relogio.png", "Auditoria NF"),
         ]
 
         nav_container = ctk.CTkFrame(self, fg_color="transparent")

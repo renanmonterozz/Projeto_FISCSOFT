@@ -31,6 +31,7 @@ def _rebuild_sidebar_and_content(page):
             "RelatoriosPage": "Relatorio",
             "RelatorioEntregaPage": "Destinacao",
             "HistoricoPage": "Historico",
+            "AuditoriaPage": "Auditoria NF",
         }
         page_name = page_map.get(current_page)
         if page_name:

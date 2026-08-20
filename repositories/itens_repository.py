@@ -30,11 +30,27 @@ class ItensRepository:
             (NotaFiscal.nota_fiscal == Produto.nota_fiscal)
             & (NotaFiscal.agente_matricula == Produto.agente_matricula),
         ).where(Produto.itens_id == Item.id)
+        entregue = entregue.where(NotaFiscal.status_nota == "Aprovada")
+        if processo:
+            entregue = entregue.where(NotaFiscal.processo == processo)
         if semestre:
             entregue = entregue.where(NotaFiscal.data >= inicio, NotaFiscal.data <= fim)
         entregue = func.coalesce(entregue.scalar_subquery(), 0)
 
-        statement = select(Item, quantidade_prevista, entregue)
+        notas_vinculadas = select(
+            func.count(func.distinct(NotaFiscal.nota_fiscal))
+        ).join(
+            Produto,
+            (Produto.nota_fiscal == NotaFiscal.nota_fiscal)
+            & (Produto.agente_matricula == NotaFiscal.agente_matricula),
+        ).where(Produto.itens_id == Item.id)
+        if processo:
+            notas_vinculadas = notas_vinculadas.where(NotaFiscal.processo == processo)
+        notas_vinculadas = func.coalesce(notas_vinculadas.scalar_subquery(), 0)
+
+        statement = select(Item, quantidade_prevista, entregue, notas_vinculadas).where(
+            Item.status == "Ativo"
+        )
         if processo:
             itens_por_nota = select(NotaFiscal.nota_fiscal).where(NotaFiscal.processo == processo)
             statement = statement.where(
@@ -54,14 +70,33 @@ class ItensRepository:
                 "unidade_medida": item.unidade_medida or "",
                 "quantidade_prevista": quantidade or 0,
                 "qtd_entregue": entregue or 0,
+                "qtd_notas_vinculadas": qtd_notas or 0,
             }
-            for item, quantidade, entregue in rows
+            for item, quantidade, entregue, qtd_notas in rows
         ]
         return itens
+
+    def listar_notas_do_item(self, item_id, processo):
+        with session_scope() as session:
+            statement = (
+                select(NotaFiscal.nota_fiscal, NotaFiscal.status_nota, Produto.quantidade)
+                .join(
+                    Produto,
+                    (Produto.nota_fiscal == NotaFiscal.nota_fiscal)
+                    & (Produto.agente_matricula == NotaFiscal.agente_matricula),
+                )
+                .where(Produto.itens_id == item_id, NotaFiscal.processo == processo)
+                .order_by(NotaFiscal.data.desc(), NotaFiscal.nota_fiscal)
+            )
+            return [
+                {"nota_fiscal": nota, "status": status or "Pendente", "quantidade": quantidade or 0}
+                for nota, status, quantidade in session.execute(statement).all()
+            ]
 
     def listar_para_exportacao(self, processo=None):
         with session_scope() as session:
             statement = select(Item).order_by(Item.id)
+            statement = statement.where(Item.status == "Ativo")
             if processo:
                 statement = statement.where(Item.processo == processo)
             itens = session.scalars(statement).all()
@@ -92,10 +127,30 @@ class ItensRepository:
             mapa = {(item_id, ano, semestre): quantidade for item_id, ano, semestre, quantidade in quantidades}
             return dados, [(ano, semestre) for ano, semestre in semestres], mapa
 
-    def excluir(self, item_id):
+    def desativar(self, item_id):
         with session_scope() as session:
-            session.execute(delete(ItemSemestre).where(ItemSemestre.itens_id == item_id))
-            session.execute(delete(Item).where(Item.id == item_id))
+            item = session.get(Item, item_id)
+            if item is None:
+                raise LookupError("Item nao encontrado.")
+            if item.status != "Ativo":
+                raise ValueError("O item ja esta inativo.")
+            item.status = "Inativo"
+
+    def listar_historico(self, processo=None):
+        with session_scope() as session:
+            statement = select(Item).order_by(Item.id)
+            if processo:
+                statement = statement.where(Item.processo == processo)
+            return [
+                {
+                    "id": item.id,
+                    "nome": item.nome or "-",
+                    "descricao": item.descricao or "-",
+                    "processo": item.processo,
+                    "status": item.status or "Inativo",
+                }
+                for item in session.scalars(statement).all()
+            ]
 
     @staticmethod
     def _semestre_atual():
@@ -128,6 +183,8 @@ class ItensRepository:
             item = session.get(Item, item_id)
             if item is None:
                 raise LookupError("Item nao encontrado.")
+            if item.status != "Ativo":
+                raise ValueError("Itens inativos nao podem ser alterados.")
             item.nome = dados["nome"]
             item.descricao = dados["descricao"] or dados["nome"]
             item.tipo = dados["tipo"]

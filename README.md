@@ -4,14 +4,19 @@ Sistema desktop para gerenciamento de Termos de Coordenacao e Controle de Materi
 
 ## Funcionalidades
 
-- Tela de login com autenticacao por usuario/senha (bcrypt + SHA-256 legado)
+- Tela de login com autenticacao por usuario/senha e CPF (bcrypt + SHA-256 legado)
 - Controle de acesso por perfil (Administrador / Agente / Operador)
 - Modo externo para infratores (login via CPF)
 - Navegacao por sidebar com multiplas paginas (filtrada por perfil)
 - Gerenciamento de Agentes IBAMA (CRUD)
 - Gerenciamento de Infratores (CRUD)
-- Gerenciamento de Itens (CRUD + importacao Excel)
-- Monitoramento de Notas Fiscais com acoes (Aprovar/Rejeitar)
+- Gerenciamento de Itens com acompanhamento quantitativo por TCCM
+- Desativacao de itens por soft delete, preservando o historico
+- Exportacao do acompanhamento de itens para Excel
+- Monitoramento de Notas Fiscais com acoes de aprovar, rejeitar e solicitar correcao
+- Reenvio de Notas Fiscais apos solicitacao de correcao
+- Auditoria de Notas Fiscais com filtros por NF, TCCM, acao e usuario
+- Historico de operacoes administrativas e de alteracao de dados
 - Relatorio de Entrega de Materiais
 - Banco de dados SQLite local
 
@@ -35,10 +40,14 @@ Projeto_FISCSOFT/
 │   ├── usuarios.py            # Gerenciamento de Agentes IBAMA
 │   ├── infratores.py          # Gerenciamento de Infratores
 │   ├── itens.py               # Gerenciamento de Itens + Excel
-│   ├── relatorios.py          # Monitoramento de Notas Fiscais
+│   ├── notas_fiscais.py       # Analise e aprovacao de Notas Fiscais
+│   ├── auditoria.py           # Auditoria de eventos de Notas Fiscais
+│   ├── tccm_dashboard.py      # Painel e detalhes dos TCCMs
+│   ├── cadastro_tccm_completo.py # Cadastro completo de TCCM
+│   ├── relatorios.py          # Relatorios e monitoramento
 │   └── ...
-├── fiscsoft_externo/          # Sistema externo (infratores via CPF)
-│   └── telas/
+├── services/                  # Regras de negocio e transicoes de estado
+├── repositories/              # Persistencia via SQLAlchemy ORM
 ├── assets/
 │   ├── imagens/               # Icones e imagens do sistema
 │   ├── fontes/                # Fontes (Libre Baskerville)
@@ -82,6 +91,36 @@ pip install -r requirements.txt
 python main.py            # Sistema interno e externo (infratores via CPF)
 ```
 
+## Regras principais
+
+### Notas Fiscais
+
+As transicoes permitidas sao:
+
+```text
+Pendente
+├── Aprovada
+├── Rejeitada
+└── Correcao Solicitada (exibida como "Em exigencia")
+
+Correcao Solicitada
+└── Pendente (apos reenvio do infrator)
+```
+
+Os motivos de rejeicao e solicitacao de correcao sao obrigatorios. A contabilizacao
+de itens ocorre somente na aprovacao. Os eventos `ENVIO`, `APROVACAO`, `REJEICAO`,
+`CORRECAO_SOLICITADA` e `REENVIO` sao mantidos no historico de auditoria.
+
+### Itens
+
+Itens nunca sao apagados fisicamente. A opcao "Excluir" realiza uma desativacao
+(`status = Inativo`) e exige permissao de administrador e motivo. Itens inativos
+permanecem disponiveis para consultas historicas, mas nao aparecem em novas selecoes.
+
+Na tela de itens, a quantidade entregue considera somente produtos de Notas Fiscais
+aprovadas. O acompanhamento tambem exibe quantidade prevista, restante e total de
+Notas Fiscais vinculadas ao TCCM.
+
 ## Seguranca
 
 - Senhas armazenadas com bcrypt (hash com salt); compatibilidade com SHA-256 legado
@@ -94,7 +133,6 @@ python main.py            # Sistema interno e externo (infratores via CPF)
 - Pillow - Processamento de imagens
 - pandas - Leitura de planilhas Excel
 - bcrypt - Hash seguro de senhas
-- pywinstyles - Estilo visual em janelas Windows
 
 ## Gerar executável (Windows)
 

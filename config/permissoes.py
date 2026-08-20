@@ -36,6 +36,7 @@ PAGINAS_POR_PERFIL = {
         "Agente",
         "Notas Fiscais",
         "Historico",
+        "Auditoria NF",
     },
     "agente": {
         "Menu Principal",
@@ -44,11 +45,13 @@ PAGINAS_POR_PERFIL = {
         "Destinacao",
         "Agente",
         "Notas Fiscais",
+        "Auditoria NF",
     },
     "operador": {
         "Menu Principal",
         "Itens",
         "Notas Fiscais",
+        "Auditoria NF",
     },
 }
 
@@ -94,6 +97,8 @@ PAGINA_ALIASES = {
     "nota fiscal": "Notas Fiscais",
     "historico": "Historico",
     "histórico": "Historico",
+    "auditoria": "Auditoria NF",
+    "auditoria nf": "Auditoria NF",
     "dashboard tccm": "Dashboard TCCM",
     "cadastro tccm": "Cadastro TCCM",
     "cadastro": "Cadastro TCCM",

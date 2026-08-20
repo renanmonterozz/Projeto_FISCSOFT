@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, select, update
 
 from database.models import (
     AgenteIbama,
@@ -228,9 +228,12 @@ class NotasFiscaisRepository:
             if nota is None:
                 raise LookupError("Nota fiscal nao encontrada neste TCCM.")
 
+            numero_anterior = nota.nota_fiscal
+            matricula = nota.agente_matricula
+
             session.execute(delete(Produto).where(
                 Produto.nota_fiscal == nota_fiscal,
-                Produto.agente_matricula == nota.agente_matricula,
+                Produto.agente_matricula == matricula,
             ))
             session.flush()
 
@@ -243,6 +246,16 @@ class NotasFiscaisRepository:
             nota.agente_decisao = None
             nota.data_decisao = None
 
+            if numero_anterior != dados["numero"]:
+                session.execute(
+                    update(NotaFiscalHistorico)
+                    .where(
+                        NotaFiscalHistorico.nota_fiscal == numero_anterior,
+                        NotaFiscalHistorico.processo == processo,
+                    )
+                    .values(nota_fiscal=dados["numero"])
+                )
+
             for indice, item in enumerate(itens, start=1):
                 session.add(Produto(
                     lote=f"{dados['numero']}-ITEM-{indice}",
@@ -250,7 +263,7 @@ class NotasFiscaisRepository:
                     quantidade=item["quantidade"],
                     preco_unitario=item["preco_unitario"],
                     nota_fiscal=dados["numero"],
-                    agente_matricula=nota.agente_matricula,
+                    agente_matricula=matricula,
                     itens_id=item["item_id"],
                     nome_item=item["nome"],
                 ))

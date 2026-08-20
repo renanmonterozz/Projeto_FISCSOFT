@@ -283,7 +283,7 @@ class LayoutSystem:
     @staticmethod
     def button(parent, text, *, command=None, width=None, height=None, fg_color=None, hover_color=None,
                text_color=None, border_width=0, border_color=None, corner_radius=None, font_size=None,
-               font_weight=None, compound=None, image=None):
+               font_weight=None, compound=None, image=None, bg_color=None):
         button_kwargs = {
             "text": text,
             "command": command,
@@ -297,6 +297,8 @@ class LayoutSystem:
             "compound": compound,
             "image": image,
         }
+        if bg_color is not None:
+            button_kwargs["bg_color"] = bg_color
         if width is not None:
             button_kwargs["width"] = LayoutSystem.responsive(
                 value=width,
