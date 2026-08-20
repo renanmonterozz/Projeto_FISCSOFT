@@ -2,8 +2,6 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))  # noqa: F401 — garante o root do projeto no sys.path
-import pywinstyles
-
 import os
 from tkinter import messagebox
 
@@ -49,12 +47,10 @@ class TestLoginApp(ctk.CTk):
             text="ACESSE O SISTEMA!",
             font=("Libre Baskerville", 36),
             text_color="#FFF9BE",
-            fg_color="#000001",
-            bg_color="#000001"
+            fg_color="#202a15",
+            bg_color="#202a15"
         )
-        self.label_titulo.place(relx=0.5, rely=0.78, anchor="center")
-
-        pywinstyles.set_opacity(self.label_titulo, color="#000001")
+        self.label_titulo.place(relx=0.5, rely=0.72, anchor="center")
 
         # --- Botão 1: Entrar com Usuário e Senha ---
         self.btn_usuario = ctk.CTkButton(
@@ -63,17 +59,16 @@ class TestLoginApp(ctk.CTk):
             width=480,
             height=50,
             corner_radius=16,
-            fg_color=VERDE_POLIGONO,
-            bg_color="#000001",
-            hover_color="#211E1E",
+            fg_color="#202a15",
+            bg_color="#202a15",
+            hover_color="#354522",
             text_color=AMARELO_BOTAO,
             font=ctk.CTkFont(family="Segoe UI", size=19),
             border_width=2,
-            border_color="#000001",
+            border_color="#FFF48C",
             command=self._on_usuario_click
         )
-        self.btn_usuario.place(relx=0.5, rely=0.86, anchor="center")
-        pywinstyles.set_opacity(self.btn_usuario, color="#000001")
+        self.btn_usuario.place(relx=0.5, rely=0.78, anchor="center")
 
 
         # --- Botão 2: Entrar com Certificado Digital ---
@@ -83,17 +78,16 @@ class TestLoginApp(ctk.CTk):
             width=480,
             height=50,
             corner_radius=16,
-            fg_color=VERDE_POLIGONO,
-            bg_color="#000001",
-            hover_color="#211E1E",
+            fg_color="#202a15",
+            bg_color="#202a15",
+            hover_color="#354522",
             text_color=AMARELO_BOTAO,
             font=ctk.CTkFont(family="Segoe UI", size=19),
             border_width=2,
-            border_color="#000001",
+            border_color="#FFF48C",
             command=self._on_certificado_click
         )
-        self.btn_certificado.place(relx=0.5, rely=0.93, anchor="center")
-        pywinstyles.set_opacity(self.btn_certificado, color="#000001")
+        self.btn_certificado.place(relx=0.5, rely=0.89, anchor="center")
 
 
     def _ajustar_imagem_fundo(self):
@@ -121,10 +115,9 @@ class TestLoginApp(ctk.CTk):
 
     def _mostrar_formulario_login(self):
         # Frame para o formulário
-        self.frame_login = ctk.CTkFrame(self, fg_color="#000001", bg_color="#000001", corner_radius=0)
-        self.frame_login.place(relx=0.5, rely=0.90, anchor="center")
+        self.frame_login = ctk.CTkFrame(self, fg_color="#202a15", bg_color="#202a15", corner_radius=12)
+        self.frame_login.place(relx=0.5, rely=0.82, anchor="center")
         self.frame_login.lift()
-        pywinstyles.set_opacity(self.frame_login, color="#000001")
 
         # Entry - Usuário
         self.entry_usuario = ctk.CTkEntry(
@@ -185,7 +178,7 @@ class TestLoginApp(ctk.CTk):
         self._senha_visivel = False
 
         # Botões em uma linha
-        frame_botoes = ctk.CTkFrame(self.frame_login, fg_color="#000001")
+        frame_botoes = ctk.CTkFrame(self.frame_login, fg_color="#202a15", bg_color="#202a15")
         frame_botoes.pack()
         # Botão Entrar
         btn_entrar = ctk.CTkButton(
@@ -233,8 +226,8 @@ class TestLoginApp(ctk.CTk):
         # Oculta o frame de login
         self.frame_login.place_forget()
         # Mostra novamente os botões iniciais
-        self.btn_usuario.place(relx=0.5, rely=0.86, anchor="center")
-        self.btn_certificado.place(relx=0.5, rely=0.93, anchor="center")
+        self.btn_usuario.place(relx=0.5, rely=0.78, anchor="center")
+        self.btn_certificado.place(relx=0.5, rely=0.89, anchor="center")
 
     def _toggle_senha(self):
         # Alterna a visibilidade da senha
