@@ -1,0 +1,111 @@
+ESTRUTURA VISUAL DO LOGINAPP
+============================
+
+Objetivo
+--------
+Replicar o bloco de acesso ao sistema sobre o poligono do fundo da tela de login.
+Usar CustomTkinter nativo, sem pywinstyles e sem a cor-chave #000001.
+
+Paleta do bloco de acesso
+-------------------------
+- Cor principal do bloco: #202a15
+- Texto claro: #FFF9BE
+- Borda dos botoes: #FFF48C
+- Hover dos botoes: #354522
+- Campos de entrada: #CFFFE3
+- Borda dos campos: #16A34A
+- Texto dos campos: #2D8A4E
+- Fundo do botao Sair: #8B0000
+- Hover do botao Sair: #850202
+
+Titulo e botoes iniciais
+------------------------
+Todos os labels e botoes do bloco devem usar:
+
+    fg_color="#202a15"
+    bg_color="#202a15"
+
+Titulo:
+- Texto: ACESSE O SISTEMA!
+- Fonte: Libre Baskerville, tamanho 36, negrito
+- Texto: #FFF9BE
+- Posicao: relx=0.5, rely=0.72, anchor="center"
+
+Label de credencial:
+- Texto: Entrar com Usuario e Senha
+- Fonte: tamanho 18, negrito
+- Texto: #FFF9BE
+- Posicao: relx=0.5, rely=0.75, anchor="center"
+
+Label de certificado:
+- Texto: Entrar com Certificado Digital
+- Fonte: tamanho 18, negrito
+- Texto: #FFF9BE
+- Posicao: relx=0.5, rely=0.83, anchor="center"
+
+Botao Fazer Login:
+- Largura: 480
+- Altura: 50
+- Corner radius: 16
+- fg_color: #202a15
+- bg_color: #202a15
+- hover_color: #354522
+- border_width: 2
+- border_color: #FFF48C
+- Texto: #FFF48C
+- Posicao: relx=0.5, rely=0.78, anchor="center"
+
+Botao Entrar com Certificado Digital:
+- Largura: 480
+- Altura: 50
+- Corner radius: 16
+- fg_color: #202a15
+- bg_color: #202a15
+- hover_color: #354522
+- border_width: 2
+- border_color: #FFF48C
+- Texto: #FFF48C
+- Posicao: relx=0.5, rely=0.89, anchor="center"
+
+Formulario unificado
+--------------------
+Ao clicar em Fazer Login, esconder os labels e botoes iniciais e criar:
+
+    self.frame_login = ctk.CTkFrame(
+        self,
+        fg_color="#202a15",
+        bg_color="#202a15",
+        corner_radius=12,
+    )
+    self.frame_login.place(relx=0.5, rely=0.82, anchor="center")
+
+Campos do formulario:
+- Frame credencial: width=586, height=45, fg_color="transparent"
+- Campo credencial: width=480, height=45, posicao x=53, y=0
+- Frame senha: width=586, height=45, fg_color="transparent"
+- Campo senha: width=480, height=45, posicao x=53, y=0
+- Botao olho: width=45, height=45, posicao x=541, y=0
+- Botoes internos Entrar e Sair: altura 40
+
+Os campos devem manter:
+- fg_color: #CFFFE3
+- border_color: #16A34A
+- border_width: 2
+- text_color: #2D8A4E
+- placeholder_text_color: #2D8A4E
+
+Regras de posicionamento
+-------------------------
+- Manter os elementos principais na faixa vertical rely=0.72 ate rely=0.92.
+- Usar anchor="center" nos elementos posicionados com place.
+- Reaplicar as mesmas coordenadas ao restaurar a tela apos cancelar ou falhar o login.
+- Nao usar pywinstyles.set_opacity.
+- Nao usar #000001.
+
+Dependencia do helper
+---------------------
+Se os botoes forem criados por LayoutSystem.button, o helper deve aceitar:
+
+    bg_color=None
+
+e repassar esse valor ao ctk.CTkButton.
